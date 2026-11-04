@@ -48,7 +48,12 @@ class Invoice extends Model
     }
 
     /**
-     * Generate WhatsApp reminder URL
+     * Generate WhatsApp reminder URL matching the exact format:
+     * Yth, Pelanggan Hokigo Starlink..
+     * Sebagai pengingat, Hari ini pembayaran wifi🙏🏻
+     * Bisa dibayarkan melalui rekening berikut:
+     * MUHAMMAD IRZAQ IRAWAN 
+     * 7233297792 BSI
      */
     public function getWhatsappUrlAttribute(): string
     {
@@ -57,23 +62,21 @@ class Invoice extends Model
             return '#';
         }
 
-        $companyName = Setting::get('company_name', 'Hokigo WiFi');
-        $bankInfo = Setting::get('bank_accounts', "BCA: 1234567890 a.n Hokigo\nBRI: 9876543210 a.n Hokigo\nDANA/GoPay: 081234567890");
+        $companyName = Setting::get('company_name', 'Hokigo Starlink');
+        $bankInfo = Setting::get('bank_accounts', "MUHAMMAD IRZAQ IRAWAN\n7233297792 BSI");
         $dueDate = $this->due_date ? $this->due_date->isoFormat('D MMMM Y') : '-';
         $formattedAmount = 'Rp ' . number_format($this->amount, 0, ',', '.');
-        $periodName = \Carbon\Carbon::createFromFormat('Y-m', $this->period)->isoFormat('MMMM Y');
+        $packageName = $customer->package?->name ?? 'Internet Bulanan';
 
-        $message = "Halo Kak *{$customer->name}*,\n\n"
-            . "Kami dari *{$companyName}* menginformasikan tagihan internet WiFi Anda untuk periode *{$periodName}*:\n\n"
-            . "🆔 ID Pelanggan: *{$customer->customer_code}*\n"
-            . "📦 Paket: *" . ($customer->package?->name ?? 'Internet Bulanan') . "*\n"
+        $message = "Yth, Pelanggan {$companyName}..\n"
+            . "*{$customer->name}* (ID: *{$customer->customer_code}*)\n\n"
+            . "Sebagai pengingat, Hari ini pembayaran wifi🙏🏻\n\n"
+            . "📦 Paket: *{$packageName}*\n"
             . "💰 Total Tagihan: *{$formattedAmount}*\n"
-            . "📅 Jatuh Tempo: *{$dueDate}*\n"
-            . "📌 Status: *" . ($this->status === 'paid' ? 'LUNAS ✅' : 'BELUM BAYAR ⏳') . "*\n\n"
-            . "Pembayaran dapat ditransfer melalui:\n"
+            . "📅 Jatuh Tempo: *{$dueDate}*\n\n"
+            . "Bisa dibayarkan melalui rekening berikut:\n\n"
             . "{$bankInfo}\n\n"
-            . "Mohon kirimkan bukti transfer setelah melakukan pembayaran ya Kak.\n"
-            . "Terima kasih atas kepercayaannya menggunakan layanan *{$companyName}*! 🙏✨";
+            . "Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨";
 
         return 'https://api.whatsapp.com/send?phone=' . $customer->clean_phone . '&text=' . rawurlencode($message);
     }
@@ -88,22 +91,23 @@ class Invoice extends Model
             return '#';
         }
 
-        $companyName = Setting::get('company_name', 'Hokigo WiFi');
+        $companyName = Setting::get('company_name', 'Hokigo Starlink');
         $formattedAmount = 'Rp ' . number_format($this->amount, 0, ',', '.');
         $paidDate = $this->paid_at ? $this->paid_at->isoFormat('D MMMM Y HH:mm') : now()->isoFormat('D MMMM Y HH:mm');
         $periodName = \Carbon\Carbon::createFromFormat('Y-m', $this->period)->isoFormat('MMMM Y');
         $method = strtoupper($this->payment_method ?? 'TUNAI');
+        $packageName = $customer->package?->name ?? 'Internet Bulanan';
 
-        $message = "Halo Kak *{$customer->name}*,\n\n"
-            . "✅ *BUKTI PEMBAYARAN TAGIHAN WIFI - LUNAS*\n"
+        $message = "Yth, Pelanggan {$companyName}..\n"
+            . "*{$customer->name}* (ID: *{$customer->customer_code}*)\n\n"
+            . "✅ *BUKTI PEMBAYARAN WIFI - LUNAS*\n"
             . "Terima kasih, pembayaran tagihan Anda telah kami terima:\n\n"
             . "🧾 No. Faktur: *{$this->invoice_number}*\n"
-            . "🆔 ID Pelanggan: *{$customer->customer_code}*\n"
-            . "📦 Paket: *" . ($customer->package?->name ?? 'Internet Bulanan') . "*\n"
+            . "📦 Paket: *{$packageName}*\n"
             . "🗓️ Periode: *{$periodName}*\n"
             . "💳 Metode: *{$method}*\n"
             . "💰 Jumlah: *{$formattedAmount}*\n"
-            . "⏰ Waktu Bayar: *{$paidDate}*\n\n"
+            . "⏰ Waktu: *{$paidDate}*\n\n"
             . "Layanan internet Anda tetap aktif dan lancar. Terima kasih telah setia bersama *{$companyName}*! 🚀🌐";
 
         return 'https://api.whatsapp.com/send?phone=' . $customer->clean_phone . '&text=' . rawurlencode($message);

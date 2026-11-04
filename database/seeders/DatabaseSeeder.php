@@ -42,11 +42,11 @@ class DatabaseSeeder extends Seeder
 
         // 2. Settings
         $settings = [
-            'company_name' => 'Hokigo WiFi',
+            'company_name' => 'Hokigo Starlink',
             'company_tagline' => 'Provider Internet Cepat, Stabil & Hemat untuk Warga Desa',
             'company_phone' => '081234567890',
             'company_address' => 'Jl. Poros Desa Utama No. 88, Jawa Timur',
-            'bank_accounts' => "BCA: 5420-918-231 a.n Hokigo Network\nBRI: 0192-01-002931-50-2 a.n Hokigo Network\nDANA / GoPay: 081234567890",
+            'bank_accounts' => "MUHAMMAD IRZAQ IRAWAN\n7233297792 BSI",
             'currency_symbol' => 'Rp',
         ];
 

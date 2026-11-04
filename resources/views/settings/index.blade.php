@@ -171,21 +171,20 @@
                 </div>
 
                 <div class="bg-emerald-900/60 border border-emerald-700/50 rounded-2xl p-4 text-xs font-mono text-emerald-100 leading-relaxed whitespace-pre-line space-y-2">
-Halo Kak *Bapak Slamet Raharjo*,
+Yth, Pelanggan {{ $settings['company_name'] }}..
+*Bapak Slamet Raharjo* (ID: *HKG-001*)
 
-Kami dari *{{ $settings['company_name'] }}* menginformasikan tagihan internet WiFi Anda untuk periode *{{ now()->translatedFormat('F Y') }}*:
+Sebagai pengingat, Hari ini pembayaran wifi🙏🏻
 
-🆔 ID Pelanggan: *HKG-001*
 📦 Paket: *Hoki Home 10 Mbps*
 💰 Total Tagihan: *Rp 150.000*
 📅 Jatuh Tempo: *10 {{ now()->translatedFormat('F Y') }}*
-📌 Status: *BELUM BAYAR ⏳*
 
-Pembayaran dapat ditransfer melalui:
+Bisa dibayarkan melalui rekening berikut:
+
 {{ $settings['bank_accounts'] }}
 
-Mohon kirimkan bukti transfer setelah melakukan pembayaran ya Kak.
-Terima kasih atas kepercayaannya menggunakan layanan *{{ $settings['company_name'] }}*! 🙏✨
+Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
                 </div>
             </div>
 
