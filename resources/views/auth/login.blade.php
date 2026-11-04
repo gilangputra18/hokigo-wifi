@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Masuk - Hokigo WiFi Management</title>
+    <title>Masuk - Hokigo Starlink Management</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 
     <!-- Google Fonts -->
@@ -21,7 +21,7 @@
                         brand: {
                             blue: '#1055CC',
                             blueHover: '#0b419e',
-                            dark: '#141414',
+                            dark: '#070F2B',
                             light: '#FEFEFE',
                         }
                     },
@@ -44,28 +44,63 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-[#141414] via-[#1a1c23] to-[#0f172a] min-h-[100dvh] flex flex-col justify-center items-center p-3 sm:p-6 antialiased text-slate-800">
+<body class="min-h-[100dvh] flex flex-col justify-center items-center p-3 sm:p-6 antialiased text-slate-800 relative overflow-x-hidden bg-[#070F2B]">
 
-    <div class="w-full max-w-[420px] my-auto">
+    <!-- Decorative Luxury Blue Glowing Ambient Backdrop -->
+    <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <!-- Deep Royal Blue & Sapphire Gradient Spheres -->
+        <div class="absolute -top-[15%] -left-[10%] w-[550px] h-[550px] rounded-full bg-gradient-to-br from-blue-600/35 via-indigo-700/25 to-transparent blur-[130px]"></div>
+        <div class="absolute -bottom-[20%] -right-[10%] w-[650px] h-[650px] rounded-full bg-gradient-to-tl from-[#1055CC]/40 via-sky-500/20 to-transparent blur-[140px]"></div>
+        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-blue-700/15 blur-[160px]"></div>
         
-        <!-- Main Card with responsive padding & radius -->
-        <div class="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-5 sm:p-7 border border-white/10 relative overflow-hidden backdrop-blur-md">
-            
-            <!-- Top Accent Glow -->
-            <div class="absolute -top-12 -right-12 w-36 h-36 bg-blue-500/15 rounded-full blur-2xl pointer-events-none"></div>
+        <!-- Subtle Starlink / High-Tech Geometric Grid Lines -->
+        <svg class="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <pattern id="network-grid" width="48" height="48" patternUnits="userSpaceOnUse">
+                    <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#60a5fa" stroke-width="0.75" />
+                    <circle cx="48" cy="48" r="1.5" fill="#93c5fd" />
+                    <circle cx="0" cy="0" r="1.5" fill="#93c5fd" />
+                </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#network-grid)" />
+        </svg>
 
-            <!-- Logo & Brand Header (Optimized for Android & PC) -->
+        <!-- Top Luxury Cyan Accent Line -->
+        <div class="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-400/80 to-transparent"></div>
+    </div>
+
+    <!-- Login Container -->
+    <div class="w-full max-w-[420px] my-auto relative z-10">
+        
+        <!-- Subtle Glowing Halo around Card -->
+        <div class="absolute -inset-1 bg-gradient-to-r from-blue-600/30 via-cyan-500/20 to-indigo-600/30 rounded-3xl blur-xl pointer-events-none"></div>
+
+        <!-- Main Card -->
+        <div class="bg-white/95 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-2xl shadow-blue-950/70 p-5 sm:p-7 border border-white/80 relative overflow-hidden">
+            
+            <!-- Top Inner Glow Accent -->
+            <div class="absolute -top-12 -right-12 w-40 h-40 bg-blue-500/15 rounded-full blur-2xl pointer-events-none"></div>
+
+            <!-- Logo & Brand Header -->
             <div class="text-center mb-4 sm:mb-5">
-                <div class="inline-flex items-center justify-center p-2 rounded-xl bg-brand-dark shadow-md mb-2.5 border border-white/10">
+                <div class="inline-flex items-center justify-center p-2 rounded-2xl bg-gradient-to-b from-[#0B1A40] to-[#070F2B] shadow-lg shadow-blue-950/40 mb-2.5 border border-blue-400/20">
                     <img src="{{ asset('images/logo.png') }}" alt="Hokigo Logo" class="h-8 sm:h-10 w-auto object-contain">
                 </div>
-                <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Selamat Datang di Hokigo</h1>
-                <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5">Sistem Manajemen Pelanggan, Tagihan & Keuangan</p>
+                
+                <div class="flex items-center justify-center gap-1.5 mb-1">
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Hokigo <span class="text-[#1055CC]">Starlink</span></h1>
+                </div>
+                
+                <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Sistem Manajemen Pelanggan, Tagihan & Keuangan</p>
+                <div class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-[10px] font-semibold">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Portal ISP & Billing Terintegrasi
+                </div>
             </div>
 
             <!-- Alert Flash Messages -->
             @if(isset($errors) && $errors->any())
-                <div class="mb-3.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2.5">
+                <div class="mb-3.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2.5 animate-shake">
                     <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-rose-500"></i>
                     <span>{{ $errors->first() }}</span>
                 </div>
@@ -91,7 +126,7 @@
                         </div>
                         <input type="email" id="email" name="email" value="{{ old('email', 'owner@hokigo.net') }}" required
                                placeholder="nama@hokigo.net"
-                               class="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue text-xs sm:text-sm transition">
+                               class="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-[#1055CC] text-xs sm:text-sm transition bg-white/80">
                     </div>
                 </div>
 
@@ -104,16 +139,16 @@
                         </div>
                         <input :type="showPassword ? 'text' : 'password'" id="password" name="password" value="password" required
                                placeholder="••••••••"
-                               class="w-full pl-10 pr-11 py-2.5 sm:py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue text-xs sm:text-sm transition">
+                               class="w-full pl-10 pr-11 py-2.5 sm:py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-[#1055CC] text-xs sm:text-sm transition bg-white/80">
                         
                         <!-- Toggle Password Visibility Button -->
                         <button type="button" 
                                 @click="showPassword = !showPassword"
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-brand-blue transition focus:outline-none"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-blue-600 transition focus:outline-none"
                                 title="Lihat / Sembunyikan Kata Sandi"
                                 aria-label="Toggle password visibility">
                             <i x-show="!showPassword" data-lucide="eye" class="w-4 h-4"></i>
-                            <i x-show="showPassword" x-cloak data-lucide="eye-off" class="w-4 h-4 text-brand-blue"></i>
+                            <i x-show="showPassword" x-cloak data-lucide="eye-off" class="w-4 h-4 text-blue-600"></i>
                         </button>
                     </div>
                 </div>
@@ -121,37 +156,37 @@
                 <!-- Remember Me -->
                 <div class="flex items-center justify-between text-xs pt-0.5">
                     <label class="flex items-center gap-2 cursor-pointer text-slate-600 select-none">
-                        <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-brand-blue focus:ring-brand-blue">
+                        <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                         <span class="text-[11px] sm:text-xs">Ingat saya di perangkat ini</span>
                     </label>
                 </div>
 
                 <!-- Submit Button -->
                 <button type="submit" 
-                        class="w-full py-3 px-4 bg-brand-blue hover:bg-brand-blueHover active:scale-[0.99] text-white rounded-xl font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2">
+                        class="w-full py-3 px-4 bg-gradient-to-r from-[#1055CC] via-[#1A64E8] to-[#0D44A6] hover:from-[#0E49B0] hover:to-[#0A398D] active:scale-[0.99] text-white rounded-xl font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-blue-600/35 hover:shadow-blue-600/50 transition-all duration-200 flex items-center justify-center gap-2">
                     <i data-lucide="log-in" class="w-4 h-4"></i>
                     <span>Masuk ke Dashboard</span>
                 </button>
             </form>
 
-            <!-- Quick Demo Credentials Box (Responsive grid) -->
+            <!-- Quick Demo Credentials Box -->
             <div class="mt-4 pt-3.5 border-t border-slate-100">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center mb-2">Akun Akses Cepat</p>
                 <div class="grid grid-cols-2 gap-2">
                     <button type="button" onclick="fillAccount('owner@hokigo.net', 'password')" 
-                            class="px-2.5 py-2 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/80 rounded-xl text-left transition group">
+                            class="px-2.5 py-2 bg-slate-50 hover:bg-blue-50/60 active:bg-blue-100/60 border border-slate-200/80 hover:border-blue-200 rounded-xl text-left transition group">
                         <span class="block text-[11px] font-bold text-slate-800 flex items-center gap-1.5 truncate">
                             <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span> Owner (Saya)
                         </span>
-                        <span class="text-[10px] text-slate-500 font-mono truncate block">owner@hokigo.net</span>
+                        <span class="text-[10px] text-slate-500 font-mono truncate block group-hover:text-blue-600">owner@hokigo.net</span>
                     </button>
                     
                     <button type="button" onclick="fillAccount('admin@hokigo.net', 'password')" 
-                            class="px-2.5 py-2 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 border border-slate-200/80 rounded-xl text-left transition group">
+                            class="px-2.5 py-2 bg-slate-50 hover:bg-blue-50/60 active:bg-blue-100/60 border border-slate-200/80 hover:border-blue-200 rounded-xl text-left transition group">
                         <span class="block text-[11px] font-bold text-slate-800 flex items-center gap-1.5 truncate">
                             <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span> Admin (Staff)
                         </span>
-                        <span class="text-[10px] text-slate-500 font-mono truncate block">admin@hokigo.net</span>
+                        <span class="text-[10px] text-slate-500 font-mono truncate block group-hover:text-blue-600">admin@hokigo.net</span>
                     </button>
                 </div>
                 <p class="text-[10px] text-slate-400 text-center mt-1.5">Password default: <code class="bg-slate-100 px-1 py-0.2 rounded text-slate-700 font-mono">password</code></p>
@@ -159,10 +194,15 @@
 
         </div>
 
-        <!-- Watermark footer -->
-        <p class="text-center text-[11px] text-slate-400 mt-3 font-medium">
-            &copy; {{ date('Y') }} Hokigo WiFi &bull; Sistem Terpadu
-        </p>
+        <!-- Luxury Watermark footer with soft blue glow -->
+        <div class="text-center mt-3.5 space-y-0.5">
+            <p class="text-[11px] text-blue-200/80 font-medium tracking-wide">
+                &copy; {{ date('Y') }} Hokigo Starlink &bull; Sistem Terpadu
+            </p>
+            <p class="text-[10px] text-blue-300/40">
+                Layanan Internet Cepat & Stabil
+            </p>
+        </div>
 
     </div>
 
@@ -178,11 +218,11 @@
             passInput.value = password;
 
             // Subtle flash effect on inputs
-            emailInput.classList.add('ring-2', 'ring-brand-blue');
-            passInput.classList.add('ring-2', 'ring-brand-blue');
+            emailInput.classList.add('ring-2', 'ring-blue-500');
+            passInput.classList.add('ring-2', 'ring-blue-500');
             setTimeout(() => {
-                emailInput.classList.remove('ring-2', 'ring-brand-blue');
-                passInput.classList.remove('ring-2', 'ring-brand-blue');
+                emailInput.classList.remove('ring-2', 'ring-blue-500');
+                passInput.classList.remove('ring-2', 'ring-blue-500');
             }, 400);
         }
     </script>
