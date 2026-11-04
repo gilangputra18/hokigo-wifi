@@ -104,7 +104,7 @@
                     <span>Pelanggan</span>
                 </div>
                 <span class="text-xs px-2 py-0.5 rounded-full {{ request()->routeIs('customers.*') ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400' }}">
-                    {{ \App\Models\Customer::count() }}
+                    {{ $sidebarCounts['total_customers'] ?? 0 }}
                 </span>
             </a>
 
@@ -115,12 +115,9 @@
                     <i data-lucide="receipt" class="w-5 h-5"></i>
                     <span>Tagihan WiFi</span>
                 </div>
-                @php
-                    $unpaidThisMonth = \App\Models\Invoice::where('period', now()->format('Y-m'))->whereIn('status', ['unpaid', 'overdue'])->count();
-                @endphp
-                @if($unpaidThisMonth > 0)
+                @if(($sidebarCounts['unpaid_month'] ?? 0) > 0)
                     <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">
-                        {{ $unpaidThisMonth }}
+                        {{ $sidebarCounts['unpaid_month'] }}
                     </span>
                 @endif
             </a>
@@ -132,14 +129,9 @@
                     <i data-lucide="message-circle" class="w-5 h-5 text-emerald-400"></i>
                     <span>WhatsApp Tagihan</span>
                 </div>
-                @php
-                    $dueCount = \App\Models\Invoice::whereIn('status', ['unpaid', 'overdue'])
-                        ->whereDate('due_date', '<=', now()->toDateString())
-                        ->count();
-                @endphp
-                @if($dueCount > 0)
+                @if(($sidebarCounts['due_count'] ?? 0) > 0)
                     <span class="text-xs px-2 py-0.5 rounded-full bg-rose-500 text-white font-bold animate-pulse">
-                        {{ $dueCount }}
+                        {{ $sidebarCounts['due_count'] }}
                     </span>
                 @endif
             </a>
@@ -220,8 +212,8 @@
                 <a href="{{ route('invoices.reminders') }}" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/80 transition-all shadow-xs">
                     <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i>
                     <span>Chat Tagihan Hari Ini</span>
-                    @if(isset($dueCount) && $dueCount > 0)
-                        <span class="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">{{ $dueCount }}</span>
+                    @if(($sidebarCounts['due_count'] ?? 0) > 0)
+                        <span class="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">{{ $sidebarCounts['due_count'] }}</span>
                     @endif
                 </a>
 

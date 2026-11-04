@@ -46,14 +46,24 @@ class InvoiceController extends Controller
 
         $invoices = $query->orderBy('due_date', 'asc')->paginate(25)->withQueryString();
 
-        // Statistics for current selected period
+        // Statistics for current selected period in ONE single query
+        $statsRow = Invoice::where('period', $selectedPeriod)
+            ->selectRaw("
+                COUNT(*) as total_count,
+                COALESCE(SUM(amount), 0) as total_amount,
+                COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_count,
+                COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) as paid_amount,
+                COUNT(CASE WHEN status IN ('unpaid', 'overdue') THEN 1 END) as unpaid_count,
+                COALESCE(SUM(CASE WHEN status IN ('unpaid', 'overdue') THEN amount ELSE 0 END), 0) as unpaid_amount
+            ")->first();
+
         $stats = [
-            'total_amount' => Invoice::where('period', $selectedPeriod)->sum('amount'),
-            'total_count' => Invoice::where('period', $selectedPeriod)->count(),
-            'paid_amount' => Invoice::where('period', $selectedPeriod)->where('status', 'paid')->sum('amount'),
-            'paid_count' => Invoice::where('period', $selectedPeriod)->where('status', 'paid')->count(),
-            'unpaid_amount' => Invoice::where('period', $selectedPeriod)->whereIn('status', ['unpaid', 'overdue'])->sum('amount'),
-            'unpaid_count' => Invoice::where('period', $selectedPeriod)->whereIn('status', ['unpaid', 'overdue'])->count(),
+            'total_amount' => (float) ($statsRow->total_amount ?? 0),
+            'total_count' => (int) ($statsRow->total_count ?? 0),
+            'paid_amount' => (float) ($statsRow->paid_amount ?? 0),
+            'paid_count' => (int) ($statsRow->paid_count ?? 0),
+            'unpaid_amount' => (float) ($statsRow->unpaid_amount ?? 0),
+            'unpaid_count' => (int) ($statsRow->unpaid_count ?? 0),
         ];
 
         // Available periods for dropdown (last 12 months)

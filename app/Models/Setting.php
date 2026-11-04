@@ -15,14 +15,23 @@ class Setting extends Model
         'group',
     ];
 
+    protected static array $memoryCache = [];
+
     public static function get(string $key, $default = null): ?string
     {
-        $setting = static::where('key', $key)->first();
-        return $setting ? $setting->value : $default;
+        if (empty(static::$memoryCache)) {
+            try {
+                static::$memoryCache = static::pluck('value', 'key')->toArray();
+            } catch (\Throwable $e) {
+                return $default;
+            }
+        }
+        return static::$memoryCache[$key] ?? $default;
     }
 
     public static function set(string $key, ?string $value, string $group = 'general'): self
     {
+        static::$memoryCache[$key] = $value;
         return static::updateOrCreate(
             ['key' => $key],
             ['value' => $value, 'group' => $group]

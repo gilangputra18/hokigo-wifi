@@ -1,11 +1,13 @@
 {
   "version": 2,
   "framework": null,
+  "regions": ["sin1"],
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
     "api/index.php": {
-      "runtime": "vercel-php@0.7.2"
+      "runtime": "vercel-php@0.7.2",
+      "memory": 1024
     }
   },
   "routes": [

@@ -43,15 +43,15 @@ class FinanceController extends Controller
 
         $transactions = $query->orderBy('transaction_date', 'desc')->orderBy('id', 'desc')->paginate(30)->withQueryString();
 
-        // Calculate totals for selected period
-        $totalIncome = FinancialTransaction::income()
-            ->whereBetween('transaction_date', [$startDate->toDateString(), $endDate->toDateString()])
-            ->sum('amount');
+        // Calculate totals for selected period in ONE single query
+        $totals = FinancialTransaction::whereBetween('transaction_date', [$startDate->toDateString(), $endDate->toDateString()])
+            ->selectRaw("
+                COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) as total_income,
+                COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) as total_expense
+            ")->first();
 
-        $totalExpense = FinancialTransaction::expense()
-            ->whereBetween('transaction_date', [$startDate->toDateString(), $endDate->toDateString()])
-            ->sum('amount');
-
+        $totalIncome = (float) ($totals->total_income ?? 0);
+        $totalExpense = (float) ($totals->total_expense ?? 0);
         $netProfit = $totalIncome - $totalExpense;
         $profitMargin = $totalIncome > 0 ? round(($netProfit / $totalIncome) * 100, 1) : 0;
 
