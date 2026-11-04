@@ -11,9 +11,11 @@ $storageDirs = [
 
 foreach ($storageDirs as $dir) {
     if (!is_dir($dir)) {
-        mkdir($dir, 0755, true);
+        @mkdir($dir, 0755, true);
     }
 }
+
+putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 
 // Forward to public/index.php
 require __DIR__ . '/../public/index.php';

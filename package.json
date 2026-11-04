@@ -3,6 +3,6 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "node -e \"const fs = require('fs'); if (!fs.existsSync('dist')) fs.mkdirSync('dist');\""
+        "build": "node -e \"const fs = require('fs'); fs.cpSync('public', 'dist', { recursive: true }); fs.writeFileSync('dist/index.html', 'OK');\""
     }
 }
