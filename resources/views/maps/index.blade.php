@@ -4,6 +4,35 @@
 @section('header_title', 'Peta Jaringan & Titik Pelanggan')
 
 @section('content')
+<style>
+    /* Leaflet performance & mobile touch optimizations */
+    .custom-house-marker {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        will-change: transform;
+    }
+    .leaflet-div-icon {
+        background: transparent !important;
+        border: none !important;
+    }
+    .leaflet-popup-content-wrapper {
+        border-radius: 16px !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15) !important;
+        padding: 4px !important;
+    }
+    .leaflet-popup-content {
+        margin: 6px 8px !important;
+        line-height: 1.4 !important;
+    }
+    .leaflet-container {
+        font-family: inherit !important;
+        touch-action: pan-x pan-y !important;
+    }
+    .leaflet-tile {
+        will-change: transform, opacity;
+    }
+</style>
 <div class="space-y-4" x-data="mapApp()">
 
     <!-- Top Stats & Filter Bar -->
@@ -83,17 +112,21 @@
         <div class="lg:col-span-3 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden relative">
             
             <!-- Map Layer Switcher / Mode Overlay Badge -->
-            <div class="absolute top-3 left-3 z-[1000] flex items-center gap-2 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl shadow-md border border-slate-200 text-xs">
-                <span class="font-bold text-slate-700">Tampilan:</span>
-                <button type="button" @click="setLayer('satellite')" 
-                        :class="currentLayer === 'satellite' ? 'bg-brand-blue text-white font-bold' : 'bg-slate-100 text-slate-600'"
-                        class="px-2.5 py-1 rounded-lg text-[11px] transition">
-                    🛰️ Satelit
+            <div class="absolute top-3 left-3 z-[1000] flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1 rounded-xl shadow-md border border-slate-200 text-xs">
+                <button type="button" @click="setLayer('google')" 
+                        :class="currentLayer === 'google' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100'"
+                        class="px-2.5 py-1.5 rounded-lg text-[11px] transition flex items-center gap-1">
+                    <span>🛰️</span> <span class="hidden sm:inline">Google Satelit</span><span class="sm:hidden">Google</span>
+                </button>
+                <button type="button" @click="setLayer('esri')" 
+                        :class="currentLayer === 'esri' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100'"
+                        class="px-2.5 py-1.5 rounded-lg text-[11px] transition flex items-center gap-1">
+                    <span>🛰️</span> <span class="hidden sm:inline">Esri Satelit</span><span class="sm:hidden">Esri</span>
                 </button>
                 <button type="button" @click="setLayer('street')" 
-                        :class="currentLayer === 'street' ? 'bg-brand-blue text-white font-bold' : 'bg-slate-100 text-slate-600'"
-                        class="px-2.5 py-1 rounded-lg text-[11px] transition">
-                    🗺️ Jalan
+                        :class="currentLayer === 'street' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100'"
+                        class="px-2.5 py-1.5 rounded-lg text-[11px] transition flex items-center gap-1">
+                    <span>🗺️</span> <span>Jalan</span>
                 </button>
             </div>
 
@@ -428,9 +461,10 @@
     function mapApp() {
         return {
             map: null,
-            satelliteLayer: null,
+            googleHybridLayer: null,
+            esriSatelliteLayer: null,
             streetLayer: null,
-            currentLayer: 'satellite',
+            currentLayer: 'google',
             markersGroup: null,
             resetMapModalOpen: false,
             
@@ -441,12 +475,13 @@
             modalInputLat: '',
             modalInputLng: '',
             
+            // Single lightweight JSON array (no duplicate base64 photo bloat)
             allCustomersData: @json($allCustomers),
-            pinnedList: @json($pinnedCustomers),
-            unpinnedList: @json($unpinnedCustomers),
+            pinnedList: [],
+            unpinnedList: [],
             
-            pinnedCount: {{ $pinnedCustomers->count() }},
-            unpinnedCount: {{ $unpinnedCustomers->count() }},
+            pinnedCount: 0,
+            unpinnedCount: 0,
             
             selectedVillage: '',
             searchQuery: '',
@@ -455,6 +490,7 @@
             temporaryMarker: null,
             pendingCoordinate: null,
             saving: false,
+            isMapMoving: false,
 
             get filteredUnpinnedListForModal() {
                 if (!this.modalCustomerSearch) return this.unpinnedList;
@@ -478,13 +514,19 @@
 
             init() {
                 window.mapAppInstance = this;
+                
+                // Partition customers in memory to keep DOM and initial payload ultra-fast
+                this.pinnedList = this.allCustomersData.filter(c => c.latitude !== null && c.longitude !== null && !isNaN(parseFloat(c.latitude)));
+                this.unpinnedList = this.allCustomersData.filter(c => c.latitude === null || c.longitude === null || isNaN(parseFloat(c.latitude)));
+                this.pinnedCount = this.pinnedList.length;
+                this.unpinnedCount = this.unpinnedList.length;
+
                 this.$nextTick(() => {
                     this.initMap();
                 });
             },
 
             initMap() {
-                // Determine center: either first pinned customer or default East Java / Indonesia coords
                 let defaultLat = -7.536064;
                 let defaultLng = 112.238402;
                 let defaultZoom = 13;
@@ -492,50 +534,84 @@
                 if (this.pinnedList.length > 0) {
                     defaultLat = parseFloat(this.pinnedList[0].latitude);
                     defaultLng = parseFloat(this.pinnedList[0].longitude);
-                    defaultZoom = 15;
+                    defaultZoom = 16;
                 }
 
-                // Initialize Leaflet Map
+                // Initialize Leaflet Map with Canvas optimization
                 this.map = L.map('map', {
                     center: [defaultLat, defaultLng],
                     zoom: defaultZoom,
-                    zoomControl: true
+                    zoomControl: true,
+                    preferCanvas: true
                 });
 
-                // Satellite Tile Layer (Esri World Imagery)
-                this.satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                    attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
-                    maxZoom: 19
+                // Google Hybrid Satellite (Super-fast Indonesian Edge CDN, high-res aerial + labels)
+                this.googleHybridLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                    subdomains: ['0', '1', '2', '3'],
+                    maxZoom: 20,
+                    attribution: '&copy; Google Maps',
+                    updateWhenIdle: true,
+                    updateWhenZooming: false,
+                    keepBuffer: 3
+                });
+
+                // Esri World Imagery (Satellite) with maxNativeZoom: 18 to fix rural 404 gray tiles
+                this.esriSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri',
+                    maxNativeZoom: 18,
+                    maxZoom: 20,
+                    updateWhenIdle: true,
+                    updateWhenZooming: false,
+                    keepBuffer: 2
                 });
 
                 // Street Tile Layer (OpenStreetMap)
                 this.streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors',
-                    maxZoom: 19
+                    attribution: '&copy; OpenStreetMap',
+                    maxZoom: 19,
+                    updateWhenIdle: true,
+                    keepBuffer: 2
                 });
 
-                // Default to Satellite view like in Image 3
-                this.satelliteLayer.addTo(this.map);
+                // Default to Google Hybrid for fastest load speed and clearest satellite resolution in Indonesia
+                this.googleHybridLayer.addTo(this.map);
 
                 // Group for markers
                 this.markersGroup = L.featureGroup().addTo(this.map);
 
-                // Render all initial customer markers
+                // Invalidate container size after layout renders to prevent gray tiles or click offset bugs
+                setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 150);
+                setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 400);
+                window.addEventListener('resize', () => {
+                    if (this.map) this.map.invalidateSize();
+                });
+
+                // Render markers with lazy popups
                 this.renderMarkers();
 
-                // Click listener for pinning new customers or clicking an empty spot
+                // Track dragging/swiping to prevent accidental click popups on mobile touchscreens
+                this.map.on('movestart', () => {
+                    this.isMapMoving = true;
+                });
+                this.map.on('moveend', () => {
+                    setTimeout(() => { this.isMapMoving = false; }, 250);
+                });
+
+                // Click listener
                 this.map.on('click', (e) => {
+                    if (this.isMapMoving) return;
+
                     if (this.pinningCustomer !== null) {
                         this.handleMapClickPinning(e.latlng);
                     } else {
                         const lat = e.latlng.lat.toFixed(6);
                         const lng = e.latlng.lng.toFixed(6);
-                        L.popup()
+                        L.popup({ maxWidth: 220 })
                             .setLatLng(e.latlng)
                             .setContent(`
-                                <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; text-align: center; padding: 4px; min-width: 170px;">
-                                    <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px;">📍 Titik Lokasi Peta</div>
-                                    <div style="font-family: monospace; font-size: 10px; color: #64748b; margin-bottom: 8px;">${lat}, ${lng}</div>
+                                <div style="font-family: inherit; font-size: 11px; text-align: center; padding: 4px;">
+                                    <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px;">📍 Titik Koordinat</div>
+                                    <div style="font-family: monospace; font-size: 10px; color: #64748b; margin-bottom: 6px;">${lat}, ${lng}</div>
                                     <button type="button" onclick="window.mapAppInstance.openModalWithCoordinate(${lat}, ${lng})"
                                             style="background: #1055CC; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; width: 100%;">
                                         + Titik Pelanggan di Sini
@@ -556,36 +632,37 @@
 
             setLayer(type) {
                 this.currentLayer = type;
-                if (type === 'satellite') {
-                    this.map.removeLayer(this.streetLayer);
-                    this.satelliteLayer.addTo(this.map);
-                } else {
-                    this.map.removeLayer(this.satelliteLayer);
+                if (this.googleHybridLayer) this.map.removeLayer(this.googleHybridLayer);
+                if (this.esriSatelliteLayer) this.map.removeLayer(this.esriSatelliteLayer);
+                if (this.streetLayer) this.map.removeLayer(this.streetLayer);
+
+                if (type === 'google') {
+                    this.googleHybridLayer.addTo(this.map);
+                } else if (type === 'esri') {
+                    this.esriSatelliteLayer.addTo(this.map);
+                } else if (type === 'street') {
                     this.streetLayer.addTo(this.map);
                 }
             },
 
             createCustomIcon(customer) {
                 let bgColor = '#1055CC'; // Active blue
-                let ringColor = '#93c5fd';
                 let iconSymbol = '📶';
 
                 if (customer.status === 'isolated') {
                     bgColor = '#D97706'; // Amber
-                    ringColor = '#fde68a';
                     iconSymbol = '⚠️';
                 } else if (customer.status === 'inactive') {
                     bgColor = '#E11D48'; // Rose/Red
-                    ringColor = '#fecdd3';
                     iconSymbol = '❌';
                 }
 
                 const html = `
-                    <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
-                        <div style="background-color: ${bgColor}; border: 2.5px solid #ffffff; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.4); font-size: 15px; color: white;">
+                    <div style="position: relative; display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+                        <div style="background-color: ${bgColor}; border: 2.5px solid #ffffff; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.35); font-size: 14px; color: white;">
                             ${iconSymbol}
                         </div>
-                        <div style="background: rgba(15, 23, 42, 0.88); color: #ffffff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 6px; margin-top: 3px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                        <div style="background: rgba(15, 23, 42, 0.9); color: #ffffff; font-size: 10px; font-weight: 700; padding: 1.5px 6px; border-radius: 6px; margin-top: 3px; white-space: nowrap; border: 1px solid rgba(255,255,255,0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
                             ${customer.name}
                         </div>
                     </div>
@@ -598,6 +675,70 @@
                     iconAnchor: [40, 25],
                     popupAnchor: [0, -25]
                 });
+            },
+
+            buildPopupHtml(c) {
+                const lat = parseFloat(c.latitude);
+                const lng = parseFloat(c.longitude);
+                const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+                const customerUrl = `/customers/${c.id}`;
+                const waUrl = c.phone ? `https://api.whatsapp.com/send?phone=${c.clean_phone || c.phone}` : '#';
+                const villageName = c.village ? c.village.name : 'Tanpa Desa';
+                const packageName = c.package ? `${c.package.name} (${c.package.speed})` : 'Paket Standar';
+                const monthlyFee = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(c.monthly_fee || 0);
+
+                const photoHtml = (c.has_photo && c.photo_url)
+                    ? `<div style="margin-bottom: 8px; border-radius: 8px; overflow: hidden; height: 110px; background: #0f172a; position: relative;">
+                         <img src="${c.photo_url}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" alt="Foto Rumah">
+                       </div>`
+                    : '';
+                const houseNumberHtml = c.house_number 
+                    ? `<div>🏠 <strong>${c.house_number}</strong></div>`
+                    : '';
+                const redamanHtml = c.redaman 
+                    ? `<div>📶 Redaman: <strong style="color: #059669; background: #ecfdf5; padding: 1px 5px; border-radius: 4px; border: 1px solid #a7f3d0;">${c.redaman}</strong></div>`
+                    : '';
+
+                return `
+                    <div style="font-family: inherit; min-width: 220px; max-width: 280px; padding: 4px;">
+                        ${photoHtml}
+                        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
+                            <h4 style="margin: 0; font-weight: 800; font-size: 14px; color: #0f172a;">${c.name}</h4>
+                            <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: #f1f5f9; color: #475569;">${c.customer_code}</span>
+                        </div>
+                        
+                        <div style="font-size: 11px; color: #64748b; line-height: 1.4; margin-bottom: 8px;">
+                            <div>📍 <strong>${villageName}</strong></div>
+                            ${houseNumberHtml}
+                            <div>📦 ${packageName} &bull; <strong>${monthlyFee}</strong></div>
+                            ${redamanHtml}
+                            ${c.pppoe_user ? `<div>👤 PPPoE: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_user}</code></div>` : ''}
+                            ${c.pppoe_password ? `<div>🔑 Sandi: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_password}</code></div>` : ''}
+                            ${c.notes ? `<div style="margin-top: 4px; padding: 4px 6px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; color: #92400e; font-size: 10px;">📝 ${c.notes}</div>` : ''}
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <a href="${googleMapsUrl}" target="_blank" 
+                               style="display: flex; align-items: center; justify-content: center; gap: 4px; background: #059669; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
+                                🗺️ Buka Navigasi Google Maps
+                            </a>
+                            <div style="display: flex; gap: 4px;">
+                                <a href="${customerUrl}" 
+                                   style="flex: 1; text-align: center; background: #1055CC; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
+                                    Lihat Profil
+                                </a>
+                                <a href="${waUrl}" target="_blank" 
+                                   style="flex: 1; text-align: center; background: #22c55e; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
+                                    Chat WA
+                                </a>
+                            </div>
+                            <button type="button" onclick="window.mapAppInstance.startRepositionCustomer(${c.id})" 
+                                    style="width: 100%; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer;">
+                                📍 Geser / Ubah Titik Rumah
+                            </button>
+                        </div>
+                    </div>
+                `;
             },
 
             renderMarkers() {
@@ -620,66 +761,13 @@
                         icon: this.createCustomIcon(c)
                     });
 
-                    // Build Rich Popup
-                    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-                    const customerUrl = `/customers/${c.id}`;
-                    const waUrl = c.phone ? `https://api.whatsapp.com/send?phone=${c.clean_phone || c.phone}` : '#';
-                    const villageName = c.village ? c.village.name : 'Tanpa Desa';
-                    const packageName = c.package ? `${c.package.name} (${c.package.speed})` : 'Paket Standar';
-                    const monthlyFee = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(c.monthly_fee || 0);
+                    // Lazy Popup binding: popup HTML string only constructed upon marker click!
+                    marker.bindPopup(() => this.buildPopupHtml(c), {
+                        maxWidth: 290,
+                        minWidth: 220,
+                        autoPanPadding: [25, 25]
+                    });
 
-                    const photoHtml = c.house_photo 
-                        ? `<div style="margin-bottom: 8px; border-radius: 8px; overflow: hidden; max-height: 110px; background: #0f172a;"><img src="${c.house_photo}" style="width: 100%; height: 100px; object-fit: cover;" alt="Foto Rumah"></div>`
-                        : '';
-                    const houseNumberHtml = c.house_number 
-                        ? `<div>🏠 <strong>${c.house_number}</strong></div>`
-                        : '';
-                    const redamanHtml = c.redaman 
-                        ? `<div>📶 Redaman: <strong style="color: #059669; background: #ecfdf5; padding: 1px 5px; border-radius: 4px; border: 1px solid #a7f3d0;">${c.redaman}</strong></div>`
-                        : '';
-
-                    const popupContent = `
-                        <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 220px; max-width: 280px; padding: 4px;">
-                            ${photoHtml}
-                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
-                                <h4 style="margin: 0; font-weight: 800; font-size: 14px; color: #0f172a;">${c.name}</h4>
-                                <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: #f1f5f9; color: #475569;">${c.customer_code}</span>
-                            </div>
-                            
-                            <div style="font-size: 11px; color: #64748b; line-height: 1.4; margin-bottom: 8px;">
-                                <div>📍 <strong>${villageName}</strong></div>
-                                ${houseNumberHtml}
-                                <div>📦 ${packageName} &bull; <strong>${monthlyFee}</strong></div>
-                                ${redamanHtml}
-                                ${c.pppoe_user ? `<div>👤 PPPoE: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_user}</code></div>` : ''}
-                                ${c.pppoe_password ? `<div>🔑 Sandi: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_password}</code></div>` : ''}
-                                ${c.notes ? `<div style="margin-top: 4px; padding: 4px 6px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; color: #92400e; font-size: 10px;">📝 ${c.notes}</div>` : ''}
-                            </div>
-
-                            <div style="display: flex; flex-direction: column; gap: 4px;">
-                                <a href="${googleMapsUrl}" target="_blank" 
-                                   style="display: flex; align-items: center; justify-content: center; gap: 4px; background: #059669; color: white; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
-                                    🗺️ Buka Navigasi Google Maps
-                                </a>
-                                <div style="display: flex; gap: 4px;">
-                                    <a href="${customerUrl}" 
-                                       style="flex: 1; text-align: center; background: #1055CC; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
-                                        Lihat Profil
-                                    </a>
-                                    <a href="${waUrl}" target="_blank" 
-                                       style="flex: 1; text-align: center; background: #22c55e; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
-                                        Chat WA
-                                    </a>
-                                </div>
-                                <button type="button" onclick="window.mapAppInstance.startRepositionCustomer(${c.id})" 
-                                        style="width: 100%; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer;">
-                                    📍 Geser / Ubah Titik Rumah
-                                </button>
-                            </div>
-                        </div>
-                    `;
-
-                    marker.bindPopup(popupContent);
                     this.markersGroup.addLayer(marker);
                 });
             },

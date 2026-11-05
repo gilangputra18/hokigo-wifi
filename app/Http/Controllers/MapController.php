@@ -12,7 +12,27 @@ class MapController extends Controller
     {
         $villages = Village::orderBy('name')->get();
 
-        $query = Customer::with(['village', 'package']);
+        $query = Customer::with([
+            'village:id,name,system_type',
+            'package:id,name,speed,price'
+        ])->select([
+            'id',
+            'customer_code',
+            'name',
+            'phone',
+            'village_id',
+            'package_id',
+            'monthly_fee',
+            'router_model',
+            'pppoe_user',
+            'pppoe_password',
+            'status',
+            'notes',
+            'latitude',
+            'longitude',
+            'house_number',
+            'redaman',
+        ])->selectRaw("CASE WHEN house_photo IS NOT NULL AND house_photo != '' THEN 1 ELSE 0 END AS has_photo");
 
         if ($request->filled('village_id')) {
             $query->where('village_id', $request->village_id);
@@ -23,6 +43,11 @@ class MapController extends Controller
         }
 
         $allCustomers = $query->orderBy('name')->get();
+
+        // Attach lightweight photo URL without loading massive base64 string into map payload
+        $allCustomers->each(function ($c) {
+            $c->photo_url = $c->has_photo ? route('customers.photo', $c->id) : null;
+        });
 
         // Pinned vs Unpinned customers
         $pinnedCustomers = $allCustomers->filter(function ($c) {
@@ -49,7 +74,20 @@ class MapController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => "Titik koordinat {$customer->name} berhasil disimpan!",
-                'customer' => $customer,
+                'customer' => [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'customer_code' => $customer->customer_code,
+                    'latitude' => $customer->latitude,
+                    'longitude' => $customer->longitude,
+                    'house_number' => $customer->house_number,
+                    'redaman' => $customer->redaman,
+                    'notes' => $customer->notes,
+                    'status' => $customer->status,
+                    'clean_phone' => $customer->clean_phone,
+                    'has_photo' => !empty($customer->house_photo),
+                    'photo_url' => !empty($customer->house_photo) ? route('customers.photo', $customer->id) : null,
+                ],
             ]);
         }
 

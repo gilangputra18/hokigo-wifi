@@ -42,6 +42,10 @@ class Customer extends Model
         'longitude' => 'float',
     ];
 
+    protected $appends = [
+        'clean_phone',
+    ];
+
     public function village(): BelongsTo
     {
         return $this->belongsTo(Village::class);

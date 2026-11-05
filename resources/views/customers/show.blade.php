@@ -96,8 +96,8 @@
 
                 @if($customer->house_photo)
                     <div class="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-900">
-                        <img src="{{ $customer->house_photo }}" alt="Foto Rumah {{ $customer->name }}" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300">
-                        <a href="{{ $customer->house_photo }}" target="_blank" 
+                        <img src="{{ route('customers.photo', $customer) }}" alt="Foto Rumah {{ $customer->name }}" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300">
+                        <a href="{{ route('customers.photo', $customer) }}" target="_blank" 
                            class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-bold text-xs gap-1.5">
                             <i data-lucide="maximize-2" class="w-4 h-4"></i>
                             <span>Buka Ukuran Penuh</span>

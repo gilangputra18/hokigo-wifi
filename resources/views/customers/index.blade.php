@@ -45,7 +45,7 @@
             <!-- Search Field -->
             <div class="relative">
                 <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400"></i>
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, WA, IP, catatan..." 
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, WA, PPPoE, catatan..." 
                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
             </div>
 
@@ -191,9 +191,14 @@
                                             <span class="text-slate-400">
                                                 Tgl Tagihan: Setiap tgl <strong>{{ $customer->due_date_day }}</strong>
                                             </span>
-                                            @if($customer->ip_address)
-                                                <span class="font-mono text-slate-500 bg-slate-100 px-1.5 py-0.2 rounded">
-                                                    IP: {{ $customer->ip_address }}
+                                            @if($customer->pppoe_user)
+                                                <span class="font-mono text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200 text-[10px] font-semibold">
+                                                    User: {{ $customer->pppoe_user }}
+                                                </span>
+                                            @endif
+                                            @if($customer->pppoe_password)
+                                                <span class="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-[10px] font-semibold">
+                                                    Sandi: {{ $customer->pppoe_password }}
                                                 </span>
                                             @endif
                                         </div>

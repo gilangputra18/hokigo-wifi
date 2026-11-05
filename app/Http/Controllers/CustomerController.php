@@ -219,6 +219,24 @@ class CustomerController extends Controller
         return back()->with('success', "Status pelanggan {$customer->name} diubah menjadi {$statusLabels[$request->status]}.");
     }
 
+    public function photo(Customer $customer)
+    {
+        if (empty($customer->house_photo)) {
+            abort(404);
+        }
+
+        if (preg_match('/^data:image\/(\w+);base64,(.+)$/', $customer->house_photo, $matches)) {
+            $mime = $matches[1];
+            $data = base64_decode($matches[2]);
+            return response($data, 200, [
+                'Content-Type' => 'image/' . ($mime === 'jpg' ? 'jpeg' : $mime),
+                'Cache-Control' => 'public, max-age=604800, immutable',
+            ]);
+        }
+
+        abort(404);
+    }
+
     public function destroy(Customer $customer)
     {
         $name = $customer->name;
