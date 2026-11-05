@@ -14,16 +14,16 @@
     }
 }">
 
-    <!-- Section 1: Manajemen Akun (Requirement 6: Bisa dibuka di saya sama di admin) -->
+    <!-- Section 1: Manajemen Akun (Owner, Admin & Teknisi) -->
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
         
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
                 <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
                     <i data-lucide="shield-check" class="w-6 h-6 text-brand-blue"></i>
-                    <span>Hak Akses: Akun Owner & Admin</span>
+                    <span>Daftar Akun Pengguna: Owner, Admin & Teknisi</span>
                 </h2>
-                <p class="text-xs text-slate-500 mt-0.5">Kelola akun staf admin dan owner yang memiliki akses masuk ke aplikasi Hokigo</p>
+                <p class="text-xs text-slate-500 mt-0.5">Atur nama dan identitas siapa pemilik (owner), staf admin, dan teknisi lapangan yang bertugas</p>
             </div>
 
             <button type="button" @click="userModalOpen = true" 
@@ -33,12 +33,104 @@
             </button>
         </div>
 
+        <!-- 3 Highlighted Identity Cards (Siapa Owner, Admin, Teknisi) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <!-- Owner Card -->
+            @php $ownerUser = $users->firstWhere('role', 'owner'); @endphp
+            <div class="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-3 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black uppercase tracking-wider">
+                            👑 Owner (Pemilik)
+                        </span>
+                        <span class="w-2 h-2 rounded-full {{ $ownerUser?->is_active ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+                    </div>
+                    <div>
+                        <h4 class="font-black text-slate-900 text-base">{{ $ownerUser?->name ?? 'Belum Diatur' }}</h4>
+                        <p class="text-xs font-mono text-slate-500">{{ $ownerUser?->email ?? 'owner@hokigo.net' }}</p>
+                        @if($ownerUser?->phone)
+                            <p class="text-xs text-amber-800 font-semibold mt-1">WA: {{ $ownerUser->phone }}</p>
+                        @endif
+                    </div>
+                </div>
+                @if($ownerUser)
+                    <button type="button" @click="openEditUser({{ json_encode($ownerUser) }})"
+                            class="w-full py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        <span>Isi / Ubah Nama Owner</span>
+                    </button>
+                @endif
+            </div>
+
+            <!-- Admin Card -->
+            @php $adminUser = $users->firstWhere('role', 'admin'); @endphp
+            <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-3 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-full bg-blue-200 text-blue-900 text-[10px] font-black uppercase tracking-wider">
+                            🛡️ Admin (Staf Kantor)
+                        </span>
+                        <span class="w-2 h-2 rounded-full {{ $adminUser?->is_active ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+                    </div>
+                    <div>
+                        <h4 class="font-black text-slate-900 text-base">{{ $adminUser?->name ?? 'Belum Diatur' }}</h4>
+                        <p class="text-xs font-mono text-slate-500">{{ $adminUser?->email ?? 'admin@hokigo.net' }}</p>
+                        @if($adminUser?->phone)
+                            <p class="text-xs text-blue-800 font-semibold mt-1">WA: {{ $adminUser->phone }}</p>
+                        @endif
+                    </div>
+                </div>
+                @if($adminUser)
+                    <button type="button" @click="openEditUser({{ json_encode($adminUser) }})"
+                            class="w-full py-2 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        <span>Isi / Ubah Nama Admin</span>
+                    </button>
+                @endif
+            </div>
+
+            <!-- Teknisi Card -->
+            @php $teknisiUser = $users->firstWhere('role', 'teknisi'); @endphp
+            <div class="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200/80 space-y-3 flex flex-col justify-between">
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="px-2.5 py-0.5 rounded-full bg-cyan-200 text-cyan-900 text-[10px] font-black uppercase tracking-wider">
+                            🔧 Teknisi (Lapangan)
+                        </span>
+                        <span class="w-2 h-2 rounded-full {{ $teknisiUser?->is_active ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+                    </div>
+                    <div>
+                        <h4 class="font-black text-slate-900 text-base">{{ $teknisiUser?->name ?? 'Belum Diatur' }}</h4>
+                        <p class="text-xs font-mono text-slate-500">{{ $teknisiUser?->email ?? 'teknisi@hokigo.net' }}</p>
+                        @if($teknisiUser?->phone)
+                            <p class="text-xs text-cyan-800 font-semibold mt-1">WA: {{ $teknisiUser->phone }}</p>
+                        @endif
+                    </div>
+                </div>
+                @if($teknisiUser)
+                    <button type="button" @click="openEditUser({{ json_encode($teknisiUser) }})"
+                            class="w-full py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        <span>Isi / Ubah Nama Teknisi</span>
+                    </button>
+                @else
+                    <button type="button" @click="userModalOpen = true"
+                            class="w-full py-2 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                        <span>Tambah Akun Teknisi</span>
+                    </button>
+                @endif
+            </div>
+
+        </div>
+
         <!-- Users Table -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto pt-2">
             <table class="w-full text-left text-sm">
                 <thead class="bg-slate-50 border-b border-slate-200/80 text-xs font-bold text-slate-400 uppercase tracking-wider">
                     <tr>
-                        <th class="py-3 pl-4">Nama & Email</th>
+                        <th class="py-3 pl-4">Nama Lengkap & Email</th>
                         <th class="py-3">Peran (Role)</th>
                         <th class="py-3">No. WhatsApp</th>
                         <th class="py-3">Status</th>
@@ -56,6 +148,10 @@
                                 @if($user->role === 'owner')
                                     <span class="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 font-bold border border-amber-300">
                                         👑 Owner (Pemilik)
+                                    </span>
+                                @elseif($user->role === 'teknisi')
+                                    <span class="px-2.5 py-1 rounded-full bg-cyan-100 text-cyan-800 font-bold border border-cyan-300">
+                                        🔧 Teknisi Lapangan
                                     </span>
                                 @else
                                     <span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-300">
@@ -230,8 +326,9 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Peran (Role) *</label>
                         <select name="role" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                            <option value="admin">Admin (Staff)</option>
-                            <option value="owner">Owner (Pemilik)</option>
+                            <option value="owner">👑 Owner (Pemilik Usaha)</option>
+                            <option value="admin">🛡️ Admin (Staf Kantor)</option>
+                            <option value="teknisi">🔧 Teknisi (Lapangan)</option>
                         </select>
                     </div>
                 </div>
@@ -291,8 +388,9 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Peran (Role) *</label>
                         <select name="role" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                            <option value="admin" :selected="selectedUser && selectedUser.role === 'admin'">Admin (Staff)</option>
-                            <option value="owner" :selected="selectedUser && selectedUser.role === 'owner'">Owner (Pemilik)</option>
+                            <option value="owner" :selected="selectedUser && selectedUser.role === 'owner'">👑 Owner (Pemilik Usaha)</option>
+                            <option value="admin" :selected="selectedUser && selectedUser.role === 'admin'">🛡️ Admin (Staf Kantor)</option>
+                            <option value="teknisi" :selected="selectedUser && selectedUser.role === 'teknisi'">🔧 Teknisi (Lapangan)</option>
                         </select>
                     </div>
                 </div>

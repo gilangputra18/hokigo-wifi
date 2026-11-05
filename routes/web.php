@@ -28,6 +28,7 @@ Route::middleware('auth')->group(function () {
     // Peta Jaringan & Penitikan Rumah Pelanggan (Bisa diakses Owner, Admin, & Teknisi)
     Route::get('/maps', [MapController::class, 'index'])->name('maps.index');
     Route::post('/maps/customers/{customer}/location', [MapController::class, 'updateLocation'])->name('maps.update-location');
+    Route::post('/maps/reset', [MapController::class, 'resetMapData'])->name('maps.reset');
 
     // Pelanggan (Bisa diakses Owner, Admin, & Teknisi)
     Route::resource('customers', CustomerController::class);

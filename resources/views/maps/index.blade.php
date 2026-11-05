@@ -55,6 +55,16 @@
                 <i data-lucide="crosshair" class="w-4 h-4"></i>
                 <span class="hidden sm:inline">Posisi Saya</span>
             </button>
+
+            @if(auth()->user()->isAdmin())
+                <!-- Reset Data Peta Button -->
+                <button type="button" @click="resetMapModalOpen = true" 
+                        class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-rose-300 hover:text-rose-200 border border-rose-500/30 font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
+                        title="Kosongkan / Reset titik koordinat GPS di peta">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4 text-rose-400"></i>
+                    <span>Reset Titik Peta</span>
+                </button>
+            @endif
         </div>
     </div>
 
@@ -174,6 +184,67 @@
 
     </div>
 
+    <!-- Modal Konfirmasi Reset Titik Peta & Pelanggan -->
+    <div x-show="resetMapModalOpen" x-cloak 
+         class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div @click.away="resetMapModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-rose-100">
+                <div class="flex items-center gap-2 text-rose-600 font-extrabold text-base">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <span>Reset Data Titik Peta (0-kan Peta)</span>
+                </div>
+                <button type="button" @click="resetMapModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form action="{{ route('maps.reset') }}" method="POST" class="space-y-4" x-data="{ confirmReset: '', actionChoice: 'coordinates_only' }">
+                @csrf
+
+                <div class="space-y-2.5">
+                    <label class="block text-xs font-bold text-slate-700">Pilih Opsi Reset:</label>
+                    
+                    <label class="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200 hover:border-brand-blue cursor-pointer bg-slate-50/60 transition">
+                        <input type="radio" name="action_type" value="coordinates_only" x-model="actionChoice" checked class="mt-0.5 text-brand-blue focus:ring-brand-blue">
+                        <div class="text-xs">
+                            <span class="font-extrabold text-slate-800 block">Kosongkan Titik Koordinat GPS Saja (0 Titik)</span>
+                            <span class="text-slate-500 text-[11px] block mt-0.5">Semua marker rumah di peta dihapus. Data pelanggan tetap aman dan berpindah ke daftar 'Belum Dititik' untuk dititik ulang.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-2.5 p-3 rounded-xl border border-rose-200 hover:border-rose-400 cursor-pointer bg-rose-50/40 transition">
+                        <input type="radio" name="action_type" value="delete_all_customers" x-model="actionChoice" class="mt-0.5 text-rose-600 focus:ring-rose-500">
+                        <div class="text-xs">
+                            <span class="font-extrabold text-rose-700 block">Hapus Seluruh Data Pelanggan (0 Pelanggan)</span>
+                            <span class="text-rose-600/80 text-[11px] block mt-0.5">Menghapus seluruh daftar pelanggan dari sistem sehingga Anda bisa input data pelanggan baru dari nol.</span>
+                        </div>
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        Ketik kata <code class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-mono font-bold">RESET</code> untuk konfirmasi:
+                    </label>
+                    <input type="text" name="confirmation" x-model="confirmReset" required placeholder="Ketik RESET"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-rose-300 font-mono text-xs uppercase font-bold text-center focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500">
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" @click="resetMapModalOpen = false" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        Batal
+                    </button>
+                    <button type="submit" :disabled="confirmReset.toUpperCase() !== 'RESET'"
+                            class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-md shadow-rose-600/30 transition flex items-center gap-1.5">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>Eksekusi Reset</span>
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
 </div>
 
 <!-- Leaflet Map Script Implementation -->
@@ -185,6 +256,7 @@
             streetLayer: null,
             currentLayer: 'satellite',
             markersGroup: null,
+            resetMapModalOpen: false,
             
             allCustomersData: @json($allCustomers),
             pinnedList: @json($pinnedCustomers),
