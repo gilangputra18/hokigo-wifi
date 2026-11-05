@@ -386,68 +386,67 @@
     @auth
     <!-- Modal Ganti Kata Sandi, Email & Foto Profil Akun (Bisa diakses Owner, Admin, & Teknisi) -->
     <div x-show="profileModalOpen" x-cloak 
-         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4"
-         style="padding-top: max(16px, calc(env(safe-area-inset-top, 0px) + 12px)); padding-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px));">
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+        
         <div @click.away="profileModalOpen = false" 
              x-data="userProfileModalComponent()"
-             class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+             class="bg-white rounded-2xl sm:rounded-3xl max-w-sm sm:max-w-md w-full my-auto shadow-2xl border border-slate-100 flex flex-col max-h-[88vh] overflow-hidden">
             
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <!-- Header Modal (Ringkas & Proporsional) -->
+            <div class="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 bg-white shrink-0">
                 <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center font-bold">
-                        <i data-lucide="user-cog" class="w-5 h-5"></i>
+                    <div class="w-8 h-8 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center font-bold shrink-0">
+                        <i data-lucide="user-cog" class="w-4 h-4"></i>
                     </div>
                     <div>
-                        <h3 class="font-extrabold text-slate-900 text-base">Profil & Kata Sandi Akun</h3>
-                        <p class="text-xs text-slate-500">Perbarui foto profil, email login dan kata sandi Anda</p>
+                        <h3 class="font-extrabold text-slate-900 text-sm sm:text-base leading-tight">Profil & Kata Sandi Akun</h3>
+                        <p class="text-[11px] text-slate-400">Perbarui profil dan sandi login akun Anda</p>
                     </div>
                 </div>
-                <button type="button" @click="profileModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+                <button type="button" @click="profileModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
-            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-4" autocomplete="off">
+            <!-- Form Body (Scrollable bila layar HP kecil) -->
+            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="overflow-y-auto p-4 sm:p-5 space-y-3 flex-1" autocomplete="off">
                 @csrf
 
-                <!-- Upload Foto Profil -->
+                <!-- Upload Foto Profil (Ringkas & Pas) -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Foto Profil</label>
-                    <div class="flex items-center gap-3.5 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
-                        <!-- Avatar Circular Preview -->
-                        <div class="relative w-14 h-14 rounded-full bg-slate-200 border-2 border-brand-blue/30 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Foto Profil</label>
+                    <div class="flex items-center gap-3 p-2 bg-slate-50 rounded-xl border border-slate-200/80">
+                        <div class="relative w-11 h-11 rounded-full bg-slate-200 border border-brand-blue/30 shadow-xs flex items-center justify-center overflow-hidden shrink-0">
                             <template x-if="avatarPreview">
                                 <img :src="avatarPreview" alt="Foto Profil" class="w-full h-full object-cover">
                             </template>
                             <template x-if="!avatarPreview">
-                                <div class="w-full h-full bg-brand-blue text-white font-extrabold text-lg flex items-center justify-center">
+                                <div class="w-full h-full bg-brand-blue text-white font-extrabold text-sm flex items-center justify-center">
                                     {{ substr(auth()->user()->name, 0, 1) }}
                                 </div>
                             </template>
-                            <div x-show="compressing" class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-[10px] font-bold">
-                                Proses...
+                            <div x-show="compressing" class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-[9px] font-bold">
+                                ...
                             </div>
                         </div>
 
-                        <!-- Buttons & Info -->
-                        <div class="flex-1 min-w-0 space-y-1">
+                        <div class="flex-1 min-w-0">
                             <input type="file" id="user_avatar_file_input" name="avatar_file" accept="image/*" @change="handleAvatarFile($event)" class="hidden">
                             <input type="hidden" name="avatar" :value="avatarPreview">
                             <input type="hidden" name="remove_avatar" :value="removeAvatar ? '1' : '0'">
 
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1.5">
                                 <button type="button" @click="document.getElementById('user_avatar_file_input').click()"
-                                        class="px-3 py-1.5 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+                                        class="px-2.5 py-1 rounded-lg bg-brand-blue hover:bg-brand-blueHover text-white text-[11px] font-bold shadow-xs transition flex items-center gap-1">
                                     <i data-lucide="camera" class="w-3.5 h-3.5"></i>
                                     <span>Pilih Foto</span>
                                 </button>
                                 <button type="button" x-show="avatarPreview" @click="clearAvatar()"
-                                        class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition flex items-center gap-1">
-                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                                    <span>Hapus</span>
+                                        class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold transition">
+                                    Hapus
                                 </button>
                             </div>
-                            <p class="text-[10px] text-slate-400">
+                            <p class="text-[10px] text-slate-400 mt-0.5 truncate">
                                 JPG, PNG atau foto kamera langsung.
                             </p>
                         </div>
@@ -457,41 +456,41 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap *</label>
                     <input type="text" name="name" value="{{ auth()->user()->name }}" required
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Email Login *</label>
                     <input type="email" name="email" value="{{ auth()->user()->email }}" required autocomplete="off"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                    <p class="text-[10px] text-slate-400 mt-1">Ubah email di atas jika ingin mengganti email untuk login.</p>
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Kata Sandi Baru</label>
                     <div class="relative">
                         <input :type="showProfilePassword ? 'text' : 'password'" name="password" placeholder="Kosongkan jika tidak ingin ganti" autocomplete="new-password"
-                               class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                               class="w-full pl-3 pr-9 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                         <button type="button" @click="showProfilePassword = !showProfilePassword"
-                                class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
+                                class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5"
                                 title="Lihat / Sembunyikan Sandi">
                             <span x-text="showProfilePassword ? '🙈' : '👁️'" class="text-xs"></span>
                         </button>
                     </div>
-                    <p class="text-[10px] text-slate-400 mt-1">Minimal 6 karakter. Kosongkan jika tidak ingin mengubah sandi.</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Min 6 karakter. Kosongkan jika tetap.</p>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nomor WhatsApp</label>
                     <input type="text" name="phone" value="{{ auth()->user()->phone }}" placeholder="08xxxxxxxxxx"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                 </div>
 
-                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                    <button type="button" @click="profileModalOpen = false" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                <!-- Footer Aksi -->
+                <div class="pt-2.5 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" @click="profileModalOpen = false" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
                         Batal
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white text-xs font-bold shadow-md shadow-blue-600/30 transition">
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white text-xs font-bold shadow-md shadow-blue-600/30 transition">
                         Simpan Perubahan Akun
                     </button>
                 </div>
