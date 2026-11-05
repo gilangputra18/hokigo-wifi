@@ -40,14 +40,13 @@ Route::middleware('auth')->group(function () {
     Route::resource('customers', CustomerController::class);
     Route::post('/customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
 
+    // Ganti Kata Sandi & Profil Pengguna Login (Semua Role: Owner, Admin, Teknisi)
+    Route::post('/profile/update', [AuthController::class, 'updateProfile'])->name('profile.update');
+
     // Kelompok Desa - Tampilan Read-Only untuk Teknisi
     Route::get('/villages', [VillageController::class, 'index'])->name('villages.index');
 
-    // Manajemen Voucheran (Bisa diakses Owner, Admin, & Teknisi Lapangan untuk input rekap)
-    Route::get('/vouchers', [VoucherController::class, 'index'])->name('vouchers.index');
-    Route::post('/vouchers', [VoucherController::class, 'store'])->name('vouchers.store');
-
-    // Routes Khusus Owner & Admin (Finansial, Tagihan, Settings, Paket, Master Data)
+    // Routes Khusus Owner & Admin (Finansial, Tagihan, Settings, Paket, Master Data, Manajemen Voucher)
     Route::middleware('role:owner,admin')->group(function () {
         // Dashboard
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -62,7 +61,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
 
-        // Tindakan Khusus Voucheran (Tandai Setor & Hapus)
+        // Manajemen Voucheran (Khusus Owner & Admin)
+        Route::get('/vouchers', [VoucherController::class, 'index'])->name('vouchers.index');
+        Route::post('/vouchers', [VoucherController::class, 'store'])->name('vouchers.store');
         Route::post('/vouchers/{voucher}/mark-deposited', [VoucherController::class, 'markDeposited'])->name('vouchers.mark-deposited');
         Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy'])->name('vouchers.destroy');
 

@@ -56,7 +56,7 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; }
     </style>
 </head>
-<body class="text-slate-800 antialiased min-h-screen flex" x-data="{ sidebarOpen: false }">
+<body class="text-slate-800 antialiased min-h-screen flex" x-data="{ sidebarOpen: false, profileModalOpen: false, showProfilePassword: false }">
 
     <!-- Mobile Sidebar Backdrop -->
     <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false" 
@@ -158,9 +158,8 @@
                     </span>
                 @endif
             </a>
-            @endif
 
-            <!-- Voucheran Hotspot (Bisa diakses Owner, Admin, & Teknisi) -->
+            <!-- Voucheran Hotspot (Khusus Owner & Admin) -->
             <a href="{{ route('vouchers.index') }}" 
                class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('vouchers.*') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <div class="flex items-center gap-3">
@@ -170,7 +169,6 @@
                 <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">Desa</span>
             </a>
 
-            @if(!auth()->user()->isTeknisi())
             <!-- Keuangan & Laporan (Omzet & Laba Bersih) -->
             <div class="pt-4 px-2 pb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Finansial & Bisnis</div>
 
@@ -264,16 +262,24 @@
                 </a>
                 @endif
 
-                <!-- User profile pill -->
-                <div class="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-3 border-l border-slate-200">
-                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm">
+                <!-- User profile pill (Bisa diklik untuk ganti email & kata sandi) -->
+                <button type="button" @click="profileModalOpen = true" 
+                        class="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-3 border-l border-slate-200 hover:opacity-85 transition group text-left cursor-pointer"
+                        title="Klik untuk ganti email & kata sandi akun Anda">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm group-hover:scale-105 transition">
                         {{ substr(auth()->user()->name, 0, 1) }}
                     </div>
                     <div class="hidden md:block text-left">
-                        <div class="text-xs font-bold text-slate-900 leading-tight">{{ auth()->user()->name }}</div>
-                        <div class="text-[11px] text-slate-500 capitalize">{{ auth()->user()->role }}</div>
+                        <div class="text-xs font-bold text-slate-900 leading-tight group-hover:text-brand-blue flex items-center gap-1">
+                            <span>{{ auth()->user()->name }}</span>
+                            <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
+                        </div>
+                        <div class="text-[11px] text-slate-500 capitalize flex items-center gap-1">
+                            <span>{{ auth()->user()->role }}</span>
+                            <span class="text-[10px] text-brand-blue font-semibold">&bull; Ganti Sandi</span>
+                        </div>
                     </div>
-                </div>
+                </button>
 
             </div>
         </header>
@@ -359,6 +365,77 @@
         </footer>
 
     </div>
+
+    @auth
+    <!-- Modal Ganti Kata Sandi & Email Akun (Bisa diakses Owner, Admin, & Teknisi) -->
+    <div x-show="profileModalOpen" x-cloak 
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div @click.away="profileModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center font-bold">
+                        <i data-lucide="user-cog" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-900 text-base">Profil & Kata Sandi Akun</h3>
+                        <p class="text-xs text-slate-500">Perbarui email login dan kata sandi Anda</p>
+                    </div>
+                </div>
+                <button type="button" @click="profileModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form action="{{ route('profile.update') }}" method="POST" class="space-y-4" autocomplete="off">
+                @csrf
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap *</label>
+                    <input type="text" name="name" value="{{ auth()->user()->name }}" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Email Login *</label>
+                    <input type="email" name="email" value="{{ auth()->user()->email }}" required autocomplete="off"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    <p class="text-[10px] text-slate-400 mt-1">Ubah email di atas jika ingin mengganti email untuk login.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Kata Sandi Baru</label>
+                    <div class="relative">
+                        <input :type="showProfilePassword ? 'text' : 'password'" name="password" placeholder="Kosongkan jika tidak ingin ganti" autocomplete="new-password"
+                               class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <button type="button" @click="showProfilePassword = !showProfilePassword"
+                                class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
+                                title="Lihat / Sembunyikan Sandi">
+                            <span x-text="showProfilePassword ? '🙈' : '👁️'" class="text-xs"></span>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1">Minimal 6 karakter. Kosongkan jika tidak ingin mengubah sandi.</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nomor WhatsApp</label>
+                    <input type="text" name="phone" value="{{ auth()->user()->phone }}" placeholder="08xxxxxxxxxx"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" @click="profileModalOpen = false" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white text-xs font-bold shadow-md shadow-blue-600/30 transition">
+                        Simpan Perubahan Akun
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+    @endauth
 
     <!-- Initialize Lucide Icons -->
     <script>

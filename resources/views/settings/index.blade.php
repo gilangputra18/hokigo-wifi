@@ -8,8 +8,22 @@
     userModalOpen: false, 
     editUserModalOpen: false,
     selectedUser: null,
+    editName: '',
+    editEmail: '',
+    editRole: 'admin',
+    editPhone: '',
+    editIsActive: true,
+    editPassword: '',
+    showEditPassword: false,
     openEditUser(u) {
         this.selectedUser = u;
+        this.editName = u.name;
+        this.editEmail = u.email;
+        this.editRole = u.role;
+        this.editPhone = u.phone || '';
+        this.editIsActive = !!u.is_active;
+        this.editPassword = '';
+        this.showEditPassword = false;
         this.editUserModalOpen = true;
     }
 }">
@@ -363,47 +377,57 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
                 </button>
             </div>
 
-            <form :action="'{{ url('settings/users') }}/' + (selectedUser ? selectedUser.id : '')" method="POST" class="space-y-4">
+            <form :action="'{{ url('settings/users') }}/' + (selectedUser ? selectedUser.id : '')" method="POST" class="space-y-4" autocomplete="off">
                 @csrf
                 @method('PUT')
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap *</label>
-                    <input type="text" name="name" :value="selectedUser ? selectedUser.name : ''" required
+                    <input type="text" name="name" x-model="editName" required
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Email Login *</label>
-                    <input type="email" name="email" :value="selectedUser ? selectedUser.email : ''" required
+                    <input type="email" name="email" x-model="editEmail" required autocomplete="off"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    <p class="text-[10px] text-slate-400 mt-1">Ubah email di atas jika ingin mengganti email untuk masuk/login ke akun ini.</p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Kata Sandi Baru</label>
-                        <input type="password" name="password" placeholder="Kosongkan jika tetap"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <div class="relative">
+                            <input :type="showEditPassword ? 'text' : 'password'" name="password" x-model="editPassword"
+                                   placeholder="Kosongkan jika tetap" autocomplete="new-password"
+                                   class="w-full pl-3.5 pr-10 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                            <button type="button" @click="showEditPassword = !showEditPassword"
+                                    class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
+                                    title="Tampilkan / Sembunyikan Kata Sandi">
+                                <span x-text="showEditPassword ? '🙈' : '👁️'" class="text-xs"></span>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">Ketik sandi baru di sini (min. 6 karakter). Biarkan kosong jika tidak ingin ganti sandi.</p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Peran (Role) *</label>
-                        <select name="role" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                            <option value="owner" :selected="selectedUser && selectedUser.role === 'owner'">👑 Owner (Pemilik Usaha)</option>
-                            <option value="admin" :selected="selectedUser && selectedUser.role === 'admin'">🛡️ Admin (Staf Kantor)</option>
-                            <option value="teknisi" :selected="selectedUser && selectedUser.role === 'teknisi'">🔧 Teknisi (Lapangan)</option>
+                        <select name="role" x-model="editRole" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                            <option value="owner">👑 Owner (Pemilik Usaha)</option>
+                            <option value="admin">🛡️ Admin (Staf Kantor)</option>
+                            <option value="teknisi">🔧 Teknisi (Lapangan)</option>
                         </select>
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nomor WhatsApp</label>
-                    <input type="text" name="phone" :value="selectedUser ? selectedUser.phone : ''"
+                    <input type="text" name="phone" x-model="editPhone" placeholder="08xxxxxxxxxx"
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                 </div>
 
                 <div>
                     <label class="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
-                        <input type="checkbox" name="is_active" value="1" :checked="selectedUser && selectedUser.is_active"
+                        <input type="checkbox" name="is_active" value="1" x-model="editIsActive"
                                class="rounded border-slate-300 text-brand-blue focus:ring-brand-blue">
                         <span>Akun Aktif (Dapat Login)</span>
                     </label>

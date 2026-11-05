@@ -67,19 +67,33 @@ class SettingController extends Controller
             'password' => ['nullable', 'string', 'min:6'],
             'role' => ['required', 'in:owner,admin,teknisi'],
             'phone' => ['nullable', 'string', 'max:25'],
-            'is_active' => ['boolean'],
+            'is_active' => ['nullable'],
         ]);
 
+        $user->name = $validated['name'];
+        $user->email = $validated['email'];
+        $user->role = $validated['role'];
+        $user->phone = $validated['phone'] ?? null;
+        $user->is_active = $request->boolean('is_active');
+
+        $passwordChanged = false;
         if (!empty($validated['password'])) {
-            $validated['password'] = Hash::make($validated['password']);
-        } else {
-            unset($validated['password']);
+            $user->password = Hash::make($validated['password']);
+            $passwordChanged = true;
         }
 
-        $validated['is_active'] = $request->boolean('is_active');
-        $user->update($validated);
+        $user->save();
 
-        return back()->with('success', "Data pengguna {$user->name} berhasil diperbarui.");
+        if (\Illuminate\Support\Facades\Auth::id() === $user->id) {
+            \Illuminate\Support\Facades\Auth::login($user);
+        }
+
+        $msg = "Akun {$user->name} berhasil diperbarui. Email login: {$user->email}";
+        if ($passwordChanged) {
+            $msg .= " & kata sandi baru berhasil disimpan!";
+        }
+
+        return back()->with('success', $msg);
     }
 
     public function destroyUser(User $user)
