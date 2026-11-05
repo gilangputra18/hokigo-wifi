@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Hokigo') - Provider WiFi & Billing Management</title>
     
@@ -158,8 +158,9 @@
                     </span>
                 @endif
             </a>
+            @endif
 
-            <!-- Voucheran Hotspot -->
+            <!-- Voucheran Hotspot (Bisa diakses Owner, Admin, & Teknisi) -->
             <a href="{{ route('vouchers.index') }}" 
                class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('vouchers.*') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <div class="flex items-center gap-3">
@@ -169,6 +170,7 @@
                 <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">Desa</span>
             </a>
 
+            @if(!auth()->user()->isTeknisi())
             <!-- Keuangan & Laporan (Omzet & Laba Bersih) -->
             <div class="pt-4 px-2 pb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Finansial & Bisnis</div>
 
@@ -222,7 +224,7 @@
     <div class="flex-1 flex flex-col min-w-0 min-h-screen">
         
         <!-- Top Navbar -->
-        <header class="h-16 sm:h-20 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between px-3.5 sm:px-8 shadow-xs">
+        <header class="min-h-16 sm:min-h-20 py-2 sm:py-0 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between px-3.5 sm:px-8 shadow-xs" style="padding-top: max(8px, env(safe-area-inset-top, 0px));">
             
             <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <!-- Mobile Menu Button -->
@@ -288,6 +290,34 @@
                         <span class="text-sm font-semibold">{{ session('success') }}</span>
                     </div>
                     <button @click="show = false" class="text-emerald-500 hover:text-emerald-700">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            @endif
+
+            @if(session('warning'))
+                <div x-data="{ show: true }" x-show="show" class="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-600 flex items-center justify-center shrink-0">
+                            <i data-lucide="alert-circle" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-sm font-semibold">{{ session('warning') }}</span>
+                    </div>
+                    <button @click="show = false" class="text-amber-500 hover:text-amber-700">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div x-data="{ show: true }" x-show="show" class="mb-6 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 flex items-center justify-between shadow-xs">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-600 flex items-center justify-center shrink-0">
+                            <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+                        </div>
+                        <span class="text-sm font-semibold">{{ session('error') }}</span>
+                    </div>
+                    <button @click="show = false" class="text-rose-500 hover:text-rose-700">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
                 </div>

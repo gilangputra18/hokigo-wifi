@@ -94,11 +94,137 @@
                     @endforeach
                 </select>
 
-                <!-- Search Input with Smart Village/Customer Search -->
-                <div class="relative flex-1 max-w-xs">
-                    <input type="text" x-model="searchQuery" @input="onSearchInput()" placeholder="Cari desa, pelanggan, ODP..." 
-                           class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                <!-- Interactive Search Bar with Instant Fly-To Dropdown -->
+                <div class="relative flex-1 max-w-sm" @click.away="searchDropdownOpen = false">
+                    <div class="relative">
+                        <input type="text" x-model="searchQuery" 
+                               @input="onSearchInput()" 
+                               @focus="searchDropdownOpen = true"
+                               @keydown.enter.prevent="goToFirstSearchResult()"
+                               placeholder="Cari nama tempat, desa, pelanggan, ODP..." 
+                               class="w-full pl-8 pr-8 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue bg-white shadow-xs">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                        
+                        <!-- Tombol Clear [X] jika ada teks -->
+                        <button type="button" x-show="searchQuery.length > 0" @click="clearSearch()"
+                                class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-100 transition">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Floating Search Autocomplete Dropdown (Langsung Ke Arah Lokasi Tersebut) -->
+                    <div x-show="searchDropdownOpen && searchQuery.trim().length > 0" x-cloak
+                         class="absolute top-full left-0 right-0 mt-1.5 z-[1050] bg-white/98 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-200 overflow-hidden divide-y divide-slate-100 max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-150">
+                        
+                        <!-- 1. Wilayah / Desa -->
+                        <template x-if="matchedVillages.length > 0">
+                            <div>
+                                <div class="px-3 py-1.5 bg-slate-50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                    Wilayah / Desa
+                                </div>
+                                <template x-for="v in matchedVillages" :key="'mv_' + v.id">
+                                    <button type="button" @click="goToVillage(v)"
+                                            class="w-full text-left p-2.5 hover:bg-blue-50/80 transition flex items-center justify-between gap-2 group">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <span class="w-7 h-7 rounded-lg bg-blue-100 text-brand-blue flex items-center justify-center shrink-0 text-sm">🏛️</span>
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-bold text-slate-900 group-hover:text-brand-blue truncate" x-text="v.name"></p>
+                                                <p class="text-[10px] text-slate-500 truncate" x-text="'Wilayah Desa • ' + (v.system_type === 'voucher' ? 'Voucher Hotspot' : 'PPPoE / FTTH')"></p>
+                                            </div>
+                                        </div>
+                                        <span class="text-[10px] font-bold text-brand-blue bg-blue-50 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
+                                            <span>Terbang</span> <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+                                        </span>
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- 2. Rumah Pelanggan -->
+                        <template x-if="matchedCustomers.length > 0">
+                            <div>
+                                <div class="px-3 py-1.5 bg-slate-50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                    Rumah Pelanggan
+                                </div>
+                                <template x-for="c in matchedCustomers" :key="'mc_' + c.id">
+                                    <button type="button" @click="goToCustomer(c)"
+                                            class="w-full text-left p-2.5 hover:bg-emerald-50/80 transition flex items-center justify-between gap-2 group">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 text-xs font-bold">🏠</span>
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-bold text-slate-900 group-hover:text-emerald-800 truncate" x-text="c.name + ' (' + c.customer_code + ')'"></p>
+                                                <p class="text-[10px] text-slate-500 truncate" x-text="(c.village ? c.village.name : 'Tanpa Desa') + (c.house_number ? ' • ' + c.house_number : '') + (c.pppoe_user ? ' • User: ' + c.pppoe_user : '')"></p>
+                                            </div>
+                                        </div>
+                                        <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
+                                            <span>Ke Atap</span> <i data-lucide="navigation" class="w-3 h-3"></i>
+                                        </span>
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- 3. Server & ODP -->
+                        <template x-if="matchedNodes.length > 0">
+                            <div>
+                                <div class="px-3 py-1.5 bg-slate-50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                    Server & ODP
+                                </div>
+                                <template x-for="node in matchedNodes" :key="'mn_' + node.id">
+                                    <button type="button" @click="goToNode(node)"
+                                            class="w-full text-left p-2.5 hover:bg-amber-50/80 transition flex items-center justify-between gap-2 group">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 text-sm"
+                                                  x-text="node.type === 'server' || node.type === 'starlink' ? '🛰️' : '🔲'"></span>
+                                            <div class="min-w-0">
+                                                <p class="text-xs font-bold text-slate-900 group-hover:text-amber-800 truncate" x-text="node.name"></p>
+                                                <p class="text-[10px] text-slate-500 truncate" x-text="(node.type === 'server' ? 'Server Pusat' : (node.type === 'starlink' ? 'Dish Starlink' : 'Kotak ODP')) + (node.capacity ? ' • ' + node.capacity : '')"></p>
+                                            </div>
+                                        </div>
+                                        <span class="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
+                                            <span>Ke Tiang</span> <i data-lucide="navigation" class="w-3 h-3"></i>
+                                        </span>
+                                    </button>
+                                </template>
+                            </div>
+                        </template>
+
+                        <!-- 4. Tombol Cari Tempat Online (Nominatim OpenStreetMap) -->
+                        <div class="p-2 bg-slate-50 text-[11px]">
+                            <button type="button" @click="triggerExternalSearch()" :disabled="searchingExternal"
+                                    class="w-full text-left p-2 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 transition flex items-center justify-between gap-2 text-slate-700 font-semibold shadow-xs">
+                                <div class="flex items-center gap-2 truncate">
+                                    <i data-lucide="globe" class="w-3.5 h-3.5 text-blue-600 shrink-0"></i>
+                                    <span class="truncate">Cari tempat &quot;<span class="font-bold text-slate-900" x-text="searchQuery"></span>&quot; di peta satelit</span>
+                                </div>
+                                <span class="text-[10px] text-blue-600 font-bold shrink-0" x-text="searchingExternal ? 'Mencari...' : 'Cari 🔎'"></span>
+                            </button>
+                        </div>
+
+                        <!-- Hasil Pencarian Tempat Online -->
+                        <template x-for="p in externalResults" :key="'ext_' + p.place_id">
+                            <button type="button" @click="goToExternalPlace(p)"
+                                    class="w-full text-left p-2.5 hover:bg-sky-50 transition flex items-center justify-between gap-2 group">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <span class="w-7 h-7 rounded-lg bg-sky-100 text-sky-800 flex items-center justify-center shrink-0 text-sm">📍</span>
+                                    <div class="min-w-0">
+                                        <p class="text-xs font-bold text-slate-900 group-hover:text-sky-700 truncate" x-text="p.display_name.split(',')[0]"></p>
+                                        <p class="text-[10px] text-slate-500 truncate" x-text="p.display_name"></p>
+                                    </div>
+                                </div>
+                                <span class="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md shrink-0">
+                                    Terbang ✈️
+                                </span>
+                            </button>
+                        </template>
+
+                        <!-- Jika Tidak Ada Hasil -->
+                        <div x-show="matchedCustomers.length === 0 && matchedVillages.length === 0 && matchedNodes.length === 0 && externalResults.length === 0 && !searchingExternal" 
+                             class="p-4 text-center text-xs text-slate-400">
+                            Tekan Enter atau klik <strong>Cari di peta satelit</strong> di atas.
+                        </div>
+
+                    </div>
                 </div>
             </div>
 
@@ -393,7 +519,8 @@
 
     <!-- Modal 1: Penitikan Baru (Pelanggan / Server / ODP / Titik Desa) -->
     <div x-show="manualPinModalOpen" x-cloak 
-         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+         style="padding-top: max(20px, calc(env(safe-area-inset-top, 0px) + 12px)); padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 12px));">
         <div @click.away="manualPinModalOpen = false" 
              class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 relative my-auto flex flex-col max-h-[90vh] overflow-hidden">
             
@@ -578,7 +705,8 @@
 
     <!-- Modal 2: Simpan Jalur Kabel FO Baru -->
     <div x-show="cableModalOpen" x-cloak 
-         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+         style="padding-top: max(20px, calc(env(safe-area-inset-top, 0px) + 12px)); padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 12px));">
         <div @click.away="cableModalOpen = false" 
              class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 p-5 space-y-4">
             
@@ -665,7 +793,8 @@
 
     <!-- Modal 3: Tambah Server / ODP Cepat -->
     <div x-show="newNodeModalOpen" x-cloak 
-         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+         style="padding-top: max(20px, calc(env(safe-area-inset-top, 0px) + 12px)); padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 12px));">
         <div @click.away="newNodeModalOpen = false" 
              class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 p-5 space-y-4">
             
@@ -736,7 +865,8 @@
 
     <!-- Modal 4: Reset Titik Peta (Admin Only) -->
     <div x-show="resetMapModalOpen" x-cloak 
-         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+         style="padding-top: max(20px, calc(env(safe-area-inset-top, 0px) + 12px)); padding-bottom: max(20px, calc(env(safe-area-inset-bottom, 0px) + 12px));">
         <div @click.away="resetMapModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4">
             <div class="flex items-center gap-3 text-rose-600">
                 <div class="w-10 h-10 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0">
@@ -827,7 +957,40 @@
             // Filter & Search
             selectedVillage: '',
             searchQuery: '',
+            searchDropdownOpen: false,
+            customerMarkers: {},
+            nodeMarkers: {},
+            searchingExternal: false,
+            externalResults: [],
+            externalSearchMarker: null,
             suggestedVillages: [],
+
+            get matchedCustomers() {
+                if (!this.searchQuery || this.searchQuery.trim().length < 2) return [];
+                const q = this.searchQuery.toLowerCase().trim();
+                return this.pinnedList.filter(c => 
+                    c.name.toLowerCase().includes(q) || 
+                    c.customer_code.toLowerCase().includes(q) ||
+                    (c.house_number && c.house_number.toLowerCase().includes(q)) ||
+                    (c.pppoe_user && c.pppoe_user.toLowerCase().includes(q))
+                ).slice(0, 8);
+            },
+
+            get matchedVillages() {
+                if (!this.searchQuery || this.searchQuery.trim().length < 2) return [];
+                const q = this.searchQuery.toLowerCase().trim();
+                return this.villagesData.filter(v => v.name.toLowerCase().includes(q)).slice(0, 5);
+            },
+
+            get matchedNodes() {
+                if (!this.searchQuery || this.searchQuery.trim().length < 2) return [];
+                const q = this.searchQuery.toLowerCase().trim();
+                return this.networkNodesData.filter(n => 
+                    n.name.toLowerCase().includes(q) ||
+                    (n.capacity && n.capacity.toLowerCase().includes(q)) ||
+                    (n.notes && n.notes.toLowerCase().includes(q))
+                ).slice(0, 5);
+            },
 
             // Customer Pinning State
             pinningCustomer: null,
@@ -1069,7 +1232,7 @@
                 this.renderMarkers();
             },
 
-            // --- VILLAGE SEARCH & FLY-TO IMPLEMENTATION ---
+            // --- SEARCH & DIRECT FLY-TO IMPLEMENTATION ---
             onVillageSelected() {
                 this.filterMarkers();
                 if (!this.selectedVillage) return;
@@ -1077,13 +1240,142 @@
             },
 
             onSearchInput() {
+                this.searchDropdownOpen = true;
                 this.filterMarkers();
-                if (!this.searchQuery || this.searchQuery.trim().length < 2) {
-                    this.suggestedVillages = [];
+            },
+
+            clearSearch() {
+                this.searchQuery = '';
+                this.searchDropdownOpen = false;
+                this.externalResults = [];
+                if (this.externalSearchMarker) {
+                    this.map.removeLayer(this.externalSearchMarker);
+                    this.externalSearchMarker = null;
+                }
+                this.filterMarkers();
+            },
+
+            goToCustomer(c) {
+                if (!c.latitude || !c.longitude) {
+                    alert('Pelanggan ' + c.name + ' belum memiliki titik koordinat.');
                     return;
                 }
-                const q = this.searchQuery.toLowerCase().trim();
-                this.suggestedVillages = this.villagesData.filter(v => v.name.toLowerCase().includes(q));
+                const lat = parseFloat(c.latitude);
+                const lng = parseFloat(c.longitude);
+                this.searchDropdownOpen = false;
+                this.searchQuery = c.name;
+                this.showCustomers = true;
+
+                if (this.selectedVillage && c.village_id && this.selectedVillage != c.village_id) {
+                    this.selectedVillage = '';
+                }
+                this.renderAll();
+
+                // Smoothly fly directly to exact customer rooftop at zoom 18
+                this.map.flyTo([lat, lng], 18, { duration: 1.2 });
+
+                setTimeout(() => {
+                    const marker = this.customerMarkers[c.id];
+                    if (marker) {
+                        marker.openPopup();
+                    }
+                }, 1100);
+            },
+
+            goToNode(node) {
+                if (!node.latitude || !node.longitude) return;
+                const lat = parseFloat(node.latitude);
+                const lng = parseFloat(node.longitude);
+                this.searchDropdownOpen = false;
+                this.searchQuery = node.name;
+                this.showNodes = true;
+
+                if (this.selectedVillage && node.village_id && this.selectedVillage != node.village_id) {
+                    this.selectedVillage = '';
+                }
+                this.renderAll();
+
+                // Smoothly fly directly to exact server / ODP location at zoom 18
+                this.map.flyTo([lat, lng], 18, { duration: 1.2 });
+
+                setTimeout(() => {
+                    const marker = this.nodeMarkers[node.id];
+                    if (marker) {
+                        marker.openPopup();
+                    }
+                }, 1100);
+            },
+
+            goToVillage(v) {
+                this.searchDropdownOpen = false;
+                this.searchQuery = v.name;
+                this.flyToVillage(v.id);
+            },
+
+            goToFirstSearchResult() {
+                if (this.matchedCustomers.length > 0) {
+                    this.goToCustomer(this.matchedCustomers[0]);
+                } else if (this.matchedVillages.length > 0) {
+                    this.goToVillage(this.matchedVillages[0]);
+                } else if (this.matchedNodes.length > 0) {
+                    this.goToNode(this.matchedNodes[0]);
+                } else if (this.externalResults.length > 0) {
+                    this.goToExternalPlace(this.externalResults[0]);
+                } else {
+                    this.triggerExternalSearch();
+                }
+            },
+
+            async triggerExternalSearch() {
+                if (!this.searchQuery || this.searchQuery.trim().length < 2) return;
+                this.searchingExternal = true;
+                try {
+                    const query = this.searchQuery.trim();
+                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=id&limit=4`);
+                    const data = await res.json();
+                    this.externalResults = data || [];
+                    if (this.externalResults.length === 0) {
+                        alert('Tidak ditemukan lokasi dengan nama "' + query + '" di peta satelit.');
+                    } else if (this.externalResults.length === 1) {
+                        this.goToExternalPlace(this.externalResults[0]);
+                    }
+                } catch (e) {
+                    alert('Gagal mencari lokasi online.');
+                } finally {
+                    this.searchingExternal = false;
+                }
+            },
+
+            goToExternalPlace(place) {
+                const lat = parseFloat(place.lat);
+                const lng = parseFloat(place.lon);
+                this.searchDropdownOpen = false;
+                this.searchQuery = place.display_name.split(',')[0];
+
+                this.map.flyTo([lat, lng], 17, { duration: 1.5 });
+
+                if (this.externalSearchMarker) {
+                    this.map.removeLayer(this.externalSearchMarker);
+                }
+                this.externalSearchMarker = L.marker([lat, lng])
+                    .addTo(this.map)
+                    .bindPopup(`
+                        <div style="font-family: inherit; font-size: 11px; padding: 4px; text-align: center; max-width: 220px;">
+                            <div style="font-weight: 800; color: #0f172a; font-size: 12px;">📍 ${place.display_name.split(',')[0]}</div>
+                            <div style="color: #64748b; font-size: 10px; margin-top: 2px; line-height: 1.3;">${place.display_name}</div>
+                            <div style="margin-top: 6px; display: flex; gap: 4px;">
+                                <button type="button" onclick="window.mapAppInstance.openModalWithCoordinate(${lat}, ${lng})"
+                                        style="flex: 1; background: #1055CC; color: white; border: none; padding: 5px 8px; border-radius: 6px; font-weight: 700; font-size: 10px; cursor: pointer;">
+                                    + Titik Rumah
+                                </button>
+                                <button type="button" onclick="window.mapAppInstance.openAddNodeModal(${lat}, ${lng})"
+                                        style="flex: 1; background: #f59e0b; color: white; border: none; padding: 5px 8px; border-radius: 6px; font-weight: 700; font-size: 10px; cursor: pointer;">
+                                    + Titik Server
+                                </button>
+                            </div>
+                        </div>
+                    `)
+                    .openPopup();
             },
 
             flyToVillage(villageId) {
@@ -1422,6 +1714,7 @@
 
             renderNodes() {
                 this.nodesGroup.clearLayers();
+                this.nodeMarkers = {};
                 if (!this.showNodes) return;
 
                 this.networkNodesData.forEach(node => {
@@ -1468,6 +1761,7 @@
                     `, { autoPanPadding: [20, 20] });
 
                     this.nodesGroup.addLayer(marker);
+                    this.nodeMarkers[node.id] = marker;
                 });
             },
 
@@ -1615,6 +1909,7 @@
 
             renderMarkers() {
                 this.markersGroup.clearLayers();
+                this.customerMarkers = {};
                 if (!this.showCustomers) return;
 
                 const filtered = this.pinnedList.filter(c => {
@@ -1642,6 +1937,7 @@
                     });
 
                     this.markersGroup.addLayer(marker);
+                    this.customerMarkers[c.id] = marker;
                 });
             },
 

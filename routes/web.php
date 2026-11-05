@@ -43,6 +43,10 @@ Route::middleware('auth')->group(function () {
     // Kelompok Desa - Tampilan Read-Only untuk Teknisi
     Route::get('/villages', [VillageController::class, 'index'])->name('villages.index');
 
+    // Manajemen Voucheran (Bisa diakses Owner, Admin, & Teknisi Lapangan untuk input rekap)
+    Route::get('/vouchers', [VoucherController::class, 'index'])->name('vouchers.index');
+    Route::post('/vouchers', [VoucherController::class, 'store'])->name('vouchers.store');
+
     // Routes Khusus Owner & Admin (Finansial, Tagihan, Settings, Paket, Master Data)
     Route::middleware('role:owner,admin')->group(function () {
         // Dashboard
@@ -58,9 +62,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
 
-        // Manajemen Voucheran
-        Route::get('/vouchers', [VoucherController::class, 'index'])->name('vouchers.index');
-        Route::post('/vouchers', [VoucherController::class, 'store'])->name('vouchers.store');
+        // Tindakan Khusus Voucheran (Tandai Setor & Hapus)
         Route::post('/vouchers/{voucher}/mark-deposited', [VoucherController::class, 'markDeposited'])->name('vouchers.mark-deposited');
         Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy'])->name('vouchers.destroy');
 
@@ -88,10 +90,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/settings/users', [SettingController::class, 'storeUser'])->name('settings.users.store');
         Route::put('/settings/users/{user}', [SettingController::class, 'updateUser'])->name('settings.users.update');
         Route::delete('/settings/users/{user}', [SettingController::class, 'destroyUser'])->name('settings.users.destroy');
-    });
 
-    // Route Khusus Owner (Reset Keuangan ke 0)
-    Route::middleware('role:owner')->group(function () {
+        // Reset Data Keuangan ke 0 (Bisa diakses Owner & Admin)
         Route::post('/finance/reset', [FinanceController::class, 'resetData'])->name('finance.reset');
     });
 });

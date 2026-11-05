@@ -29,11 +29,8 @@ class EnsureUserRole
                 ], 403);
             }
 
-            if ($user->isTeknisi()) {
-                return redirect()->route('maps.index')->with('warning', 'Halaman tersebut khusus untuk akun Owner atau Admin. Akun Anda (Teknisi) difokuskan untuk fitur Peta Jaringan & Data Pelanggan.');
-            }
-
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk membuka halaman ini.');
+            $redirectRoute = $user->isTeknisi() ? 'maps.index' : 'dashboard';
+            return redirect()->route($redirectRoute)->with('warning', 'Akses dibatasi: Akun Anda (' . ucfirst($user->role ?? 'Pengguna') . ') tidak memiliki wewenang untuk halaman tersebut.');
         }
 
         return $next($request);
