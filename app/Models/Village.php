@@ -15,10 +15,26 @@ class Village extends Model
         'code',
         'district',
         'notes',
+        'system_type', // 'pppoe', 'voucher', 'hybrid'
     ];
 
     public function customers(): HasMany
     {
         return $this->hasMany(Customer::class);
+    }
+
+    public function voucherSales(): HasMany
+    {
+        return $this->hasMany(VoucherSale::class);
+    }
+
+    public function isVoucherEnabled(): bool
+    {
+        return in_array($this->system_type, ['voucher', 'hybrid']);
+    }
+
+    public function isPppoeEnabled(): bool
+    {
+        return in_array($this->system_type, ['pppoe', 'hybrid', null]);
     }
 }

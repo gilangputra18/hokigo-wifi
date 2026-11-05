@@ -76,7 +76,9 @@ class Invoice extends Model
             . "📅 Jatuh Tempo: *{$dueDate}*\n\n"
             . "Bisa dibayarkan melalui rekening berikut:\n\n"
             . "{$bankInfo}\n\n"
-            . "Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨";
+            . "Konfirmasi & Bukti Transfer kirim ke WA Admin:\n"
+            . "https://wa.me/6281227391262\n\n"
+            . "Terima kasih! 🙏✨";
 
         return 'https://api.whatsapp.com/send?phone=' . $customer->clean_phone . '&text=' . rawurlencode($message);
     }

@@ -43,11 +43,12 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap items-center gap-2">
-            <!-- Direct WA -->
+            <!-- Direct WA (Membuka Chat WhatsApp ke No HP Pelanggan) -->
             <a href="https://api.whatsapp.com/send?phone={{ $customer->clean_phone }}" target="_blank"
+               title="Membuka chat WhatsApp langsung ke nomor pelanggan ini ({{ $customer->phone }})"
                class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-2 transition shadow-xs">
                 <i data-lucide="message-circle" class="w-4 h-4"></i>
-                <span>Hubungi via WA</span>
+                <span>Chat WA Pelanggan</span>
             </a>
 
             <!-- Edit -->
@@ -117,12 +118,34 @@
 
                     <div class="flex items-center justify-between py-1 border-b border-slate-50">
                         <span class="text-slate-400">Username PPPoE</span>
-                        <span class="font-mono text-slate-700">{{ $customer->pppoe_user ?: '-' }}</span>
+                        <span class="font-mono text-slate-700 font-semibold">{{ $customer->pppoe_user ?: '-' }}</span>
                     </div>
 
                     <div class="flex items-center justify-between py-1 border-b border-slate-50">
-                        <span class="text-slate-400">Alamat IP</span>
-                        <span class="font-mono text-slate-700">{{ $customer->ip_address ?: '-' }}</span>
+                        <span class="text-slate-400">Sandi PPPoE</span>
+                        <span class="font-mono text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded">{{ $customer->pppoe_password ?: '-' }}</span>
+                    </div>
+
+                    <div class="py-1 border-b border-slate-50">
+                        <span class="text-slate-400 block mb-1">Titik Lokasi GPS</span>
+                        @if($customer->latitude && $customer->longitude)
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="font-mono text-[11px] text-slate-700">{{ $customer->latitude }}, {{ $customer->longitude }}</span>
+                                <a href="https://www.google.com/maps/dir/?api=1&destination={{ $customer->latitude }},{{ $customer->longitude }}" target="_blank"
+                                   class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] flex items-center gap-1 shadow-xs transition">
+                                    <i data-lucide="navigation" class="w-3 h-3"></i>
+                                    <span>Buka Maps</span>
+                                </a>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-amber-600 text-xs font-semibold">Belum ada titik GPS</span>
+                                <a href="{{ route('maps.index') }}" 
+                                   class="px-2 py-1 rounded-lg bg-brand-blue hover:bg-brand-blueHover text-white text-[10px] font-bold">
+                                    Titik di Peta
+                                </a>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="py-1">

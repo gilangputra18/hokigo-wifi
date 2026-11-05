@@ -172,21 +172,29 @@
             <!-- Quick Demo Credentials Box -->
             <div class="mt-4 pt-3.5 border-t border-slate-100">
                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center mb-2">Akun Akses Cepat</p>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-3 gap-1.5">
                     <button type="button" onclick="fillAccount('owner@hokigo.net', 'password')" 
-                            class="px-2.5 py-2 bg-slate-50 hover:bg-blue-50/60 active:bg-blue-100/60 border border-slate-200/80 hover:border-blue-200 rounded-xl text-left transition group">
-                        <span class="block text-[11px] font-bold text-slate-800 flex items-center gap-1.5 truncate">
-                            <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span> Owner (Saya)
+                            class="p-2 bg-slate-50 hover:bg-blue-50/60 active:bg-blue-100/60 border border-slate-200/80 hover:border-blue-200 rounded-xl text-left transition group">
+                        <span class="block text-[10px] font-bold text-slate-800 flex items-center gap-1 truncate">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span> Owner
                         </span>
-                        <span class="text-[10px] text-slate-500 font-mono truncate block group-hover:text-blue-600">owner@hokigo.net</span>
+                        <span class="text-[9px] text-slate-400 font-mono truncate block group-hover:text-blue-600">owner</span>
                     </button>
                     
                     <button type="button" onclick="fillAccount('admin@hokigo.net', 'password')" 
-                            class="px-2.5 py-2 bg-slate-50 hover:bg-blue-50/60 active:bg-blue-100/60 border border-slate-200/80 hover:border-blue-200 rounded-xl text-left transition group">
-                        <span class="block text-[11px] font-bold text-slate-800 flex items-center gap-1.5 truncate">
-                            <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span> Admin (Staff)
+                            class="p-2 bg-slate-50 hover:bg-blue-50/60 active:bg-blue-100/60 border border-slate-200/80 hover:border-blue-200 rounded-xl text-left transition group">
+                        <span class="block text-[10px] font-bold text-slate-800 flex items-center gap-1 truncate">
+                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span> Admin
                         </span>
-                        <span class="text-[10px] text-slate-500 font-mono truncate block group-hover:text-blue-600">admin@hokigo.net</span>
+                        <span class="text-[9px] text-slate-400 font-mono truncate block group-hover:text-blue-600">admin</span>
+                    </button>
+
+                    <button type="button" onclick="fillAccount('teknisi@hokigo.net', 'password')" 
+                            class="p-2 bg-slate-50 hover:bg-cyan-50/60 active:bg-cyan-100/60 border border-slate-200/80 hover:border-cyan-300 rounded-xl text-left transition group">
+                        <span class="block text-[10px] font-bold text-slate-800 flex items-center gap-1 truncate">
+                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0"></span> Teknisi
+                        </span>
+                        <span class="text-[9px] text-slate-400 font-mono truncate block group-hover:text-cyan-600">teknisi</span>
                     </button>
                 </div>
                 <p class="text-[10px] text-slate-400 text-center mt-1.5">Password default: <code class="bg-slate-100 px-1 py-0.2 rounded text-slate-700 font-mono">password</code></p>

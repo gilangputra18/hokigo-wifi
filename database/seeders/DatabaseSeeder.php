@@ -40,11 +40,22 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $teknisi = User::firstOrCreate(
+            ['email' => 'teknisi@hokigo.net'],
+            [
+                'name' => 'Teknisi Lapangan',
+                'password' => Hash::make('password'),
+                'role' => 'teknisi',
+                'phone' => '081227391262',
+                'is_active' => true,
+            ]
+        );
+
         // 2. Settings
         $settings = [
             'company_name' => 'Hokigo Starlink',
             'company_tagline' => 'Provider Internet Cepat, Stabil & Hemat untuk Warga Desa',
-            'company_phone' => '081234567890',
+            'company_phone' => '081227391262',
             'company_address' => 'Jl. Poros Desa Utama No. 88, Jawa Timur',
             'bank_accounts' => "MUHAMMAD IRZAQ IRAWAN\n7233297792 BSI",
             'currency_symbol' => 'Rp',
@@ -56,10 +67,10 @@ class DatabaseSeeder extends Seeder
 
         // 3. Villages
         $villagesData = [
-            ['name' => 'Desa Sukamaju', 'code' => 'SKM', 'district' => 'Kecamatan Makmur', 'notes' => 'Server OLT utama berada di balai desa, 4 ODP terpasang'],
-            ['name' => 'Desa Karanganyar', 'code' => 'KRA', 'district' => 'Kecamatan Makmur', 'notes' => 'Jalur fiber optic tiang PLN, 3 ODP terpasang'],
-            ['name' => 'Desa Sumbersekar', 'code' => 'SBS', 'district' => 'Kecamatan Makmur', 'notes' => 'Wilayah pegunungan/lereng, coverage radio AP + fiber'],
-            ['name' => 'Desa Wonokerto', 'code' => 'WNK', 'district' => 'Kecamatan Makmur', 'notes' => 'Wilayah timur, 2 ODP sub-distribution'],
+            ['name' => 'Desa Sukamaju', 'code' => 'SKM', 'district' => 'Kecamatan Makmur', 'system_type' => 'hybrid', 'notes' => 'Server OLT utama berada di balai desa, 4 ODP terpasang'],
+            ['name' => 'Desa Karanganyar', 'code' => 'KRA', 'district' => 'Kecamatan Makmur', 'system_type' => 'pppoe', 'notes' => 'Jalur fiber optic tiang PLN, 3 ODP terpasang'],
+            ['name' => 'Desa Sumbersekar', 'code' => 'SBS', 'district' => 'Kecamatan Makmur', 'system_type' => 'voucher', 'notes' => 'Wilayah pegunungan/lereng, coverage radio AP + voucher hotspot'],
+            ['name' => 'Desa Wonokerto', 'code' => 'WNK', 'district' => 'Kecamatan Makmur', 'system_type' => 'hybrid', 'notes' => 'Wilayah timur, 2 ODP sub-distribution'],
         ];
 
         $villages = [];
@@ -94,7 +105,10 @@ class DatabaseSeeder extends Seeder
                 'installation_date' => Carbon::now()->subMonths(8)->format('Y-m-d'),
                 'router_model' => 'ZTE F609',
                 'pppoe_user' => 'slamet_skm',
+                'pppoe_password' => 'slamet123',
                 'ip_address' => '192.168.10.11',
+                'latitude' => -7.535800,
+                'longitude' => 112.237900,
                 'status' => 'active',
                 'notes' => 'Kabel dropcore hitam 75m dari ODP-01 port 2. Rumah cat putih pagar besi hitam.',
             ],
@@ -110,7 +124,10 @@ class DatabaseSeeder extends Seeder
                 'installation_date' => Carbon::now()->subMonths(6)->format('Y-m-d'),
                 'router_model' => 'Fiberhome HG6243C',
                 'pppoe_user' => 'aminah_skm',
+                'pppoe_password' => 'aminah456',
                 'ip_address' => '192.168.10.12',
+                'latitude' => -7.536300,
+                'longitude' => 112.238400,
                 'status' => 'active',
                 'notes' => 'Tiang bambu sendiri di halaman. Bayar selalu tepat tanggal 5.',
             ],
@@ -126,7 +143,10 @@ class DatabaseSeeder extends Seeder
                 'installation_date' => Carbon::now()->subMonths(5)->format('Y-m-d'),
                 'router_model' => 'Huawei HG8245H5',
                 'pppoe_user' => 'warkop_budi',
+                'pppoe_password' => 'kopi789',
                 'ip_address' => '192.168.20.15',
+                'latitude' => -7.537100,
+                'longitude' => 112.239100,
                 'status' => 'active',
                 'notes' => 'Pasang access point tambahan di gazebo outdoor. Sering minta cek kuota/speed.',
             ],
@@ -142,7 +162,10 @@ class DatabaseSeeder extends Seeder
                 'installation_date' => Carbon::now()->subMonths(10)->format('Y-m-d'),
                 'router_model' => 'Mikrotik RB750Gr3 + Huawei ONT',
                 'pppoe_user' => 'pemdes_karanganyar',
+                'pppoe_password' => 'balai2026',
                 'ip_address' => '192.168.20.2',
+                'latitude' => -7.535200,
+                'longitude' => 112.236800,
                 'status' => 'active',
                 'notes' => 'Ruang Pelayanan & Ruang Kades. Surat tagihan resmi diminta kirim WA ke bendahara desa.',
             ],
@@ -158,7 +181,10 @@ class DatabaseSeeder extends Seeder
                 'installation_date' => Carbon::now()->subMonths(4)->format('Y-m-d'),
                 'router_model' => 'ZTE F609',
                 'pppoe_user' => 'joko_sbs',
+                'pppoe_password' => 'las321',
                 'ip_address' => '192.168.30.22',
+                'latitude' => -7.537800,
+                'longitude' => 112.240200,
                 'status' => 'active',
                 'notes' => 'Kabel lewat pohon mangga tetangga (sudah izin). Router di ruang tamu.',
             ],
@@ -174,7 +200,10 @@ class DatabaseSeeder extends Seeder
                 'installation_date' => Carbon::now()->subMonths(3)->format('Y-m-d'),
                 'router_model' => 'Fiberhome HG6243C',
                 'pppoe_user' => 'endang_sbs',
+                'pppoe_password' => 'endang99',
                 'ip_address' => '192.168.30.25',
+                'latitude' => -7.536700,
+                'longitude' => 112.237200,
                 'status' => 'isolated',
                 'notes' => 'Pernah minta ganti password wifi. Status sementara diisolir karena telat bayar 2 bulan.',
             ],
@@ -190,7 +219,10 @@ class DatabaseSeeder extends Seeder
                 'installation_date' => Carbon::now()->subMonths(2)->format('Y-m-d'),
                 'router_model' => 'Huawei HG8245H5',
                 'pppoe_user' => 'hendra_wnk',
+                'pppoe_password' => 'hendra20',
                 'ip_address' => '192.168.40.10',
+                'latitude' => -7.538300,
+                'longitude' => 112.241500,
                 'status' => 'active',
                 'notes' => 'Gamer & streamer. Permintaan ping stabil ke game Mobile Legends & Valorant.',
             ],
@@ -206,7 +238,10 @@ class DatabaseSeeder extends Seeder
                 'installation_date' => Carbon::now()->subMonths(7)->format('Y-m-d'),
                 'router_model' => 'ZTE F609',
                 'pppoe_user' => 'kios_anik',
+                'pppoe_password' => 'anik88',
                 'ip_address' => '192.168.40.18',
+                'latitude' => -7.538900,
+                'longitude' => 112.239800,
                 'status' => 'active',
                 'notes' => 'Dipakai untuk EDC mesin gesek dan CCTV toko.',
             ],
@@ -376,6 +411,54 @@ class DatabaseSeeder extends Seeder
 
         foreach ($expenses as $exp) {
             FinancialTransaction::firstOrCreate(['transaction_code' => $exp['transaction_code']], $exp);
+        }
+
+        // 8. Sample Voucher Sales
+        $voucherSales = [
+            [
+                'village_id' => $villages[0]->id,
+                'seller_name' => 'Warung Bu Siti (Depan Balai Desa)',
+                'seller_phone' => '081227391262',
+                'period' => Carbon::now()->format('Y-m'),
+                'voucher_type' => 'Voucher 24 Jam',
+                'price_per_unit' => 5000,
+                'quantity_sold' => 120,
+                'total_gross_amount' => 600000,
+                'fee_per_unit' => 1000,
+                'total_seller_fee' => 120000,
+                'net_amount' => 480000,
+                'status' => 'deposited',
+                'sale_date' => Carbon::now()->toDateString(),
+                'deposited_at' => Carbon::now(),
+                'notes' => 'Stok voucher batch 1 lunas disetor',
+                'created_by' => $owner->id,
+            ],
+            [
+                'village_id' => $villages[2]->id,
+                'seller_name' => 'Konter Mas Agus Sumbersekar',
+                'seller_phone' => '085811223344',
+                'period' => Carbon::now()->format('Y-m'),
+                'voucher_type' => 'Voucher 7 Hari',
+                'price_per_unit' => 20000,
+                'quantity_sold' => 45,
+                'total_gross_amount' => 900000,
+                'fee_per_unit' => 3000,
+                'total_seller_fee' => 135000,
+                'net_amount' => 765000,
+                'status' => 'deposited',
+                'sale_date' => Carbon::now()->toDateString(),
+                'deposited_at' => Carbon::now(),
+                'notes' => 'Penjualan laris di area pasar dan balai dusun',
+                'created_by' => $admin->id,
+            ],
+        ];
+
+        foreach ($voucherSales as $vs) {
+            \App\Models\VoucherSale::firstOrCreate([
+                'seller_name' => $vs['seller_name'],
+                'period' => $vs['period'],
+                'voucher_type' => $vs['voucher_type'],
+            ], $vs);
         }
     }
 }

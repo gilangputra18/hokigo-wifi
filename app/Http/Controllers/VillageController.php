@@ -19,6 +19,7 @@ class VillageController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:villages,name'],
             'code' => ['nullable', 'string', 'max:20'],
             'district' => ['nullable', 'string', 'max:255'],
+            'system_type' => ['required', 'in:pppoe,voucher,hybrid'],
             'notes' => ['nullable', 'string'],
         ]);
 
@@ -33,6 +34,7 @@ class VillageController extends Controller
             'name' => ['required', 'string', 'max:255', 'unique:villages,name,' . $village->id],
             'code' => ['nullable', 'string', 'max:20'],
             'district' => ['nullable', 'string', 'max:255'],
+            'system_type' => ['required', 'in:pppoe,voucher,hybrid'],
             'notes' => ['nullable', 'string'],
         ]);
 

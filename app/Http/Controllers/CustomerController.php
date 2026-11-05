@@ -41,6 +41,7 @@ class CustomerController extends Controller
                   ->orWhere('address', 'like', "%{$search}%")
                   ->orWhere('notes', 'like', "%{$search}%")
                   ->orWhere('pppoe_user', 'like', "%{$search}%")
+                  ->orWhere('pppoe_password', 'like', "%{$search}%")
                   ->orWhere('ip_address', 'like', "%{$search}%");
             });
         }
@@ -101,6 +102,8 @@ class CustomerController extends Controller
             'ip_address' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,isolated,inactive'],
             'notes' => ['nullable', 'string'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
         $customer = Customer::create($validated);
@@ -165,6 +168,8 @@ class CustomerController extends Controller
             'ip_address' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,isolated,inactive'],
             'notes' => ['nullable', 'string'],
+            'latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
 
         $customer->update($validated);

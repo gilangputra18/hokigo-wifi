@@ -199,4 +199,38 @@ class FinanceController extends Controller
             fclose($handle);
         }, 200, $headers);
     }
+
+    public function resetData(Request $request)
+    {
+        if (!auth()->user()->isOwner()) {
+            abort(403, 'Hanya Owner yang memiliki wewenang untuk mereset data keuangan.');
+        }
+
+        $request->validate([
+            'confirmation' => ['required', 'string', 'in:RESET,reset,RESET KEUANGAN'],
+        ], [
+            'confirmation.in' => 'Ketik kata "RESET" untuk mengonfirmasi pengosongan data keuangan.',
+        ]);
+
+        // 1. Delete all financial transactions
+        FinancialTransaction::query()->delete();
+
+        // 2. Clear or reset invoices
+        if ($request->boolean('delete_invoices', true)) {
+            \App\Models\Invoice::query()->delete();
+        } else {
+            \App\Models\Invoice::query()->update([
+                'status' => 'unpaid',
+                'paid_at' => null,
+                'payment_method' => null,
+            ]);
+        }
+
+        // 3. Reset voucher sales if requested
+        if ($request->boolean('delete_vouchers', false)) {
+            \App\Models\VoucherSale::query()->delete();
+        }
+
+        return redirect()->route('finance.index')->with('success', 'Semua data transaksi dan keuangan berhasil di-0 kan! Omzet, pengeluaran, dan laba bersih kini mulai murni dari Rp 0.');
+    }
 }

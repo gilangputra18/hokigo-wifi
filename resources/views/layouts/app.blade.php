@@ -47,6 +47,10 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+    <!-- Leaflet Maps CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
     <style>
         [x-cloak] { display: none !important; }
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; }
@@ -78,22 +82,40 @@
         <div class="px-6 py-3 bg-white/5 border-b border-white/5 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                <span class="text-xs font-semibold text-slate-300">{{ auth()->user()->name }}</span>
+                <span class="text-xs font-semibold text-slate-300 truncate max-w-[120px]">{{ auth()->user()->name }}</span>
             </div>
-            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded {{ auth()->user()->isOwner() ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30' }}">
-                {{ auth()->user()->role }}
-            </span>
+            @if(auth()->user()->isOwner())
+                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Owner</span>
+            @elseif(auth()->user()->isTeknisi())
+                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">Teknisi</span>
+            @else
+                <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30">Admin</span>
+            @endif
         </div>
 
         <!-- Sidebar Menu Links -->
         <nav class="flex-1 overflow-y-auto px-4 py-5 space-y-1.5">
-            <div class="px-2 pb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Menu Utama</div>
+            <div class="px-2 pb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+                {{ auth()->user()->isTeknisi() ? 'Menu Teknisi' : 'Menu Utama' }}
+            </div>
 
+            @if(!auth()->user()->isTeknisi())
             <!-- Dashboard -->
             <a href="{{ route('dashboard') }}" 
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('dashboard') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
                 <span>Dashboard</span>
+            </a>
+            @endif
+
+            <!-- Peta Jaringan & Penitikan Rumah Pelanggan (Semua Role) -->
+            <a href="{{ route('maps.index') }}" 
+               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('maps.*') ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="map-pinned" class="w-5 h-5 text-cyan-400"></i>
+                    <span>Peta & Penitikan</span>
+                </div>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-400/20 text-cyan-300 border border-cyan-400/30">GPS</span>
             </a>
 
             <!-- Pelanggan -->
@@ -101,13 +123,14 @@
                class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('customers.*') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <div class="flex items-center gap-3">
                     <i data-lucide="users" class="w-5 h-5"></i>
-                    <span>Pelanggan</span>
+                    <span>Data Pelanggan</span>
                 </div>
                 <span class="text-xs px-2 py-0.5 rounded-full {{ request()->routeIs('customers.*') ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-400' }}">
                     {{ $sidebarCounts['total_customers'] ?? 0 }}
                 </span>
             </a>
 
+            @if(!auth()->user()->isTeknisi())
             <!-- Tagihan & Pembayaran -->
             <a href="{{ route('invoices.index') }}" 
                class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('invoices.index') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
@@ -136,6 +159,16 @@
                 @endif
             </a>
 
+            <!-- Voucheran Hotspot -->
+            <a href="{{ route('vouchers.index') }}" 
+               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('vouchers.*') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="ticket" class="w-5 h-5 text-amber-400"></i>
+                    <span>Voucher Hotspot</span>
+                </div>
+                <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">Desa</span>
+            </a>
+
             <!-- Keuangan & Laporan (Omzet & Laba Bersih) -->
             <div class="pt-4 px-2 pb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Finansial & Bisnis</div>
 
@@ -147,14 +180,16 @@
 
             <!-- Master Data -->
             <div class="pt-4 px-2 pb-1 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Master Data</div>
+            @endif
 
-            <!-- Desa / Wilayah -->
+            <!-- Desa / Wilayah (Tampil juga untuk Teknisi) -->
             <a href="{{ route('villages.index') }}" 
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('villages.*') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
                 <i data-lucide="map-pin" class="w-5 h-5"></i>
                 <span>Kelompok Desa</span>
             </a>
 
+            @if(!auth()->user()->isTeknisi())
             <!-- Paket Internet -->
             <a href="{{ route('packages.index') }}" 
                class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('packages.*') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
@@ -168,6 +203,7 @@
                 <i data-lucide="settings" class="w-5 h-5"></i>
                 <span>Pengaturan Sistem</span>
             </a>
+            @endif
         </nav>
 
         <!-- Sidebar Footer / Logout -->
@@ -208,6 +244,7 @@
             <!-- Top Right Action Icons -->
             <div class="flex items-center gap-3 sm:gap-4">
                 
+                @if(!auth()->user()->isTeknisi())
                 <!-- Quick WhatsApp Due Reminders Button -->
                 <a href="{{ route('invoices.reminders') }}" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/80 transition-all shadow-xs">
                     <i data-lucide="message-circle" class="w-4 h-4 text-emerald-600"></i>
@@ -216,6 +253,13 @@
                         <span class="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">{{ $sidebarCounts['due_count'] }}</span>
                     @endif
                 </a>
+                @else
+                <!-- Quick Tambah Pelanggan Button for Teknisi -->
+                <a href="{{ route('customers.create') }}" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-brand-blue text-white hover:bg-brand-blueHover shadow-xs transition-all">
+                    <i data-lucide="user-plus" class="w-4 h-4"></i>
+                    <span>Tambah Pelanggan Baru</span>
+                </a>
+                @endif
 
                 <!-- User profile pill -->
                 <div class="flex items-center gap-3 pl-3 border-l border-slate-200">

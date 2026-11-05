@@ -139,8 +139,8 @@
                     </div>
 
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Alamat IP Pelanggan</label>
-                        <input type="text" name="ip_address" value="{{ old('ip_address') }}" placeholder="192.168.1.xxx"
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Sandi PPPoE</label>
+                        <input type="text" name="pppoe_password" value="{{ old('pppoe_password') }}" placeholder="Contoh: 12345 / rahasia"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                     </div>
                 </div>
@@ -180,6 +180,42 @@
                 </div>
             </div>
 
+            <!-- Section 5: Penitikan Titik Rumah Pelanggan (Peta GPS & Satelit) -->
+            <div class="pt-4 border-t border-slate-100" x-data="customerMapPicker()">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span> 5. Titik Lokasi Rumah Pelanggan (Peta Satelit)
+                    </h3>
+                    
+                    <button type="button" @click="useCurrentGps()" 
+                            class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition">
+                        <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+                        <span>📍 Gunakan Lokasi GPS Saya Saat Ini</span>
+                    </button>
+                </div>
+
+                <p class="text-[11px] text-slate-500 mb-3">
+                    Teknisi dapat langsung klik tombol <strong>"Gunakan Lokasi GPS Saya Saat Ini"</strong> saat berdiri di rumah pelanggan, atau klik & geser pin di peta satelit di bawah ini.
+                </p>
+
+                <!-- Map Canvas -->
+                <div id="customer-picker-map" class="w-full h-72 sm:h-80 rounded-2xl border border-slate-200 overflow-hidden mb-3 relative z-0"></div>
+
+                <!-- Lat & Lng Input Values -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Latitude (Garis Lintang)</label>
+                        <input type="text" name="latitude" id="input_latitude" x-model="lat" placeholder="-7.536064"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Longitude (Garis Bujur)</label>
+                        <input type="text" name="longitude" id="input_longitude" x-model="lng" placeholder="112.238402"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    </div>
+                </div>
+            </div>
+
             <!-- Submit Button -->
             <div class="pt-6 border-t border-slate-100 flex items-center justify-end gap-3">
                 <a href="{{ route('customers.index') }}" class="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
@@ -205,6 +241,90 @@
         if (price) {
             document.getElementById('monthly_fee').value = Math.round(price);
         }
+    }
+
+    function customerMapPicker() {
+        return {
+            map: null,
+            marker: null,
+            lat: '{{ old('latitude', '') }}',
+            lng: '{{ old('longitude', '') }}',
+
+            init() {
+                this.$nextTick(() => {
+                    this.initPicker();
+                });
+            },
+
+            initPicker() {
+                let initLat = this.lat ? parseFloat(this.lat) : -7.536064;
+                let initLng = this.lng ? parseFloat(this.lng) : 112.238402;
+                let hasInitial = Boolean(this.lat && this.lng);
+
+                this.map = L.map('customer-picker-map', {
+                    center: [initLat, initLng],
+                    zoom: hasInitial ? 16 : 13
+                });
+
+                // Satellite layer
+                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                    attribution: 'Tiles &copy; Esri',
+                    maxZoom: 19
+                }).addTo(this.map);
+
+                if (hasInitial) {
+                    this.marker = L.marker([initLat, initLng], { draggable: true }).addTo(this.map);
+                    this.marker.on('dragend', (e) => {
+                        const pos = e.target.getLatLng();
+                        this.lat = pos.lat.toFixed(6);
+                        this.lng = pos.lng.toFixed(6);
+                    });
+                }
+
+                this.map.on('click', (e) => {
+                    const pos = e.latlng;
+                    this.lat = pos.lat.toFixed(6);
+                    this.lng = pos.lng.toFixed(6);
+
+                    if (this.marker) {
+                        this.marker.setLatLng(pos);
+                    } else {
+                        this.marker = L.marker(pos, { draggable: true }).addTo(this.map);
+                        this.marker.on('dragend', (ev) => {
+                            const p = ev.target.getLatLng();
+                            this.lat = p.lat.toFixed(6);
+                            this.lng = p.lng.toFixed(6);
+                        });
+                    }
+                });
+            },
+
+            useCurrentGps() {
+                if (!navigator.geolocation) {
+                    alert('Browser Anda tidak mendukung deteksi lokasi GPS.');
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const pLat = pos.coords.latitude;
+                    const pLng = pos.coords.longitude;
+                    this.lat = pLat.toFixed(6);
+                    this.lng = pLng.toFixed(6);
+
+                    this.map.setView([pLat, pLng], 17);
+
+                    if (this.marker) {
+                        this.marker.setLatLng([pLat, pLng]);
+                    } else {
+                        this.marker = L.marker([pLat, pLng], { draggable: true }).addTo(this.map);
+                    }
+
+                    alert('📍 Posisi GPS Anda berhasil diambil!');
+                }, (err) => {
+                    alert('Gagal mendeteksi GPS: ' + err.message + '. Pastikan izin GPS aktif di browser HP.');
+                }, { enableHighAccuracy: true });
+            }
+        };
     }
 </script>
 @endsection

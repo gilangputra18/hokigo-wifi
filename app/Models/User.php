@@ -44,4 +44,19 @@ class User extends Authenticatable
     {
         return in_array($this->role, ['owner', 'admin']);
     }
+
+    public function isTeknisi(): bool
+    {
+        return $this->role === 'teknisi';
+    }
+
+    public function canManageFinance(): bool
+    {
+        return in_array($this->role, ['owner', 'admin']);
+    }
+
+    public function canManageCustomers(): bool
+    {
+        return in_array($this->role, ['owner', 'admin', 'teknisi']);
+    }
 }

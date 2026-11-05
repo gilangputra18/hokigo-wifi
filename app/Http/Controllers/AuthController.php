@@ -10,7 +10,9 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return redirect()->route('dashboard');
+            return Auth::user()->isTeknisi() 
+                ? redirect()->route('maps.index') 
+                : redirect()->route('dashboard');
         }
         return view('auth.login');
     }
@@ -35,6 +37,12 @@ class AuthController extends Controller
             }
 
             $request->session()->regenerate();
+
+            if ($user->isTeknisi()) {
+                return redirect()->intended(route('maps.index'))
+                    ->with('success', 'Selamat datang Teknisi, ' . $user->name . '! Silakan akses Peta & Data Pelanggan.');
+            }
+
             return redirect()->intended(route('dashboard'))
                 ->with('success', 'Selamat datang kembali, ' . $user->name . '!');
         }

@@ -6,7 +6,8 @@
 @section('content')
 <div class="space-y-6" x-data="{ 
     expenseModalOpen: false, 
-    incomeModalOpen: false 
+    incomeModalOpen: false,
+    resetModalOpen: false 
 }">
 
     <!-- 1. Top Financial Metrics Cards (Requirements 4 & 5) -->
@@ -90,6 +91,15 @@
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
+                @if(auth()->user()->isOwner())
+                    <!-- Reset Data Keuangan Button (Owner Only) -->
+                    <button type="button" @click="resetModalOpen = true" 
+                            class="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-rose-300 hover:text-rose-200 border border-rose-500/30 font-bold text-xs flex items-center gap-1.5 shadow-sm transition">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-rose-400"></i>
+                        <span>Reset Data ke Rp 0</span>
+                    </button>
+                @endif
+
                 <!-- Record Expense Modal Button -->
                 <button type="button" @click="expenseModalOpen = true" 
                         class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-2 shadow-sm transition">
@@ -108,7 +118,7 @@
                 <a href="{{ route('finance.export-csv', ['month' => $month, 'year' => $year]) }}" 
                    class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-2 transition">
                     <i data-lucide="download" class="w-4 h-4"></i>
-                    <span>Ekspor CSV (Excel)</span>
+                    <span>Ekspor CSV</span>
                 </a>
             </div>
         </div>
@@ -440,6 +450,66 @@
 
         </div>
     </div>
+
+    @if(auth()->user()->isOwner())
+    <!-- Modal 3: Konfirmasi Reset Semua Data Keuangan (Mulai dari 0) -->
+    <div x-show="resetModalOpen" x-cloak 
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div @click.away="resetModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-rose-100">
+                <div class="flex items-center gap-2 text-rose-600 font-extrabold text-base">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                    <span>Reset Data Keuangan ke Rp 0</span>
+                </div>
+                <button type="button" @click="resetModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-800 text-xs space-y-2 leading-relaxed">
+                <p class="font-bold">⚠️ Perhatian Khusus Owner:</p>
+                <p>Tindakan ini akan mengosongkan seluruh catatan buku kas, transaksi pemasukan, dan pengeluaran demo sehingga angka Omzet, Biaya, dan Laba Bersih di sistem kembali bersih menjadi <strong>Rp 0</strong>.</p>
+                <p class="text-[11px] text-rose-600">Gunakan fitur ini saat Anda siap memulai pencatatan uang nyata bisnis Hokigo Starlink.</p>
+            </div>
+
+            <form action="{{ route('finance.reset') }}" method="POST" class="space-y-4" x-data="{ confirmText: '' }">
+                @csrf
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">
+                        Ketik kata <code class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-mono font-bold">RESET</code> untuk melanjutkan:
+                    </label>
+                    <input type="text" name="confirmation" x-model="confirmText" required placeholder="Ketik RESET"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-rose-300 font-mono text-xs uppercase font-bold text-center focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500">
+                </div>
+
+                <div class="space-y-2 text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer text-slate-700">
+                        <input type="checkbox" name="delete_invoices" value="1" checked class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                        <span>Hapus tagihan demo & mulai tagihan baru</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer text-slate-700">
+                        <input type="checkbox" name="delete_vouchers" value="1" checked class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 border-slate-300">
+                        <span>Reset data voucher hotspot juga</span>
+                    </label>
+                </div>
+
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" @click="resetModalOpen = false" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        Batal
+                    </button>
+                    <button type="submit" :disabled="confirmText.toUpperCase() !== 'RESET'"
+                            class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-md shadow-rose-600/30 transition flex items-center gap-1.5">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        <span>Reset Sekarang</span>
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+    @endif
 
 </div>
 @endsection

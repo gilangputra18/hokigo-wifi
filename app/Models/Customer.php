@@ -27,12 +27,16 @@ class Customer extends Model
         'ip_address',
         'status',
         'notes',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [
         'monthly_fee' => 'decimal:2',
         'due_date_day' => 'integer',
         'installation_date' => 'date',
+        'latitude' => 'float',
+        'longitude' => 'float',
     ];
 
     public function village(): BelongsTo

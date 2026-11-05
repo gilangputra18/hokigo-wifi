@@ -43,19 +43,42 @@
                                 <i data-lucide="map-pin" class="w-5 h-5"></i>
                             </div>
                             <div>
-                                <h3 class="font-extrabold text-slate-900 text-base">{{ $village->name }}</h3>
+                                <h3 class="font-extrabold text-slate-900 text-base flex items-center gap-1.5 flex-wrap">
+                                    <span>{{ $village->name }}</span>
+                                    @if($village->system_type === 'voucher')
+                                        <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">Voucheran</span>
+                                    @elseif($village->system_type === 'hybrid')
+                                        <span class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-bold">Rumahan & Voucher</span>
+                                    @else
+                                        <span class="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">PPPoE</span>
+                                    @endif
+                                </h3>
                                 <div class="text-xs text-slate-400 font-mono">{{ $village->code ? 'Kode: ' . $village->code : '' }} {{ $village->district ? '&bull; ' . $village->district : '' }}</div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Customers Count Badge -->
-                    <div class="p-3 rounded-2xl bg-slate-50 flex items-center justify-between text-xs">
-                        <span class="text-slate-500 font-medium">Pelanggan Aktif:</span>
-                        <a href="{{ route('customers.index', ['village_id' => $village->id, 'view' => 'grouped']) }}" 
-                           class="font-extrabold text-brand-blue hover:underline">
-                            {{ $village->customers_count }} Pelanggan &rarr;
-                        </a>
+                    <!-- Customers Count & Voucher Links -->
+                    <div class="space-y-2">
+                        <div class="p-3 rounded-2xl bg-slate-50 flex items-center justify-between text-xs">
+                            <span class="text-slate-500 font-medium">Pelanggan Rumahan:</span>
+                            <a href="{{ route('customers.index', ['village_id' => $village->id, 'view' => 'grouped']) }}" 
+                               class="font-extrabold text-brand-blue hover:underline">
+                                {{ $village->customers_count }} Pelanggan &rarr;
+                            </a>
+                        </div>
+
+                        @if($village->system_type === 'voucher' || $village->system_type === 'hybrid')
+                            <div class="p-2.5 rounded-2xl bg-amber-50/70 border border-amber-200/50 flex items-center justify-between text-xs">
+                                <span class="text-amber-800 font-medium flex items-center gap-1">
+                                    <i data-lucide="ticket" class="w-3.5 h-3.5 text-amber-600"></i> Hotspot Voucher
+                                </span>
+                                <a href="{{ route('vouchers.index', ['village_id' => $village->id]) }}" 
+                                   class="font-bold text-amber-700 hover:text-amber-900 hover:underline text-[11px]">
+                                    Rekap Voucher &rarr;
+                                </a>
+                            </div>
+                        @endif
                     </div>
 
                     @if($village->notes)
@@ -127,6 +150,16 @@
                 </div>
 
                 <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Sistem Layanan Desa *</label>
+                    <select name="system_type" :value="selectedVillage ? (selectedVillage.system_type || 'pppoe') : 'pppoe'" required
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <option value="pppoe">WiFi Rumahan (PPPoE Bulanan)</option>
+                        <option value="voucher">Sistem Voucheran Hotspot</option>
+                        <option value="hybrid">Keduanya (Rumahan & Voucheran)</option>
+                    </select>
+                </div>
+
+                <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Topologi / Jaringan</label>
                     <textarea name="notes" rows="2" placeholder="Misal: 3 ODP terpasang, jalur fiber optic dari tiang PLN utama..."
                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue"></textarea>
@@ -177,6 +210,16 @@
                         <input type="text" name="district" :value="selectedVillage ? selectedVillage.district : ''"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                     </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Sistem Layanan Desa *</label>
+                    <select name="system_type" :value="selectedVillage ? (selectedVillage.system_type || 'pppoe') : 'pppoe'" required
+                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <option value="pppoe">WiFi Rumahan (PPPoE Bulanan)</option>
+                        <option value="voucher">Sistem Voucheran Hotspot</option>
+                        <option value="hybrid">Keduanya (Rumahan & Voucheran)</option>
+                    </select>
                 </div>
 
                 <div>
