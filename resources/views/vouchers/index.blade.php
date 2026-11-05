@@ -245,12 +245,13 @@
 
     <!-- Modal Form: Catat Penjualan Voucher -->
     <div x-show="modalOpen" x-cloak 
-         class="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+         class="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 pt-10 sm:pt-6 pb-16">
         
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl border border-slate-100 relative"
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 relative my-auto flex flex-col max-h-[88vh] sm:max-h-[85vh] overflow-hidden"
              @click.away="modalOpen = false" x-data="voucherCalculator()">
             
-            <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+            <!-- Sticky Modal Header -->
+            <div class="flex items-center justify-between p-5 sm:p-6 pb-4 border-b border-slate-100 shrink-0 bg-white">
                 <div>
                     <h3 class="font-extrabold text-base text-slate-900 flex items-center gap-2">
                         <i data-lucide="ticket" class="w-5 h-5 text-brand-blue"></i>
@@ -258,12 +259,13 @@
                     </h3>
                     <p class="text-xs text-slate-400 mt-0.5">Hitung otomatis omset kotor, fee mitra, dan laba bersih</p>
                 </div>
-                <button type="button" @click="modalOpen = false" class="text-slate-400 hover:text-slate-600 p-1">
+                <button type="button" @click="modalOpen = false" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 transition">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
 
-            <form action="{{ route('vouchers.store') }}" method="POST" class="space-y-4">
+            <!-- Scrollable Modal Body Form -->
+            <form id="voucherForm" action="{{ route('vouchers.store') }}" method="POST" class="overflow-y-auto p-5 sm:p-6 space-y-4 flex-1">
                 @csrf
 
                 <!-- Pilih Desa & Nama Penjual -->
@@ -372,16 +374,18 @@
                            class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                 </div>
 
-                <!-- Action Buttons -->
-                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-2">
-                    <button type="button" @click="modalOpen = false" class="px-4 py-2.5 rounded-xl bg-slate-100 text-slate-600 font-bold text-xs hover:bg-slate-200 transition">
-                        Batal
-                    </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs shadow-md shadow-blue-600/30 transition">
-                        Simpan Rekap Voucher
-                    </button>
-                </div>
             </form>
+
+            <!-- Sticky Modal Footer -->
+            <div class="p-4 sm:px-6 border-t border-slate-100 bg-slate-50/90 shrink-0 flex items-center justify-end gap-2">
+                <button type="button" @click="modalOpen = false" class="px-4 py-2.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition">
+                    Batal
+                </button>
+                <button type="button" @click="document.getElementById('voucherForm').requestSubmit()" class="px-5 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs shadow-md shadow-blue-600/30 transition flex items-center gap-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Simpan Rekap Voucher</span>
+                </button>
+            </div>
 
         </div>
 

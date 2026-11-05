@@ -48,6 +48,14 @@
                 <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
             </div>
 
+            <!-- Button Titik Pelanggan Manual (Tanpa Harus ke Rumah Pelanggan) -->
+            <button type="button" @click="openManualPinModal()" 
+                    class="px-3.5 py-2 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/25 transition"
+                    title="Pilih pelanggan dan tentukan titik rumah langsung di peta satelit">
+                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                <span>+ Titik Manual</span>
+            </button>
+
             <!-- GPS Device Button (For Field Technicians) -->
             <button type="button" @click="locateMe()" 
                     class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
@@ -89,13 +97,73 @@
                 </button>
             </div>
 
-            <!-- Pinning Mode Notice Bar (Shows when actively pinning a customer) -->
+            <!-- Floating Manual Pinning Control Card on Map (Always Visible on Mobile & PC) -->
             <div x-show="pinningCustomer !== null" x-cloak
-                 class="absolute top-3 right-3 z-[1000] bg-amber-500 text-slate-950 font-bold px-4 py-2 rounded-xl shadow-lg border border-amber-400 text-xs flex items-center gap-3 animate-bounce">
-                <span>📍 Klik di peta untuk menitik: <strong x-text="pinningCustomer?.name"></strong></span>
-                <button type="button" @click="cancelPinning()" class="px-2 py-0.5 rounded bg-black/20 text-white hover:bg-black/40 text-[10px]">
-                    Batal
-                </button>
+                 class="absolute bottom-4 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-[1000] bg-white/95 backdrop-blur-md p-4 rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-brand-blue space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+                
+                <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2.5">
+                    <div>
+                        <div class="flex items-center gap-1.5 text-xs font-extrabold text-brand-blue">
+                            <span class="w-2.5 h-2.5 rounded-full bg-brand-blue animate-ping"></span>
+                            <span>Mode Penitikan Manual Aktif</span>
+                        </div>
+                        <h4 class="text-sm font-extrabold text-slate-900 mt-0.5" x-text="pinningCustomer?.name"></h4>
+                        <p class="text-[11px] text-slate-500 font-medium">
+                            <span x-text="pinningCustomer?.village ? pinningCustomer.village.name : 'Tanpa Desa'"></span> &bull; 
+                            <span x-text="pinningCustomer?.customer_code"></span>
+                            <template x-if="pinningCustomer?.house_number">
+                                <span class="font-bold text-amber-700" x-text="' • ' + pinningCustomer.house_number"></span>
+                            </template>
+                        </p>
+                    </div>
+                    <button type="button" @click="cancelPinning()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition" title="Batal">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <!-- State 1: Before clicking the map -->
+                <template x-if="pendingCoordinate === null">
+                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-amber-900 text-xs space-y-1">
+                        <div class="font-bold flex items-center gap-1.5">
+                            <i data-lucide="mouse-pointer-click" class="w-4 h-4 text-amber-600 shrink-0"></i>
+                            <span>Klik di Peta Satelit</span>
+                        </div>
+                        <p class="text-[11px] leading-relaxed text-amber-800">
+                            Arahkan dan <strong>klik tepat di atap rumah pelanggan</strong> pada peta satelit untuk menaruh pin titik koordinat.
+                        </p>
+                    </div>
+                </template>
+
+                <!-- State 2: After clicking the map, pin is placed -->
+                <template x-if="pendingCoordinate !== null">
+                    <div class="space-y-2.5">
+                        <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-emerald-950 text-xs space-y-1">
+                            <div class="font-bold flex items-center gap-1 text-emerald-800">
+                                <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                                <span>Titik Koordinat Terpilih:</span>
+                            </div>
+                            <p class="font-mono text-[11px] text-emerald-900">
+                                Lat: <strong x-text="pendingCoordinate.lat.toFixed(6)"></strong>, 
+                                Lng: <strong x-text="pendingCoordinate.lng.toFixed(6)"></strong>
+                            </p>
+                            <p class="text-[10px] text-emerald-700 font-medium">
+                                *Pin di peta bisa digeser (drag) lagi jika posisinya ingin disesuaikan lebih pas.
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <button type="button" @click="saveLocation()" :disabled="saving"
+                                    class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-1.5">
+                                <i data-lucide="check" class="w-4 h-4"></i>
+                                <span x-text="saving ? 'Menyimpan...' : '✓ SIMPAN TITIK RUMAH INI'"></span>
+                            </button>
+                            <button type="button" @click="cancelPinning()" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                </template>
+
             </div>
 
             <!-- Leaflet Map Canvas -->
@@ -184,6 +252,114 @@
 
     </div>
 
+    <!-- Modal Penitikan Pelanggan Manual (Tanpa Harus ke Rumah Pelanggan) -->
+    <div x-show="manualPinModalOpen" x-cloak 
+         class="fixed inset-0 z-[2000] overflow-y-auto bg-black/70 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 pt-10 sm:pt-6 pb-16">
+        <div @click.away="manualPinModalOpen = false" 
+             class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 relative my-auto flex flex-col max-h-[90vh] overflow-hidden">
+            
+            <div class="flex items-center justify-between p-5 border-b border-slate-100 bg-white shrink-0">
+                <div class="flex items-center gap-2.5 text-slate-900 font-extrabold text-base">
+                    <div class="w-9 h-9 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center shadow-xs">
+                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-extrabold text-slate-900">Penitikan Pelanggan Manual</h3>
+                        <p class="text-[11px] text-slate-400 font-medium">Titik rumah pelanggan yang sudah terpasang dari kantor/PC/HP</p>
+                    </div>
+                </div>
+                <button type="button" @click="manualPinModalOpen = false" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div class="overflow-y-auto p-5 space-y-4 flex-1">
+                
+                <!-- Pilih Pelanggan -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Pelanggan Yang Ingin Dititik *</label>
+                    
+                    <div class="relative mb-2">
+                        <input type="text" x-model="modalCustomerSearch" placeholder="Ketik nama atau kode pelanggan..."
+                               class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                    </div>
+
+                    <select x-model="modalSelectedCustomerId" 
+                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <option value="">-- Pilih Pelanggan --</option>
+                        <optgroup label="📍 Belum Memiliki Titik GPS">
+                            <template x-for="c in filteredUnpinnedListForModal" :key="'unp_' + c.id">
+                                <option :value="c.id" x-text="c.name + ' (' + (c.village ? c.village.name : 'Tanpa Desa') + ' - ' + c.customer_code + ')'"></option>
+                            </template>
+                        </optgroup>
+                        <optgroup label="✅ Sudah Ada Titik (Ubah / Geser Titik)">
+                            <template x-for="c in filteredPinnedListForModal" :key="'pin_' + c.id">
+                                <option :value="c.id" x-text="c.name + ' (' + (c.village ? c.village.name : 'Tanpa Desa') + ')'"></option>
+                            </template>
+                        </optgroup>
+                    </select>
+                </div>
+
+                <!-- Pilihan Metode Titik -->
+                <div class="space-y-3 pt-2 border-t border-slate-100">
+                    <p class="text-xs font-bold text-slate-700">Pilih Cara Menitik Rumah:</p>
+
+                    <!-- Metode 1: Klik Langsung di Peta Satelit -->
+                    <div class="p-3.5 rounded-2xl border-2 border-brand-blue/40 bg-blue-50/50 hover:bg-blue-50 transition cursor-pointer"
+                         @click="startPinningFromModal()">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-brand-blue text-white flex items-center justify-center shrink-0 shadow-sm">
+                                <i data-lucide="crosshair" class="w-5 h-5"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-extrabold text-xs text-brand-blue">Arahkan ke Peta Satelit (Klik Atap Rumah)</h4>
+                                <p class="text-[11px] text-slate-600 mt-0.5">Peta otomatis terbang ke desa pelanggan, Anda tinggal klik di atas atap rumahnya pada peta.</p>
+                            </div>
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-brand-blue shrink-0"></i>
+                        </div>
+                    </div>
+
+                    <!-- Metode 2: Masukkan Titik Koordinat Manual (Lat & Lng) -->
+                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3">
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="map" class="w-4 h-4 text-emerald-600"></i>
+                            <h4 class="font-extrabold text-xs text-slate-800">Atau Masukkan Koordinat Manual (Lat, Lng)</h4>
+                        </div>
+                        <p class="text-[11px] text-slate-500">Jika Anda punya titik koordinat dari Google Maps atau share loc WhatsApp:</p>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Latitude</label>
+                                <input type="text" x-model="modalInputLat" placeholder="-7.536123"
+                                       class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Longitude</label>
+                                <input type="text" x-model="modalInputLng" placeholder="112.238456"
+                                       class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono">
+                            </div>
+                        </div>
+
+                        <button type="button" @click="saveManualCoordinatesFromModal()" :disabled="!modalSelectedCustomerId || !modalInputLat || !modalInputLng || saving"
+                                class="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
+                            <i data-lucide="check" class="w-4 h-4"></i>
+                            <span x-text="saving ? 'Menyimpan...' : 'Simpan Koordinat Ini Langsung'"></span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="p-4 bg-slate-50 border-t border-slate-100 shrink-0 flex items-center justify-end">
+                <button type="button" @click="manualPinModalOpen = false" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition">
+                    Tutup
+                </button>
+            </div>
+
+        </div>
+    </div>
+
     <!-- Modal Konfirmasi Reset Titik Peta & Pelanggan -->
     <div x-show="resetMapModalOpen" x-cloak 
          class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
@@ -258,6 +434,13 @@
             markersGroup: null,
             resetMapModalOpen: false,
             
+            // Manual Pin Modal States
+            manualPinModalOpen: false,
+            modalSelectedCustomerId: '',
+            modalCustomerSearch: '',
+            modalInputLat: '',
+            modalInputLng: '',
+            
             allCustomersData: @json($allCustomers),
             pinnedList: @json($pinnedCustomers),
             unpinnedList: @json($unpinnedCustomers),
@@ -273,7 +456,28 @@
             pendingCoordinate: null,
             saving: false,
 
+            get filteredUnpinnedListForModal() {
+                if (!this.modalCustomerSearch) return this.unpinnedList;
+                const q = this.modalCustomerSearch.toLowerCase();
+                return this.unpinnedList.filter(c => 
+                    c.name.toLowerCase().includes(q) || 
+                    c.customer_code.toLowerCase().includes(q) ||
+                    (c.village && c.village.name.toLowerCase().includes(q))
+                );
+            },
+
+            get filteredPinnedListForModal() {
+                if (!this.modalCustomerSearch) return this.pinnedList;
+                const q = this.modalCustomerSearch.toLowerCase();
+                return this.pinnedList.filter(c => 
+                    c.name.toLowerCase().includes(q) || 
+                    c.customer_code.toLowerCase().includes(q) ||
+                    (c.village && c.village.name.toLowerCase().includes(q))
+                );
+            },
+
             init() {
+                window.mapAppInstance = this;
                 this.$nextTick(() => {
                     this.initMap();
                 });
@@ -319,10 +523,26 @@
                 // Render all initial customer markers
                 this.renderMarkers();
 
-                // Click listener for pinning new customers
+                // Click listener for pinning new customers or clicking an empty spot
                 this.map.on('click', (e) => {
                     if (this.pinningCustomer !== null) {
                         this.handleMapClickPinning(e.latlng);
+                    } else {
+                        const lat = e.latlng.lat.toFixed(6);
+                        const lng = e.latlng.lng.toFixed(6);
+                        L.popup()
+                            .setLatLng(e.latlng)
+                            .setContent(`
+                                <div style="font-family: 'Plus Jakarta Sans', sans-serif; font-size: 11px; text-align: center; padding: 4px; min-width: 170px;">
+                                    <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px;">📍 Titik Lokasi Peta</div>
+                                    <div style="font-family: monospace; font-size: 10px; color: #64748b; margin-bottom: 8px;">${lat}, ${lng}</div>
+                                    <button type="button" onclick="window.mapAppInstance.openModalWithCoordinate(${lat}, ${lng})"
+                                            style="background: #1055CC; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; width: 100%;">
+                                        + Titik Pelanggan di Sini
+                                    </button>
+                                </div>
+                            `)
+                            .openOn(this.map);
                     }
                 });
 
@@ -451,6 +671,10 @@
                                         Chat WA
                                     </a>
                                 </div>
+                                <button type="button" onclick="window.mapAppInstance.startRepositionCustomer(${c.id})" 
+                                        style="width: 100%; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer;">
+                                    📍 Geser / Ubah Titik Rumah
+                                </button>
                             </div>
                         </div>
                     `;
@@ -464,12 +688,151 @@
                 this.renderMarkers();
             },
 
+            openManualPinModal() {
+                this.manualPinModalOpen = true;
+                this.modalCustomerSearch = '';
+                this.modalSelectedCustomerId = '';
+                this.modalInputLat = '';
+                this.modalInputLng = '';
+                if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 50);
+                }
+            },
+
+            openModalWithCoordinate(lat, lng) {
+                this.map.closePopup();
+                this.manualPinModalOpen = true;
+                this.modalInputLat = lat;
+                this.modalInputLng = lng;
+                if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 50);
+                }
+            },
+
+            startPinningFromModal() {
+                if (!this.modalSelectedCustomerId) {
+                    alert('Silakan pilih salah satu pelanggan terlebih dahulu.');
+                    return;
+                }
+
+                const customer = this.allCustomersData.find(c => c.id == this.modalSelectedCustomerId);
+                if (!customer) return;
+
+                this.manualPinModalOpen = false;
+                this.startPinning(customer);
+            },
+
+            async saveManualCoordinatesFromModal() {
+                if (!this.modalSelectedCustomerId) {
+                    alert('Pilih pelanggan terlebih dahulu.');
+                    return;
+                }
+                const lat = parseFloat(this.modalInputLat);
+                const lng = parseFloat(this.modalInputLng);
+                if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                    alert('Nilai Latitude (-90 s/d 90) dan Longitude (-180 s/d 180) tidak valid.');
+                    return;
+                }
+
+                const customer = this.allCustomersData.find(c => c.id == this.modalSelectedCustomerId);
+                if (!customer) return;
+
+                this.saving = true;
+                try {
+                    const response = await fetch(`/maps/customers/${customer.id}/location`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ latitude: lat, longitude: lng })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        customer.latitude = lat;
+                        customer.longitude = lng;
+
+                        if (!this.pinnedList.some(item => item.id == customer.id)) {
+                            this.pinnedList.push(customer);
+                            this.unpinnedList = this.unpinnedList.filter(item => item.id != customer.id);
+                        }
+                        this.pinnedCount = this.pinnedList.length;
+                        this.unpinnedCount = this.unpinnedList.length;
+
+                        this.manualPinModalOpen = false;
+                        this.renderMarkers();
+                        this.map.setView([lat, lng], 17);
+
+                        alert('Titik koordinat rumah ' + customer.name + ' berhasil disimpan!');
+                    } else {
+                        alert('Gagal menyimpan koordinat.');
+                    }
+                } catch (e) {
+                    alert('Terjadi kesalahan koneksi.');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            startRepositionCustomer(customerId) {
+                const customer = this.allCustomersData.find(c => c.id == customerId);
+                if (!customer) return;
+
+                this.map.closePopup();
+                this.startPinning(customer);
+
+                if (customer.latitude && customer.longitude) {
+                    const lat = parseFloat(customer.latitude);
+                    const lng = parseFloat(customer.longitude);
+                    this.handleMapClickPinning({ lat: lat, lng: lng });
+                    this.map.setView([lat, lng], 17);
+                }
+            },
+
+            centerOnCustomerVillage(customer) {
+                if (!customer) return;
+
+                // 1. If customer already has coordinates, zoom to it
+                if (customer.latitude && customer.longitude) {
+                    const lat = parseFloat(customer.latitude);
+                    const lng = parseFloat(customer.longitude);
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        this.map.setView([lat, lng], 17);
+                        this.handleMapClickPinning({ lat: lat, lng: lng });
+                        return;
+                    }
+                }
+
+                // 2. Look for existing neighbor pins in the same village
+                if (customer.village_id) {
+                    const villageNeighbors = this.pinnedList.filter(c => c.village_id == customer.village_id);
+                    if (villageNeighbors.length > 0) {
+                        const first = villageNeighbors[0];
+                        this.map.setView([parseFloat(first.latitude), parseFloat(first.longitude)], 16);
+                        return;
+                    }
+                }
+            },
+
             startPinning(customer) {
                 this.pinningCustomer = customer;
                 this.pendingCoordinate = null;
                 if (this.temporaryMarker) {
                     this.map.removeLayer(this.temporaryMarker);
                     this.temporaryMarker = null;
+                }
+
+                this.centerOnCustomerVillage(customer);
+
+                // Auto-scroll to map smoothly on mobile so user sees the map canvas immediately
+                const mapEl = document.getElementById('map');
+                if (mapEl) {
+                    mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 50);
                 }
             },
 
@@ -495,6 +858,10 @@
                     this.temporaryMarker.on('dragend', (e) => {
                         this.pendingCoordinate = e.target.getLatLng();
                     });
+                }
+
+                if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 50);
                 }
             },
 
@@ -551,8 +918,10 @@
                         updated.latitude = this.pendingCoordinate.lat;
                         updated.longitude = this.pendingCoordinate.lng;
 
-                        this.pinnedList.push(updated);
-                        this.unpinnedList = this.unpinnedList.filter(item => item.id !== updated.id);
+                        if (!this.pinnedList.some(item => item.id == updated.id)) {
+                            this.pinnedList.push(updated);
+                            this.unpinnedList = this.unpinnedList.filter(item => item.id !== updated.id);
+                        }
                         this.pinnedCount = this.pinnedList.length;
                         this.unpinnedCount = this.unpinnedList.length;
 
