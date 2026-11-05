@@ -39,7 +39,8 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             if ($user->isTeknisi()) {
-                return redirect()->intended(route('maps.index'))
+                $request->session()->forget('url.intended');
+                return redirect()->route('maps.index')
                     ->with('success', 'Selamat datang Teknisi, ' . $user->name . '! Silakan akses Peta & Data Pelanggan.');
             }
 
