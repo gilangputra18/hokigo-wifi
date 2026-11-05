@@ -16,6 +16,15 @@ class Village extends Model
         'district',
         'notes',
         'system_type', // 'pppoe', 'voucher', 'hybrid'
+        'latitude',
+        'longitude',
+        'zoom_level',
+    ];
+
+    protected $casts = [
+        'latitude' => 'float',
+        'longitude' => 'float',
+        'zoom_level' => 'integer',
     ];
 
     public function customers(): HasMany
@@ -26,6 +35,16 @@ class Village extends Model
     public function voucherSales(): HasMany
     {
         return $this->hasMany(VoucherSale::class);
+    }
+
+    public function networkNodes(): HasMany
+    {
+        return $this->hasMany(NetworkNode::class);
+    }
+
+    public function cableRoutes(): HasMany
+    {
+        return $this->hasMany(CableRoute::class);
     }
 
     public function isVoucherEnabled(): bool

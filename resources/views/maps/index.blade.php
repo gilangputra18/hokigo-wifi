@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'Peta Jaringan & Penitikan Rumah Pelanggan')
-@section('header_title', 'Peta Jaringan & Titik Pelanggan')
+@section('title', 'Peta Jaringan, Server Starlink, ODP & Jalur Kabel')
+@section('header_title', 'Peta Jaringan & Infrastruktur WiFi')
 
 @section('content')
 <style>
@@ -33,76 +33,128 @@
         will-change: transform, opacity;
     }
 </style>
+
 <div class="space-y-4" x-data="mapApp()">
 
-    <!-- Top Stats & Filter Bar -->
-    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- Top Stats & Controls Bar -->
+    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-3">
         
-        <!-- Stats Summary -->
-        <div class="flex flex-wrap items-center gap-2 sm:gap-4">
-            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-100 text-xs">
-                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
-                <span class="text-slate-600 font-medium">Total Pelanggan:</span>
-                <span class="font-extrabold text-blue-900">{{ $allCustomers->count() }}</span>
+        <!-- Row 1: Summary Counts -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-100 text-xs">
+                    <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                    <span class="text-slate-600 font-medium">Pelanggan:</span>
+                    <span class="font-extrabold text-blue-900" x-text="pinnedCount + '/' + allCustomersData.length"></span>
+                </div>
+
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-100 text-xs">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span class="text-slate-600 font-medium">Server & ODP:</span>
+                    <span class="font-extrabold text-amber-900" x-text="networkNodesData.length"></span>
+                </div>
+
+                <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-100 text-xs">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-600"></span>
+                    <span class="text-slate-600 font-medium">Jalur Kabel FO:</span>
+                    <span class="font-extrabold text-emerald-900" x-text="cableRoutesData.length + ' rute'"></span>
+                </div>
             </div>
 
-            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-100 text-xs">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                <span class="text-slate-600 font-medium">Sudah Dititik:</span>
-                <span class="font-extrabold text-emerald-800" x-text="pinnedCount">{{ $pinnedCustomers->count() }}</span>
-            </div>
-
-            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-100 text-xs">
-                <span class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                <span class="text-slate-600 font-medium">Belum Dititik:</span>
-                <span class="font-extrabold text-amber-800" x-text="unpinnedCount">{{ $unpinnedCustomers->count() }}</span>
-            </div>
-        </div>
-
-        <!-- Filter & Search Controls -->
-        <div class="flex flex-wrap items-center gap-2">
-            <!-- Filter Desa -->
-            <select x-model="selectedVillage" @change="filterMarkers()" 
-                    class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                <option value="">Semua Wilayah / Desa</option>
-                @foreach($villages as $v)
-                    <option value="{{ $v->id }}">{{ $v->name }} ({{ $v->system_type === 'voucher' ? 'Voucher' : ($v->system_type === 'hybrid' ? 'Hybrid' : 'PPPoE') }})</option>
-                @endforeach
-            </select>
-
-            <!-- Search Input -->
-            <div class="relative">
-                <input type="text" x-model="searchQuery" @input="filterMarkers()" placeholder="Cari nama / kode..." 
-                       class="pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue w-36 sm:w-48">
-                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
-            </div>
-
-            <!-- Button Titik Pelanggan Manual (Tanpa Harus ke Rumah Pelanggan) -->
-            <button type="button" @click="openManualPinModal()" 
-                    class="px-3.5 py-2 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/25 transition"
-                    title="Pilih pelanggan dan tentukan titik rumah langsung di peta satelit">
-                <i data-lucide="map-pin" class="w-4 h-4"></i>
-                <span>+ Titik Manual</span>
-            </button>
-
-            <!-- GPS Device Button (For Field Technicians) -->
-            <button type="button" @click="locateMe()" 
-                    class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
-                    title="Arahkan peta ke posisi GPS saya sekarang">
-                <i data-lucide="crosshair" class="w-4 h-4"></i>
-                <span class="hidden sm:inline">Posisi Saya</span>
-            </button>
-
-            @if(auth()->user()->isAdmin())
-                <!-- Reset Data Peta Button -->
-                <button type="button" @click="resetMapModalOpen = true" 
-                        class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-black text-rose-300 hover:text-rose-200 border border-rose-500/30 font-bold text-xs flex items-center gap-1.5 shadow-xs transition"
-                        title="Kosongkan / Reset titik koordinat GPS di peta">
-                    <i data-lucide="rotate-ccw" class="w-4 h-4 text-rose-400"></i>
-                    <span>Reset Titik Peta</span>
+            <!-- Layer View Toggles -->
+            <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-[11px] font-bold">
+                <button type="button" @click="showCustomers = !showCustomers; renderMarkers()"
+                        :class="showCustomers ? 'bg-white text-blue-700 shadow-xs' : 'text-slate-400 hover:text-slate-600'"
+                        class="px-2.5 py-1 rounded-lg transition">
+                    🏠 Rumah
                 </button>
-            @endif
+                <button type="button" @click="showNodes = !showNodes; renderNodes()"
+                        :class="showNodes ? 'bg-white text-amber-700 shadow-xs' : 'text-slate-400 hover:text-slate-600'"
+                        class="px-2.5 py-1 rounded-lg transition">
+                    🛰️ ODP & Server
+                </button>
+                <button type="button" @click="showCables = !showCables; renderCables()"
+                        :class="showCables ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-400 hover:text-slate-600'"
+                        class="px-2.5 py-1 rounded-lg transition">
+                    〰️ Jalur FO
+                </button>
+            </div>
         </div>
+
+        <!-- Row 2: Search, Filters & Action Buttons -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100">
+            
+            <div class="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+                <!-- Filter Desa (Pilih desa langsung terbang ke lokasinya) -->
+                <select x-model="selectedVillage" @change="onVillageSelected()" 
+                        class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    <option value="">🗺️ Semua Wilayah / Desa</option>
+                    @foreach($villages as $v)
+                        <option value="{{ $v->id }}">{{ $v->name }} ({{ $v->system_type === 'voucher' ? 'Voucher' : ($v->system_type === 'hybrid' ? 'Hybrid' : 'PPPoE') }})</option>
+                    @endforeach
+                </select>
+
+                <!-- Search Input with Smart Village/Customer Search -->
+                <div class="relative flex-1 max-w-xs">
+                    <input type="text" x-model="searchQuery" @input="onSearchInput()" placeholder="Cari desa, pelanggan, ODP..." 
+                           class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                
+                <!-- Tarik Jalur Kabel Interaktif -->
+                <button type="button" @click="startCableDrawing()" 
+                        :class="drawingCable ? 'bg-emerald-700 ring-2 ring-emerald-300' : 'bg-emerald-600 hover:bg-emerald-700'"
+                        class="px-3.5 py-2 rounded-xl text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition"
+                        title="Tarik garis jalur kabel optik di peta satelit">
+                    <i data-lucide="git-commit" class="w-4 h-4"></i>
+                    <span>+ Tarik Kabel</span>
+                </button>
+
+                <!-- Button Titik Manual (Pelanggan / Server / ODP) -->
+                <button type="button" @click="openManualPinModal()" 
+                        class="px-3.5 py-2 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition"
+                        title="Titik rumah pelanggan, ODP, atau server di peta">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    <span>+ Titik Baru</span>
+                </button>
+
+                <!-- GPS Device Button (For Field Technicians) -->
+                <button type="button" @click="locateMe()" 
+                        class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition"
+                        title="Arahkan peta ke posisi GPS saya sekarang">
+                    <i data-lucide="crosshair" class="w-4 h-4 text-emerald-600"></i>
+                    <span class="hidden sm:inline">GPS Saya</span>
+                </button>
+
+                @if(auth()->user()->isAdmin())
+                    <!-- Reset Data Peta Button -->
+                    <button type="button" @click="resetMapModalOpen = true" 
+                            class="p-2 rounded-xl bg-slate-50 hover:bg-rose-50 text-slate-400 hover:text-rose-600 border border-slate-200 text-xs transition"
+                            title="Reset data koordinat peta">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    </button>
+                @endif
+            </div>
+        </div>
+
+        <!-- Smart Search Suggestion Chips (When typing village name like "Simpur") -->
+        <template x-if="suggestedVillages.length > 0">
+            <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                <span class="text-[11px] font-bold text-slate-400">Wilayah Ditemukan:</span>
+                <template x-for="v in suggestedVillages" :key="'sug_v_' + v.id">
+                    <button type="button" @click="flyToVillage(v.id)" 
+                            class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-brand-blue font-bold text-xs flex items-center gap-1.5 border border-blue-200 transition">
+                        <span>🏛️</span>
+                        <span x-text="'Terbang ke ' + v.name"></span>
+                        <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                    </button>
+                </template>
+            </div>
+        </template>
     </div>
 
     <!-- Main Map Workspace Container -->
@@ -111,7 +163,7 @@
         <!-- Map View (Takes 3 columns on desktop, full on mobile) -->
         <div class="lg:col-span-3 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden relative">
             
-            <!-- Map Layer Switcher / Mode Overlay Badge -->
+            <!-- Map Layer Switcher Badge -->
             <div class="absolute top-3 left-3 z-[1000] flex items-center gap-1.5 bg-white/95 backdrop-blur-md p-1 rounded-xl shadow-md border border-slate-200 text-xs">
                 <button type="button" @click="setLayer('google')" 
                         :class="currentLayer === 'google' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100'"
@@ -130,7 +182,42 @@
                 </button>
             </div>
 
-            <!-- Floating Manual Pinning Control Card on Map (Always Visible on Mobile & PC) -->
+            <!-- Floating Card: Mode Tarik Jalur Kabel FO -->
+            <div x-show="drawingCable" x-cloak
+                 class="absolute bottom-4 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-[1000] bg-white/95 backdrop-blur-md p-4 rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-emerald-500 space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
+                <div class="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
+                    <div>
+                        <div class="flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                            <span>Mode Penarikan Jalur Kabel FO Aktif</span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Klik titik demi titik di peta mengikuti jalan atau tiang dropcore.
+                        </p>
+                    </div>
+                    <button type="button" @click="cancelCableDrawing()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+
+                <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200/80 flex items-center justify-between text-xs font-bold text-emerald-900">
+                    <div>Titik Tiang: <span class="text-emerald-700" x-text="cablePoints.length"></span></div>
+                    <div>Estimasi Panjang: <span class="text-emerald-700 font-mono" x-text="newCableLengthMeters + ' m'"></span></div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="openSaveCableModal()" :disabled="cablePoints.length < 2"
+                            class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-extrabold text-xs shadow-md shadow-emerald-600/30 transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>✓ SIMPAN JALUR KABEL INI</span>
+                    </button>
+                    <button type="button" @click="cancelCableDrawing()" class="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                        Batal
+                    </button>
+                </div>
+            </div>
+
+            <!-- Floating Card: Mode Penitikan Rumah Pelanggan -->
             <div x-show="pinningCustomer !== null" x-cloak
                  class="absolute bottom-4 left-3 right-3 sm:left-auto sm:right-4 sm:max-w-md z-[1000] bg-white/95 backdrop-blur-md p-4 rounded-2xl sm:rounded-3xl shadow-2xl border-2 border-brand-blue space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-200">
                 
@@ -138,7 +225,7 @@
                     <div>
                         <div class="flex items-center gap-1.5 text-xs font-extrabold text-brand-blue">
                             <span class="w-2.5 h-2.5 rounded-full bg-brand-blue animate-ping"></span>
-                            <span>Mode Penitikan Manual Aktif</span>
+                            <span>Mode Penitikan Rumah Aktif</span>
                         </div>
                         <h4 class="text-sm font-extrabold text-slate-900 mt-0.5" x-text="pinningCustomer?.name"></h4>
                         <p class="text-[11px] text-slate-500 font-medium">
@@ -202,41 +289,50 @@
             <!-- Leaflet Map Canvas -->
             <div id="map" class="w-full h-[520px] sm:h-[650px] z-0"></div>
 
-            <!-- Map Footer Guide -->
+            <!-- Map Legend Footer -->
             <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-500">
-                <div class="flex items-center gap-4">
-                    <span class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-blue-600 inline-block shadow-xs"></span> Rumah Pelanggan Aktif
+                <div class="flex flex-wrap items-center gap-3">
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-md bg-blue-600 inline-block shadow-xs"></span> Rumah Aktif
                     </span>
-                    <span class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-amber-500 inline-block shadow-xs"></span> Isolir / Catatan
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-md bg-amber-500 inline-block shadow-xs"></span> 🛰️ Server / Starlink
                     </span>
-                    <span class="flex items-center gap-1.5">
-                        <span class="w-3 h-3 rounded-full bg-rose-500 inline-block shadow-xs"></span> Nonaktif
+                    <span class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-md bg-indigo-600 inline-block shadow-xs"></span> 🔲 Kotak ODP
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-4 h-1 rounded bg-emerald-500 inline-block"></span> Jalur Dropcore
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span class="w-4 h-1 rounded bg-blue-500 inline-block"></span> Kabel Distribusi
                     </span>
                 </div>
-                <span>*Klik pada marker rumah untuk melihat rute kabel, sandi PPPoE & petunjuk arah Google Maps</span>
+                <span>*Posisi & zoom peta tersimpan otomatis saat Anda berpindah halaman</span>
             </div>
         </div>
 
-        <!-- Sidebar List: Pelanggan Belum Dititik & Manajemen Penitikan -->
+        <!-- Sidebar List: Pelanggan Belum Dititik, Server/ODP & Kabel -->
         <div class="lg:col-span-1 space-y-4">
             
             <div class="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-xs p-4 sm:p-5 flex flex-col h-[520px] sm:h-[650px]">
                 
-                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                    <div>
-                        <h3 class="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
-                            <i data-lucide="map-pin-off" class="w-4 h-4 text-amber-500"></i>
-                            <span>Belum Ada Titik GPS</span>
-                        </h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">Pilih pelanggan untuk penitikan</p>
-                    </div>
-                    <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold" x-text="unpinnedList.length"></span>
+                <!-- Sidebar Tabs -->
+                <div class="flex items-center gap-1 border-b border-slate-100 pb-2 mb-3">
+                    <button type="button" @click="sidebarTab = 'unpinned'" 
+                            :class="sidebarTab === 'unpinned' ? 'bg-amber-50 text-amber-800 font-extrabold border-amber-200' : 'text-slate-500 hover:text-slate-800 border-transparent'"
+                            class="flex-1 py-1.5 px-2 rounded-xl text-xs border text-center transition">
+                        Belum Titik (<span x-text="unpinnedList.length"></span>)
+                    </button>
+                    <button type="button" @click="sidebarTab = 'infrastructure'" 
+                            :class="sidebarTab === 'infrastructure' ? 'bg-indigo-50 text-indigo-800 font-extrabold border-indigo-200' : 'text-slate-500 hover:text-slate-800 border-transparent'"
+                            class="flex-1 py-1.5 px-2 rounded-xl text-xs border text-center transition">
+                        Server/ODP (<span x-text="networkNodesData.length"></span>)
+                    </button>
                 </div>
 
-                <!-- Unpinned Customer List -->
-                <div class="flex-1 overflow-y-auto divide-y divide-slate-100 py-2 space-y-1">
+                <!-- Tab 1: Pelanggan Belum Dititik -->
+                <div x-show="sidebarTab === 'unpinned'" class="overflow-y-auto divide-y divide-slate-100 flex-1 pr-1">
                     <template x-for="c in unpinnedList" :key="c.id">
                         <div class="py-2.5 px-2 rounded-xl hover:bg-slate-50 transition flex items-center justify-between gap-2 group">
                             <div class="min-w-0">
@@ -258,23 +354,33 @@
                     </div>
                 </div>
 
-                <!-- Quick Location Save Dialog (Modal/Box) -->
-                <div x-show="pendingCoordinate !== null" x-cloak 
-                     class="pt-3 border-t border-slate-100 bg-blue-50/80 -mx-4 -mb-4 p-4 rounded-b-2xl sm:rounded-b-3xl">
-                    <p class="text-xs font-extrabold text-blue-900 mb-1">Simpan Titik Koordinat?</p>
-                    <p class="text-[11px] text-blue-700 mb-2">
-                        Pelanggan: <strong x-text="pinningCustomer?.name"></strong><br>
-                        Lat: <span x-text="pendingCoordinate?.lat.toFixed(6)"></span>, 
-                        Lng: <span x-text="pendingCoordinate?.lng.toFixed(6)"></span>
-                    </p>
-                    <div class="flex items-center gap-2">
-                        <button type="button" @click="saveLocation()" :disabled="saving"
-                                class="flex-1 py-2 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white text-xs font-bold shadow-xs transition">
-                            <span x-show="!saving">Simpan Titik Ini</span>
-                            <span x-show="saving">Menyimpan...</span>
-                        </button>
-                        <button type="button" @click="cancelPinning()" class="px-3 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold transition">
-                            Batal
+                <!-- Tab 2: Server & Kotak ODP -->
+                <div x-show="sidebarTab === 'infrastructure'" class="overflow-y-auto divide-y divide-slate-100 flex-1 pr-1">
+                    <template x-for="node in networkNodesData" :key="'infra_' + node.id">
+                        <div class="py-2.5 px-2 rounded-xl hover:bg-slate-50 transition flex items-center justify-between gap-2">
+                            <div class="min-w-0">
+                                <p class="text-xs font-bold text-slate-800 truncate" x-text="(node.type === 'server' || node.type === 'starlink' ? '🛰️ ' : '🔲 ') + node.name"></p>
+                                <p class="text-[10px] text-slate-500 truncate" x-text="(node.village ? node.village.name : 'Pusat') + (node.capacity ? ' • ' + node.capacity : '')"></p>
+                            </div>
+                            
+                            <div class="flex items-center gap-1 shrink-0">
+                                <button type="button" @click="centerOnCoords(node.latitude, node.longitude, 18)" 
+                                        class="p-1.5 rounded-lg bg-blue-50 text-brand-blue hover:bg-blue-100 text-xs" title="Lihat di Peta">
+                                    <i data-lucide="navigation" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button type="button" @click="deleteNetworkNode(node.id)" 
+                                        class="p-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs" title="Hapus">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="networkNodesData.length === 0" class="py-12 text-center text-slate-400 text-xs space-y-2">
+                        <i data-lucide="server" class="w-8 h-8 mx-auto text-slate-300"></i>
+                        <p>Belum ada titik Server atau ODP.</p>
+                        <button type="button" @click="openAddNodeModal()" class="text-brand-blue font-bold text-xs hover:underline">
+                            + Tambah Server / ODP
                         </button>
                     </div>
                 </div>
@@ -285,7 +391,7 @@
 
     </div>
 
-    <!-- Modal Penitikan Pelanggan Manual (Tanpa Harus ke Rumah Pelanggan) -->
+    <!-- Modal 1: Penitikan Baru (Pelanggan / Server / ODP / Titik Desa) -->
     <div x-show="manualPinModalOpen" x-cloak 
          class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
         <div @click.away="manualPinModalOpen = false" 
@@ -297,8 +403,8 @@
                         <i data-lucide="map-pin" class="w-5 h-5"></i>
                     </div>
                     <div>
-                        <h3 class="text-sm sm:text-base font-extrabold text-slate-900">Penitikan Pelanggan Manual</h3>
-                        <p class="text-[11px] text-slate-400 font-medium">Titik rumah pelanggan yang sudah terpasang dari kantor/PC/HP</p>
+                        <h3 class="text-sm sm:text-base font-extrabold text-slate-900">Penitikan Peta Manual</h3>
+                        <p class="text-[11px] text-slate-400 font-medium">Pilih jenis objek yang ingin Anda tandai di peta satelit</p>
                     </div>
                 </div>
                 <button type="button" @click="manualPinModalOpen = false" class="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100">
@@ -306,39 +412,53 @@
                 </button>
             </div>
 
+            <!-- Tab Options inside Modal -->
+            <div class="p-3 bg-slate-50 border-b border-slate-100 flex items-center gap-1 text-xs">
+                <button type="button" @click="pinTypeTab = 'customer'" 
+                        :class="pinTypeTab === 'customer' ? 'bg-white text-brand-blue font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                        class="flex-1 py-1.5 rounded-xl transition">
+                    🏠 Rumah Pelanggan
+                </button>
+                <button type="button" @click="pinTypeTab = 'node'" 
+                        :class="pinTypeTab === 'node' ? 'bg-white text-amber-700 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                        class="flex-1 py-1.5 rounded-xl transition">
+                    🛰️ Server / ODP
+                </button>
+                <button type="button" @click="pinTypeTab = 'village'" 
+                        :class="pinTypeTab === 'village' ? 'bg-white text-emerald-700 font-extrabold shadow-xs' : 'text-slate-500 hover:text-slate-800'"
+                        class="flex-1 py-1.5 rounded-xl transition">
+                    🏛️ Titik Pusat Desa
+                </button>
+            </div>
+
             <div class="overflow-y-auto p-5 space-y-4 flex-1">
                 
-                <!-- Pilih Pelanggan -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Pelanggan Yang Ingin Dititik *</label>
-                    
-                    <div class="relative mb-2">
-                        <input type="text" x-model="modalCustomerSearch" placeholder="Ketik nama atau kode pelanggan..."
-                               class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                        <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                <!-- Sub-tab 1: Pelanggan -->
+                <div x-show="pinTypeTab === 'customer'" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Pilih Pelanggan Yang Ingin Dititik *</label>
+                        <div class="relative mb-2">
+                            <input type="text" x-model="modalCustomerSearch" placeholder="Ketik nama atau kode pelanggan..."
+                                   class="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                            <i data-lucide="search" class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none"></i>
+                        </div>
+
+                        <select x-model="modalSelectedCustomerId" 
+                                class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                            <option value="">-- Pilih Pelanggan --</option>
+                            <optgroup label="📍 Belum Memiliki Titik GPS">
+                                <template x-for="c in filteredUnpinnedListForModal" :key="'unp_' + c.id">
+                                    <option :value="c.id" x-text="c.name + ' (' + (c.village ? c.village.name : 'Tanpa Desa') + ' - ' + c.customer_code + ')'"></option>
+                                </template>
+                            </optgroup>
+                            <optgroup label="✅ Sudah Ada Titik (Ubah / Geser Titik)">
+                                <template x-for="c in filteredPinnedListForModal" :key="'pin_' + c.id">
+                                    <option :value="c.id" x-text="c.name + ' (' + (c.village ? c.village.name : 'Tanpa Desa') + ')'"></option>
+                                </template>
+                            </optgroup>
+                        </select>
                     </div>
 
-                    <select x-model="modalSelectedCustomerId" 
-                            class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                        <option value="">-- Pilih Pelanggan --</option>
-                        <optgroup label="📍 Belum Memiliki Titik GPS">
-                            <template x-for="c in filteredUnpinnedListForModal" :key="'unp_' + c.id">
-                                <option :value="c.id" x-text="c.name + ' (' + (c.village ? c.village.name : 'Tanpa Desa') + ' - ' + c.customer_code + ')'"></option>
-                            </template>
-                        </optgroup>
-                        <optgroup label="✅ Sudah Ada Titik (Ubah / Geser Titik)">
-                            <template x-for="c in filteredPinnedListForModal" :key="'pin_' + c.id">
-                                <option :value="c.id" x-text="c.name + ' (' + (c.village ? c.village.name : 'Tanpa Desa') + ')'"></option>
-                            </template>
-                        </optgroup>
-                    </select>
-                </div>
-
-                <!-- Pilihan Metode Titik -->
-                <div class="space-y-3 pt-2 border-t border-slate-100">
-                    <p class="text-xs font-bold text-slate-700">Pilih Cara Menitik Rumah:</p>
-
-                    <!-- Metode 1: Klik Langsung di Peta Satelit -->
                     <div class="p-3.5 rounded-2xl border-2 border-brand-blue/40 bg-blue-50/50 hover:bg-blue-50 transition cursor-pointer"
                          @click="startPinningFromModal()">
                         <div class="flex items-center gap-3">
@@ -352,80 +472,297 @@
                             <i data-lucide="chevron-right" class="w-4 h-4 text-brand-blue shrink-0"></i>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Metode 2: Masukkan Titik Koordinat Manual (Lat & Lng) -->
-                    <div class="p-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 space-y-3">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="map" class="w-4 h-4 text-emerald-600"></i>
-                            <h4 class="font-extrabold text-xs text-slate-800">Atau Masukkan Koordinat Manual (Lat, Lng)</h4>
-                        </div>
-                        <p class="text-[11px] text-slate-500">Jika Anda punya titik koordinat dari Google Maps atau share loc WhatsApp:</p>
-
-                        <div class="grid grid-cols-2 gap-2">
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Latitude</label>
-                                <input type="text" x-model="modalInputLat" placeholder="-7.536123"
-                                       class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Longitude</label>
-                                <input type="text" x-model="modalInputLng" placeholder="112.238456"
-                                       class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono">
-                            </div>
-                        </div>
-
-                        <button type="button" @click="saveManualCoordinatesFromModal()" :disabled="!modalSelectedCustomerId || !modalInputLat || !modalInputLng || saving"
-                                class="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs transition flex items-center justify-center gap-1.5 shadow-xs">
-                            <i data-lucide="check" class="w-4 h-4"></i>
-                            <span x-text="saving ? 'Menyimpan...' : 'Simpan Koordinat Ini Langsung'"></span>
-                        </button>
+                <!-- Sub-tab 2: Server / ODP -->
+                <div x-show="pinTypeTab === 'node'" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Perangkat *</label>
+                        <select x-model="newNodeType" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                            <option value="starlink">🛰️ Dish Antena Starlink</option>
+                            <option value="server">🖥️ Server Utama / NOC / Mikrotik</option>
+                            <option value="odp">🔲 Kotak ODP (Optical Distribution Point)</option>
+                            <option value="switch">🔀 Switch / Router Distribusi</option>
+                            <option value="pole">📍 Tiang Distribusi FO</option>
+                        </select>
                     </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nama Perangkat / Label *</label>
+                        <input type="text" x-model="newNodeName" placeholder="Contoh: Server SD HMDC 07 / ODP-01 Simpur"
+                               class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Wilayah / Desa</label>
+                            <select x-model="newNodeVillageId" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                                <option value="">Semua Wilayah</option>
+                                <template x-for="v in villagesData" :key="'nv_' + v.id">
+                                    <option :value="v.id" x-text="v.name"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Kapasitas Port / Tipe</label>
+                            <input type="text" x-model="newNodeCapacity" placeholder="Contoh: 8 Port / 16 Port"
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Lokasi</label>
+                        <input type="text" x-model="newNodeNotes" placeholder="Contoh: Di tiang PLN depan balai desa"
+                               class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                    </div>
+
+                    <div class="p-3 bg-amber-50 rounded-xl border border-amber-200/80 text-amber-900 text-xs">
+                        <p class="font-bold">📍 Cara Menentukan Titik Server / ODP:</p>
+                        <p class="text-[11px] mt-0.5">Tutup modal ini, lalu <strong>klik di titik tiang/bangunan pada peta satelit</strong>, lalu pilih <em>+ Titik Server / ODP</em>.</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 pt-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Latitude</label>
+                            <input type="text" x-model="modalInputLat" placeholder="-7.536123" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Longitude</label>
+                            <input type="text" x-model="modalInputLng" placeholder="112.238456" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono">
+                        </div>
+                    </div>
+
+                    <button type="button" @click="saveNodeDirectFromModal()" :disabled="!newNodeName || !modalInputLat || !modalInputLng || saving"
+                            class="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-bold text-xs transition shadow-xs">
+                        <span x-text="saving ? 'Menyimpan...' : '✓ Simpan Titik Perangkat Ini'"></span>
+                    </button>
+                </div>
+
+                <!-- Sub-tab 3: Titik Pusat Desa -->
+                <div x-show="pinTypeTab === 'village'" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Pilih Wilayah / Desa *</label>
+                        <select x-model="selectedVillageForCenter" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold">
+                            <option value="">-- Pilih Desa --</option>
+                            <template x-for="v in villagesData" :key="'vc_' + v.id">
+                                <option :value="v.id" x-text="v.name + (v.latitude ? ' (Sudah Ada Titik)' : ' (Belum Ada Titik)')"></option>
+                            </template>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Latitude</label>
+                            <input type="text" x-model="modalInputLat" placeholder="-7.536123" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 mb-0.5">Longitude</label>
+                            <input type="text" x-model="modalInputLng" placeholder="112.238456" class="w-full px-2.5 py-1.5 rounded-lg border border-slate-200 text-xs font-mono">
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-slate-500">
+                        *Dengan menyimpan titik pusat desa, saat Anda mencari nama desa di kotak pencarian peta, kamera akan otomatis terbang ke desa tersebut.
+                    </p>
+
+                    <button type="button" @click="saveVillageCenterFromModal()" :disabled="!selectedVillageForCenter || !modalInputLat || !modalInputLng || saving"
+                            class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-bold text-xs transition shadow-xs">
+                        <span x-text="saving ? 'Menyimpan...' : '✓ Simpan Titik Pusat Desa'"></span>
+                    </button>
                 </div>
 
             </div>
 
-            <div class="p-4 bg-slate-50 border-t border-slate-100 shrink-0 flex items-center justify-end">
-                <button type="button" @click="manualPinModalOpen = false" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition">
-                    Tutup
+        </div>
+    </div>
+
+    <!-- Modal 2: Simpan Jalur Kabel FO Baru -->
+    <div x-show="cableModalOpen" x-cloak 
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+        <div @click.away="cableModalOpen = false" 
+             class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 p-5 space-y-4">
+            
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <span>Simpan Jalur Kabel Optik</span>
+                </h3>
+                <button type="button" @click="cableModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Jalur Kabel *</label>
+                    <input type="text" x-model="newCableName" placeholder="Contoh: Kabel Dropcore Server ke ODP 01"
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Kabel</label>
+                        <select x-model="newCableType" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 text-xs">
+                            <option value="dropcore">Kabel Dropcore</option>
+                            <option value="distribution">Kabel Distribusi</option>
+                            <option value="backbone">Kabel Backbone</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Jumlah Core</label>
+                        <select x-model="newCableCore" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 text-xs font-mono">
+                            <option value="1 Core">1 Core</option>
+                            <option value="2 Core">2 Core</option>
+                            <option value="4 Core">4 Core</option>
+                            <option value="12 Core">12 Core</option>
+                            <option value="24 Core">24 Core</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Wilayah / Desa</label>
+                        <select x-model="newCableVillageId" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 text-xs">
+                            <option value="">Semua Wilayah</option>
+                            <template x-for="v in villagesData" :key="'cv_' + v.id">
+                                <option :value="v.id" x-text="v.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Warna Garis</label>
+                        <select x-model="newCableColor" class="w-full px-2.5 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+                            <option value="#10b981">🟢 Hijau (Dropcore)</option>
+                            <option value="#3b82f6">🔵 Biru (Distribusi)</option>
+                            <option value="#f59e0b">🟡 Kuning (Backbone)</option>
+                            <option value="#ef4444">🔴 Merah (Kritis)</option>
+                            <option value="#8b5cf6">🟣 Ungu (Cadangan)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-200/80 text-xs flex items-center justify-between font-bold text-slate-700">
+                    <span>Total Panjang Kabel:</span>
+                    <span class="font-mono text-emerald-700 font-extrabold text-sm" x-text="newCableLengthMeters + ' meter'"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+                    <input type="text" x-model="newCableNotes" placeholder="Contoh: Melewati tiang PLN 1 s/d 6"
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                </div>
+
+                <button type="button" @click="saveCableRoute()" :disabled="!newCableName || saving"
+                        class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 text-white font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/30">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span x-text="saving ? 'Menyimpan...' : '✓ SIMPAN JALUR KABEL'"></span>
                 </button>
             </div>
 
         </div>
     </div>
 
-    <!-- Modal Konfirmasi Reset Titik Peta & Pelanggan -->
-    <div x-show="resetMapModalOpen" x-cloak 
-         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
-        <div @click.away="resetMapModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4">
+    <!-- Modal 3: Tambah Server / ODP Cepat -->
+    <div x-show="newNodeModalOpen" x-cloak 
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+        <div @click.away="newNodeModalOpen = false" 
+             class="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 p-5 space-y-4">
             
-            <div class="flex items-center justify-between pb-3 border-b border-rose-100">
-                <div class="flex items-center gap-2 text-rose-600 font-extrabold text-base">
-                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-                    <span>Reset Data Titik Peta (0-kan Peta)</span>
-                </div>
-                <button type="button" @click="resetMapModalOpen = false" class="text-slate-400 hover:text-slate-600">
-                    <i data-lucide="x" class="w-5 h-5"></i>
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                    <span>Tambah Titik Server / ODP</span>
+                </h3>
+                <button type="button" @click="newNodeModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i data-lucide="x" class="w-4 h-4"></i>
                 </button>
             </div>
 
-            <form action="{{ route('maps.reset') }}" method="POST" class="space-y-4" x-data="{ confirmReset: '', actionChoice: 'coordinates_only' }">
-                @csrf
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Perangkat *</label>
+                    <select x-model="newNodeType" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
+                        <option value="starlink">🛰️ Dish Antena Starlink</option>
+                        <option value="server">🖥️ Server Utama / NOC / Mikrotik</option>
+                        <option value="odp">🔲 Kotak ODP (Optical Distribution Point)</option>
+                        <option value="switch">🔀 Switch / Router Distribusi</option>
+                        <option value="pole">📍 Tiang Distribusi FO</option>
+                    </select>
+                </div>
 
-                <div class="space-y-2.5">
-                    <label class="block text-xs font-bold text-slate-700">Pilih Opsi Reset:</label>
-                    
-                    <label class="flex items-start gap-2.5 p-3 rounded-xl border border-slate-200 hover:border-brand-blue cursor-pointer bg-slate-50/60 transition">
-                        <input type="radio" name="action_type" value="coordinates_only" x-model="actionChoice" checked class="mt-0.5 text-brand-blue focus:ring-brand-blue">
-                        <div class="text-xs">
-                            <span class="font-extrabold text-slate-800 block">Kosongkan Titik Koordinat GPS Saja (0 Titik)</span>
-                            <span class="text-slate-500 text-[11px] block mt-0.5">Semua marker rumah di peta dihapus. Data pelanggan tetap aman dan berpindah ke daftar 'Belum Dititik' untuk dititik ulang.</span>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Perangkat / Label *</label>
+                    <input type="text" x-model="newNodeName" placeholder="Contoh: Server SD HMDC 07 / ODP-01 Simpur"
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Wilayah / Desa</label>
+                        <select x-model="newNodeVillageId" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                            <option value="">Semua Wilayah</option>
+                            <template x-for="v in villagesData" :key="'nvm_' + v.id">
+                                <option :value="v.id" x-text="v.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Kapasitas Port / Tipe</label>
+                        <input type="text" x-model="newNodeCapacity" placeholder="Contoh: 8 Port / 16 Port"
+                               class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Lokasi</label>
+                    <input type="text" x-model="newNodeNotes" placeholder="Contoh: Di tiang PLN depan rumah Pak RT"
+                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs">
+                </div>
+
+                <div class="p-2.5 bg-blue-50 rounded-xl text-[11px] text-blue-900 font-mono">
+                    Koordinat: <span x-text="newNodeCoordinate ? newNodeCoordinate.lat.toFixed(6) + ', ' + newNodeCoordinate.lng.toFixed(6) : '-'"></span>
+                </div>
+
+                <button type="button" @click="saveNetworkNode()" :disabled="!newNodeName || saving"
+                        class="w-full py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 disabled:opacity-40 text-white font-extrabold text-xs transition flex items-center justify-center gap-1.5 shadow-md shadow-amber-600/30">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span x-text="saving ? 'Menyimpan...' : '✓ SIMPAN TITIK PERANGKAT'"></span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal 4: Reset Titik Peta (Admin Only) -->
+    <div x-show="resetMapModalOpen" x-cloak 
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
+        <div @click.away="resetMapModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4">
+            <div class="flex items-center gap-3 text-rose-600">
+                <div class="w-10 h-10 rounded-2xl bg-rose-50 flex items-center justify-center shrink-0">
+                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-slate-900 text-base">Reset Data Peta</h3>
+                    <p class="text-xs text-rose-600 font-semibold">Tindakan ini permanen & memerlukan konfirmasi</p>
+                </div>
+            </div>
+
+            <form action="{{ route('maps.reset') }}" method="POST" class="space-y-4">
+                @csrf
+                <div class="space-y-2 text-xs text-slate-700">
+                    <label class="flex items-start gap-2 p-3 rounded-2xl border border-slate-200 hover:bg-slate-50 cursor-pointer">
+                        <input type="radio" name="action_type" value="coordinates_only" checked class="mt-0.5 text-brand-blue focus:ring-brand-blue">
+                        <div>
+                            <strong class="text-slate-900 block font-bold">1. Kosongkan Titik GPS Saja (Recommended)</strong>
+                            <span class="text-slate-500 text-[11px] block mt-0.5">Semua data pelanggan & tagihan tetap aman, hanya koordinat di peta yang di-0 kan untuk dititik ulang.</span>
                         </div>
                     </label>
 
-                    <label class="flex items-start gap-2.5 p-3 rounded-xl border border-rose-200 hover:border-rose-400 cursor-pointer bg-rose-50/40 transition">
-                        <input type="radio" name="action_type" value="delete_all_customers" x-model="actionChoice" class="mt-0.5 text-rose-600 focus:ring-rose-500">
-                        <div class="text-xs">
-                            <span class="font-extrabold text-rose-700 block">Hapus Seluruh Data Pelanggan (0 Pelanggan)</span>
+                    <label class="flex items-start gap-2 p-3 rounded-2xl border border-rose-200 bg-rose-50/50 hover:bg-rose-50 cursor-pointer">
+                        <input type="radio" name="action_type" value="delete_all_customers" class="mt-0.5 text-rose-600 focus:ring-rose-500">
+                        <div>
+                            <strong class="text-rose-900 block font-bold">2. Hapus Seluruh Pelanggan (0 Pelanggan)</strong>
                             <span class="text-rose-600/80 text-[11px] block mt-0.5">Menghapus seluruh daftar pelanggan dari sistem sehingga Anda bisa input data pelanggan baru dari nol.</span>
                         </div>
                     </label>
@@ -433,24 +770,23 @@
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">
-                        Ketik kata <code class="bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-mono font-bold">RESET</code> untuk konfirmasi:
+                        Ketik kata <span class="text-rose-600 font-mono font-bold">RESET</span> untuk konfirmasi:
                     </label>
-                    <input type="text" name="confirmation" x-model="confirmReset" required placeholder="Ketik RESET"
-                           class="w-full px-3.5 py-2.5 rounded-xl border border-rose-300 font-mono text-xs uppercase font-bold text-center focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500">
+                    <input type="text" name="confirmation" required placeholder="RESET" 
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold uppercase focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500">
                 </div>
 
-                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
-                    <button type="button" @click="resetMapModalOpen = false" class="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+                <div class="flex items-center gap-2 pt-2">
+                    <button type="button" @click="resetMapModalOpen = false" 
+                            class="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition">
                         Batal
                     </button>
-                    <button type="submit" :disabled="confirmReset.toUpperCase() !== 'RESET'"
-                            class="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-bold shadow-md shadow-rose-600/30 transition flex items-center gap-1.5">
-                        <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        <span>Eksekusi Reset</span>
+                    <button type="submit" 
+                            class="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-md shadow-rose-600/30">
+                        Ya, Reset Peta
                     </button>
                 </div>
             </form>
-
         </div>
     </div>
 
@@ -466,29 +802,71 @@
             streetLayer: null,
             currentLayer: 'google',
             markersGroup: null,
-            resetMapModalOpen: false,
+            nodesGroup: null,
+            cablesGroup: null,
             
-            // Manual Pin Modal States
-            manualPinModalOpen: false,
-            modalSelectedCustomerId: '',
-            modalCustomerSearch: '',
-            modalInputLat: '',
-            modalInputLng: '',
+            // Layer Visibility
+            showCustomers: true,
+            showNodes: true,
+            showCables: true,
             
-            // Single lightweight JSON array (no duplicate base64 photo bloat)
+            // Tab sidebar
+            sidebarTab: 'unpinned',
+
+            // Data loaded from server (lightweight)
             allCustomersData: @json($allCustomers),
+            villagesData: @json($villages),
+            networkNodesData: @json($networkNodes),
+            cableRoutesData: @json($cableRoutes),
+            
             pinnedList: [],
             unpinnedList: [],
-            
             pinnedCount: 0,
             unpinnedCount: 0,
-            
+
+            // Filter & Search
             selectedVillage: '',
             searchQuery: '',
-            
+            suggestedVillages: [],
+
+            // Customer Pinning State
             pinningCustomer: null,
             temporaryMarker: null,
             pendingCoordinate: null,
+            
+            // Cable Drawing State
+            drawingCable: false,
+            cablePoints: [],
+            tempPolyline: null,
+            tempPointMarkers: [],
+            cableModalOpen: false,
+            newCableName: '',
+            newCableVillageId: '',
+            newCableType: 'dropcore',
+            newCableColor: '#10b981',
+            newCableCore: '2 Core',
+            newCableNotes: '',
+            newCableLengthMeters: 0,
+
+            // New Node Modal State
+            newNodeModalOpen: false,
+            newNodeType: 'starlink',
+            newNodeName: '',
+            newNodeVillageId: '',
+            newNodeCapacity: '8 Port',
+            newNodeNotes: '',
+            newNodeCoordinate: null,
+
+            // Manual Pin Modal
+            manualPinModalOpen: false,
+            pinTypeTab: 'customer',
+            modalCustomerSearch: '',
+            modalSelectedCustomerId: '',
+            modalInputLat: '',
+            modalInputLng: '',
+            selectedVillageForCenter: '',
+
+            resetMapModalOpen: false,
             saving: false,
             isMapMoving: false,
 
@@ -515,7 +893,7 @@
             init() {
                 window.mapAppInstance = this;
                 
-                // Partition customers in memory to keep DOM and initial payload ultra-fast
+                // Partition customers in memory to keep payload ultra-fast
                 this.pinnedList = this.allCustomersData.filter(c => c.latitude !== null && c.longitude !== null && !isNaN(parseFloat(c.latitude)));
                 this.unpinnedList = this.allCustomersData.filter(c => c.latitude === null || c.longitude === null || isNaN(parseFloat(c.latitude)));
                 this.pinnedCount = this.pinnedList.length;
@@ -526,18 +904,48 @@
                 });
             },
 
+            // Save last map state (lat, lng, zoom, layer) so user never loses their view!
+            saveMapState() {
+                if (!this.map) return;
+                try {
+                    const center = this.map.getCenter();
+                    const zoom = this.map.getZoom();
+                    localStorage.setItem('hokigo_map_state', JSON.stringify({
+                        lat: center.lat,
+                        lng: center.lng,
+                        zoom: zoom,
+                        layer: this.currentLayer
+                    }));
+                } catch (e) {}
+            },
+
+            getSavedMapState() {
+                try {
+                    const raw = localStorage.getItem('hokigo_map_state');
+                    if (raw) return JSON.parse(raw);
+                } catch (e) {}
+                return null;
+            },
+
             initMap() {
+                const saved = this.getSavedMapState();
                 let defaultLat = -7.536064;
                 let defaultLng = 112.238402;
                 let defaultZoom = 13;
 
-                if (this.pinnedList.length > 0) {
+                // Priority 1: Restore exact location where user left off
+                if (saved && saved.lat && saved.lng && saved.zoom) {
+                    defaultLat = parseFloat(saved.lat);
+                    defaultLng = parseFloat(saved.lng);
+                    defaultZoom = parseInt(saved.zoom);
+                    if (saved.layer) this.currentLayer = saved.layer;
+                } else if (this.pinnedList.length > 0) {
                     defaultLat = parseFloat(this.pinnedList[0].latitude);
                     defaultLng = parseFloat(this.pinnedList[0].longitude);
                     defaultZoom = 16;
                 }
 
-                // Initialize Leaflet Map with Canvas optimization
+                // Initialize Leaflet Map
                 this.map = L.map('map', {
                     center: [defaultLat, defaultLng],
                     zoom: defaultZoom,
@@ -545,7 +953,7 @@
                     preferCanvas: true
                 });
 
-                // Google Hybrid Satellite (Super-fast Indonesian Edge CDN, high-res aerial + labels)
+                // Google Hybrid Satellite
                 this.googleHybridLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
                     subdomains: ['0', '1', '2', '3'],
                     maxZoom: 20,
@@ -555,7 +963,7 @@
                     keepBuffer: 3
                 });
 
-                // Esri World Imagery (Satellite) with maxNativeZoom: 18 to fix rural 404 gray tiles
+                // Esri World Imagery (Satellite)
                 this.esriSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     attribution: 'Tiles &copy; Esri',
                     maxNativeZoom: 18,
@@ -573,27 +981,28 @@
                     keepBuffer: 2
                 });
 
-                // Default to Google Hybrid for fastest load speed and clearest satellite resolution in Indonesia
-                this.googleHybridLayer.addTo(this.map);
+                // Apply active layer
+                this.setLayer(this.currentLayer || 'google');
 
-                // Group for markers
+                // Feature groups
+                this.cablesGroup = L.featureGroup().addTo(this.map);
+                this.nodesGroup = L.featureGroup().addTo(this.map);
                 this.markersGroup = L.featureGroup().addTo(this.map);
 
-                // Invalidate container size after layout renders to prevent gray tiles or click offset bugs
+                // Auto-sync container size on mobile
                 setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 150);
                 setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 400);
                 window.addEventListener('resize', () => {
                     if (this.map) this.map.invalidateSize();
                 });
 
-                // Render markers with lazy popups
-                this.renderMarkers();
+                // Render all features
+                this.renderAll();
 
-                // Track dragging/swiping to prevent accidental click popups on mobile touchscreens
-                this.map.on('movestart', () => {
-                    this.isMapMoving = true;
-                });
+                // Persistence: save position on move & zoom
+                this.map.on('movestart', () => { this.isMapMoving = true; });
                 this.map.on('moveend', () => {
+                    this.saveMapState();
                     setTimeout(() => { this.isMapMoving = false; }, 250);
                 });
 
@@ -601,33 +1010,41 @@
                 this.map.on('click', (e) => {
                     if (this.isMapMoving) return;
 
+                    // Case A: Drawing cable line
+                    if (this.drawingCable) {
+                        this.handleCablePointClick(e.latlng);
+                        return;
+                    }
+
+                    // Case B: Pinning customer house
                     if (this.pinningCustomer !== null) {
                         this.handleMapClickPinning(e.latlng);
-                    } else {
-                        const lat = e.latlng.lat.toFixed(6);
-                        const lng = e.latlng.lng.toFixed(6);
-                        L.popup({ maxWidth: 220 })
-                            .setLatLng(e.latlng)
-                            .setContent(`
-                                <div style="font-family: inherit; font-size: 11px; text-align: center; padding: 4px;">
-                                    <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px;">📍 Titik Koordinat</div>
-                                    <div style="font-family: monospace; font-size: 10px; color: #64748b; margin-bottom: 6px;">${lat}, ${lng}</div>
+                        return;
+                    }
+
+                    // Case C: General empty spot click
+                    const lat = e.latlng.lat.toFixed(6);
+                    const lng = e.latlng.lng.toFixed(6);
+                    L.popup({ maxWidth: 240 })
+                        .setLatLng(e.latlng)
+                        .setContent(`
+                            <div style="font-family: inherit; font-size: 11px; text-align: center; padding: 4px;">
+                                <div style="font-weight: 800; color: #0f172a; margin-bottom: 2px;">📍 Titik Koordinat Peta</div>
+                                <div style="font-family: monospace; font-size: 10px; color: #64748b; margin-bottom: 8px;">${lat}, ${lng}</div>
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
                                     <button type="button" onclick="window.mapAppInstance.openModalWithCoordinate(${lat}, ${lng})"
                                             style="background: #1055CC; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; width: 100%;">
-                                        + Titik Pelanggan di Sini
+                                        + Titik Rumah Pelanggan
+                                    </button>
+                                    <button type="button" onclick="window.mapAppInstance.openAddNodeModal(${lat}, ${lng})"
+                                            style="background: #f59e0b; color: white; border: none; padding: 6px 10px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; width: 100%;">
+                                        + Titik Server / ODP
                                     </button>
                                 </div>
-                            `)
-                            .openOn(this.map);
-                    }
+                            </div>
+                        `)
+                        .openOn(this.map);
                 });
-
-                // Fit bounds if markers exist
-                if (this.pinnedList.length > 0) {
-                    try {
-                        this.map.fitBounds(this.markersGroup.getBounds(), { padding: [50, 50], maxZoom: 16 });
-                    } catch (e) {}
-                }
             },
 
             setLayer(type) {
@@ -643,17 +1060,472 @@
                 } else if (type === 'street') {
                     this.streetLayer.addTo(this.map);
                 }
+                this.saveMapState();
             },
 
+            renderAll() {
+                this.renderCables();
+                this.renderNodes();
+                this.renderMarkers();
+            },
+
+            // --- VILLAGE SEARCH & FLY-TO IMPLEMENTATION ---
+            onVillageSelected() {
+                this.filterMarkers();
+                if (!this.selectedVillage) return;
+                this.flyToVillage(this.selectedVillage);
+            },
+
+            onSearchInput() {
+                this.filterMarkers();
+                if (!this.searchQuery || this.searchQuery.trim().length < 2) {
+                    this.suggestedVillages = [];
+                    return;
+                }
+                const q = this.searchQuery.toLowerCase().trim();
+                this.suggestedVillages = this.villagesData.filter(v => v.name.toLowerCase().includes(q));
+            },
+
+            flyToVillage(villageId) {
+                const v = this.villagesData.find(item => item.id == villageId);
+                if (!v) return;
+
+                this.selectedVillage = v.id;
+                this.suggestedVillages = [];
+
+                if (v.latitude && v.longitude) {
+                    this.map.flyTo([parseFloat(v.latitude), parseFloat(v.longitude)], v.zoom_level || 16, {
+                        duration: 1.2
+                    });
+                } else {
+                    // Calculate centroid of customers in this village
+                    const villageCustomers = this.pinnedList.filter(c => c.village_id == v.id);
+                    if (villageCustomers.length > 0) {
+                        const bounds = L.latLngBounds(villageCustomers.map(c => [parseFloat(c.latitude), parseFloat(c.longitude)]));
+                        this.map.flyToBounds(bounds, { padding: [50, 50], maxZoom: 17, duration: 1.2 });
+                    }
+                }
+
+                this.filterMarkers();
+            },
+
+            centerOnCoords(lat, lng, zoom = 17) {
+                if (!lat || !lng) return;
+                this.map.flyTo([parseFloat(lat), parseFloat(lng)], zoom, { duration: 1 });
+            },
+
+            // --- CABLE DRAWING TOOL ---
+            startCableDrawing() {
+                this.cancelPinning();
+                this.drawingCable = true;
+                this.cablePoints = [];
+                this.newCableLengthMeters = 0;
+                this.clearTempCable();
+                
+                const mapEl = document.getElementById('map');
+                if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            },
+
+            cancelCableDrawing() {
+                this.drawingCable = false;
+                this.cablePoints = [];
+                this.newCableLengthMeters = 0;
+                this.clearTempCable();
+            },
+
+            clearTempCable() {
+                if (this.tempPolyline) {
+                    this.map.removeLayer(this.tempPolyline);
+                    this.tempPolyline = null;
+                }
+                this.tempPointMarkers.forEach(m => this.map.removeLayer(m));
+                this.tempPointMarkers = [];
+            },
+
+            handleCablePointClick(latlng) {
+                this.cablePoints.push([latlng.lat, latlng.lng]);
+                
+                // Waypoint circle
+                const dot = L.circleMarker(latlng, {
+                    radius: 5,
+                    color: '#ffffff',
+                    fillColor: this.newCableColor || '#10b981',
+                    fillOpacity: 1,
+                    weight: 2
+                }).addTo(this.map);
+                this.tempPointMarkers.push(dot);
+
+                // Polyline line
+                if (this.tempPolyline) {
+                    this.tempPolyline.setLatLngs(this.cablePoints);
+                } else {
+                    this.tempPolyline = L.polyline(this.cablePoints, {
+                        color: this.newCableColor || '#10b981',
+                        weight: 4.5,
+                        opacity: 0.9,
+                        dashArray: '6, 6'
+                    }).addTo(this.map);
+                }
+
+                // Compute length
+                this.newCableLengthMeters = this.calculateDistance(this.cablePoints);
+            },
+
+            calculateDistance(points) {
+                if (points.length < 2) return 0;
+                let total = 0;
+                for (let i = 0; i < points.length - 1; i++) {
+                    const p1 = L.latLng(points[i][0], points[i][1]);
+                    const p2 = L.latLng(points[i + 1][0], points[i + 1][1]);
+                    total += p1.distanceTo(p2);
+                }
+                return Math.round(total);
+            },
+
+            openSaveCableModal() {
+                if (this.cablePoints.length < 2) {
+                    alert('Minimal klik 2 titik di peta satelit untuk membentuk jalur kabel.');
+                    return;
+                }
+                this.newCableLengthMeters = this.calculateDistance(this.cablePoints);
+                this.cableModalOpen = true;
+            },
+
+            async saveCableRoute() {
+                if (!this.newCableName) {
+                    alert('Masukkan nama jalur kabel.');
+                    return;
+                }
+                this.saving = true;
+                try {
+                    const response = await fetch('/maps/cables', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            village_id: this.newCableVillageId || null,
+                            name: this.newCableName,
+                            cable_type: this.newCableType,
+                            color: this.newCableColor,
+                            core_count: this.newCableCore,
+                            coordinates: this.cablePoints,
+                            length_meters: this.newCableLengthMeters,
+                            notes: this.newCableNotes
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.cableRoutesData.push(data.cable);
+                        this.cableModalOpen = false;
+                        this.cancelCableDrawing();
+                        this.renderCables();
+                        alert('Jalur kabel ' + data.cable.name + ' (' + data.cable.length_meters + ' m) berhasil disimpan!');
+                    } else {
+                        alert('Gagal menyimpan kabel.');
+                    }
+                } catch (e) {
+                    alert('Terjadi kesalahan koneksi.');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            async deleteCableRoute(cableId) {
+                if (!confirm('Hapus jalur kabel ini dari peta?')) return;
+                try {
+                    const response = await fetch(`/maps/cables/${cableId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.cableRoutesData = this.cableRoutesData.filter(c => c.id != cableId);
+                        this.renderCables();
+                        this.map.closePopup();
+                    }
+                } catch (e) {
+                    alert('Gagal menghapus kabel.');
+                }
+            },
+
+            renderCables() {
+                this.cablesGroup.clearLayers();
+                if (!this.showCables) return;
+
+                this.cableRoutesData.forEach(cable => {
+                    if (!cable.coordinates || cable.coordinates.length < 2) return;
+
+                    if (this.selectedVillage && cable.village_id && cable.village_id != this.selectedVillage) {
+                        return;
+                    }
+
+                    const polyline = L.polyline(cable.coordinates, {
+                        color: cable.color || '#10b981',
+                        weight: 4.5,
+                        opacity: 0.95,
+                        lineJoin: 'round',
+                        smoothFactor: 1
+                    });
+
+                    const villageName = cable.village ? cable.village.name : 'Semua Wilayah';
+                    const typeLabel = cable.cable_type === 'backbone' ? 'Backbone Utama' : (cable.cable_type === 'distribution' ? 'Distribusi Antar ODP' : 'Dropcore Pelanggan');
+
+                    polyline.bindPopup(`
+                        <div style="font-family: inherit; font-size: 12px; min-width: 210px; padding: 4px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
+                                <span style="font-weight: 800; font-size: 13px; color: #0f172a;">〰️ ${cable.name}</span>
+                            </div>
+                            <div style="font-size: 11px; color: #64748b; line-height: 1.5; margin-bottom: 8px;">
+                                <div>📍 Wilayah: <strong>${villageName}</strong></div>
+                                <div>📦 Tipe: <strong style="color: ${cable.color};">${typeLabel}</strong></div>
+                                <div>📏 Panjang: <strong>${cable.length_meters || '-'} meter</strong></div>
+                                ${cable.core_count ? `<div>🧵 Kapasitas: <strong>${cable.core_count}</strong></div>` : ''}
+                                ${cable.notes ? `<div style="margin-top: 4px; padding: 4px 6px; background: #f8fafc; border-radius: 4px; font-size: 10px;">📝 ${cable.notes}</div>` : ''}
+                            </div>
+                            <button type="button" onclick="window.mapAppInstance.deleteCableRoute(${cable.id})"
+                                    style="width: 100%; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer;">
+                                🗑️ Hapus Jalur Kabel
+                            </button>
+                        </div>
+                    `, { autoPanPadding: [20, 20] });
+
+                    this.cablesGroup.addLayer(polyline);
+                });
+            },
+
+            // --- NETWORK NODES (SERVER, STARLINK, ODP) ---
+            openAddNodeModal(lat = null, lng = null) {
+                this.newNodeModalOpen = true;
+                this.newNodeCoordinate = (lat && lng) ? { lat, lng } : null;
+                this.newNodeName = '';
+                this.newNodeCapacity = this.newNodeType === 'odp' ? '8 Port' : (this.newNodeType === 'starlink' ? 'Starlink Standard' : '');
+                this.newNodeNotes = '';
+                this.map.closePopup();
+            },
+
+            createNodeIcon(node) {
+                let bgColor = '#f59e0b';
+                let iconChar = '🛰️';
+                let borderColor = '#ffffff';
+
+                if (node.type === 'server') {
+                    bgColor = '#0f172a';
+                    iconChar = '🖥️';
+                    borderColor = '#fbbf24';
+                } else if (node.type === 'odp') {
+                    bgColor = '#4f46e5';
+                    iconChar = '🔲';
+                    borderColor = '#c7d2fe';
+                } else if (node.type === 'pole') {
+                    bgColor = '#475569';
+                    iconChar = '📍';
+                }
+
+                const html = `
+                    <div style="position: relative; display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+                        <div style="background-color: ${bgColor}; border: 2.5px solid ${borderColor}; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-size: 15px; color: white;">
+                            ${iconChar}
+                        </div>
+                        <div style="background: rgba(15, 23, 42, 0.92); color: #fef08a; font-size: 10px; font-weight: 800; padding: 1.5px 6px; border-radius: 6px; margin-top: 3px; white-space: nowrap; border: 1px solid rgba(254, 240, 138, 0.4); text-shadow: 0 1px 2px rgba(0,0,0,0.8);">
+                            ${node.name}
+                        </div>
+                    </div>
+                `;
+
+                return L.divIcon({
+                    html: html,
+                    className: 'custom-house-marker',
+                    iconSize: [90, 50],
+                    iconAnchor: [45, 25],
+                    popupAnchor: [0, -25]
+                });
+            },
+
+            async saveNetworkNode() {
+                if (!this.newNodeName || !this.newNodeCoordinate) {
+                    alert('Nama dan koordinat wajib diisi.');
+                    return;
+                }
+                this.saving = true;
+                try {
+                    const response = await fetch('/maps/nodes', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            village_id: this.newNodeVillageId || null,
+                            name: this.newNodeName,
+                            type: this.newNodeType,
+                            capacity: this.newNodeCapacity,
+                            latitude: this.newNodeCoordinate.lat,
+                            longitude: this.newNodeCoordinate.lng,
+                            notes: this.newNodeNotes
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.networkNodesData.push(data.node);
+                        this.newNodeModalOpen = false;
+                        this.renderNodes();
+                        alert('Titik ' + data.node.name + ' berhasil disimpan!');
+                    } else {
+                        alert('Gagal menyimpan perangkat.');
+                    }
+                } catch (e) {
+                    alert('Terjadi kesalahan koneksi.');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            async saveNodeDirectFromModal() {
+                const lat = parseFloat(this.modalInputLat);
+                const lng = parseFloat(this.modalInputLng);
+                if (isNaN(lat) || isNaN(lng)) {
+                    alert('Koordinat latitude dan longitude tidak valid.');
+                    return;
+                }
+                this.newNodeCoordinate = { lat, lng };
+                await this.saveNetworkNode();
+                this.manualPinModalOpen = false;
+            },
+
+            async deleteNetworkNode(nodeId) {
+                if (!confirm('Hapus titik perangkat ini dari peta?')) return;
+                try {
+                    const response = await fetch(`/maps/nodes/${nodeId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        this.networkNodesData = this.networkNodesData.filter(n => n.id != nodeId);
+                        this.renderNodes();
+                        this.map.closePopup();
+                    }
+                } catch (e) {
+                    alert('Gagal menghapus perangkat.');
+                }
+            },
+
+            renderNodes() {
+                this.nodesGroup.clearLayers();
+                if (!this.showNodes) return;
+
+                this.networkNodesData.forEach(node => {
+                    if (!node.latitude || !node.longitude) return;
+
+                    if (this.selectedVillage && node.village_id && node.village_id != this.selectedVillage) {
+                        return;
+                    }
+
+                    const lat = parseFloat(node.latitude);
+                    const lng = parseFloat(node.longitude);
+                    if (isNaN(lat) || isNaN(lng)) return;
+
+                    const marker = L.marker([lat, lng], {
+                        icon: this.createNodeIcon(node)
+                    });
+
+                    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+                    const villageName = node.village ? node.village.name : 'Umum / Pusat';
+                    const typeLabel = node.type === 'server' ? 'Server Pusat / NOC' : (node.type === 'starlink' ? 'Dish Antena Starlink' : (node.type === 'odp' ? 'Kotak ODP FO' : 'Perangkat Jaringan'));
+
+                    marker.bindPopup(`
+                        <div style="font-family: inherit; font-size: 12px; min-width: 220px; padding: 4px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
+                                <span style="font-weight: 800; font-size: 13px; color: #0f172a;">${node.name}</span>
+                            </div>
+                            <div style="font-size: 11px; color: #64748b; line-height: 1.5; margin-bottom: 8px;">
+                                <div>⚙️ Tipe: <strong>${typeLabel}</strong></div>
+                                <div>📍 Lokasi: <strong>${villageName}</strong></div>
+                                ${node.capacity ? `<div>🔲 Kapasitas: <strong style="color: #4f46e5;">${node.capacity}</strong></div>` : ''}
+                                ${node.notes ? `<div style="margin-top: 4px; padding: 4px 6px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; color: #92400e; font-size: 10px;">📝 ${node.notes}</div>` : ''}
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 4px;">
+                                <a href="${googleMapsUrl}" target="_blank" 
+                                   style="display: flex; align-items: center; justify-content: center; gap: 4px; background: #059669; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
+                                    🗺️ Navigasi Google Maps
+                                </a>
+                                <button type="button" onclick="window.mapAppInstance.deleteNetworkNode(${node.id})"
+                                        style="width: 100%; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer;">
+                                    🗑️ Hapus Titik Ini
+                                </button>
+                            </div>
+                        </div>
+                    `, { autoPanPadding: [20, 20] });
+
+                    this.nodesGroup.addLayer(marker);
+                });
+            },
+
+            // --- VILLAGE CENTER SETTING ---
+            async saveVillageCenterFromModal() {
+                if (!this.selectedVillageForCenter) {
+                    alert('Pilih desa terlebih dahulu.');
+                    return;
+                }
+                const lat = parseFloat(this.modalInputLat);
+                const lng = parseFloat(this.modalInputLng);
+                if (isNaN(lat) || isNaN(lng)) {
+                    alert('Koordinat latitude dan longitude tidak valid.');
+                    return;
+                }
+
+                this.saving = true;
+                try {
+                    const response = await fetch(`/maps/villages/${this.selectedVillageForCenter}/location`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ latitude: lat, longitude: lng, zoom_level: 16 })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        const v = this.villagesData.find(item => item.id == this.selectedVillageForCenter);
+                        if (v) {
+                            v.latitude = lat;
+                            v.longitude = lng;
+                            v.zoom_level = 16;
+                        }
+                        this.manualPinModalOpen = false;
+                        this.map.flyTo([lat, lng], 16);
+                        alert('Titik pusat desa ' + data.village.name + ' berhasil disimpan!');
+                    } else {
+                        alert('Gagal menyimpan titik desa.');
+                    }
+                } catch (e) {
+                    alert('Terjadi kesalahan koneksi.');
+                } finally {
+                    this.saving = false;
+                }
+            },
+
+            // --- CUSTOMER MARKERS & POPUPS ---
             createCustomIcon(customer) {
-                let bgColor = '#1055CC'; // Active blue
+                let bgColor = '#1055CC';
                 let iconSymbol = '📶';
 
                 if (customer.status === 'isolated') {
-                    bgColor = '#D97706'; // Amber
+                    bgColor = '#D97706';
                     iconSymbol = '⚠️';
                 } else if (customer.status === 'inactive') {
-                    bgColor = '#E11D48'; // Rose/Red
+                    bgColor = '#E11D48';
                     iconSymbol = '❌';
                 }
 
@@ -743,12 +1615,14 @@
 
             renderMarkers() {
                 this.markersGroup.clearLayers();
+                if (!this.showCustomers) return;
 
                 const filtered = this.pinnedList.filter(c => {
                     const matchVillage = !this.selectedVillage || c.village_id == this.selectedVillage;
                     const matchSearch = !this.searchQuery || 
                         c.name.toLowerCase().includes(this.searchQuery.toLowerCase()) || 
-                        c.customer_code.toLowerCase().includes(this.searchQuery.toLowerCase());
+                        c.customer_code.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+                        (c.pppoe_user && c.pppoe_user.toLowerCase().includes(this.searchQuery.toLowerCase()));
                     return matchVillage && matchSearch;
                 });
 
@@ -761,7 +1635,6 @@
                         icon: this.createCustomIcon(c)
                     });
 
-                    // Lazy Popup binding: popup HTML string only constructed upon marker click!
                     marker.bindPopup(() => this.buildPopupHtml(c), {
                         maxWidth: 290,
                         minWidth: 220,
@@ -773,9 +1646,10 @@
             },
 
             filterMarkers() {
-                this.renderMarkers();
+                this.renderAll();
             },
 
+            // --- MANUAL PINNING HELPERS ---
             openManualPinModal() {
                 this.manualPinModalOpen = true;
                 this.modalCustomerSearch = '';
@@ -810,59 +1684,6 @@
                 this.startPinning(customer);
             },
 
-            async saveManualCoordinatesFromModal() {
-                if (!this.modalSelectedCustomerId) {
-                    alert('Pilih pelanggan terlebih dahulu.');
-                    return;
-                }
-                const lat = parseFloat(this.modalInputLat);
-                const lng = parseFloat(this.modalInputLng);
-                if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                    alert('Nilai Latitude (-90 s/d 90) dan Longitude (-180 s/d 180) tidak valid.');
-                    return;
-                }
-
-                const customer = this.allCustomersData.find(c => c.id == this.modalSelectedCustomerId);
-                if (!customer) return;
-
-                this.saving = true;
-                try {
-                    const response = await fetch(`/maps/customers/${customer.id}/location`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify({ latitude: lat, longitude: lng })
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        customer.latitude = lat;
-                        customer.longitude = lng;
-
-                        if (!this.pinnedList.some(item => item.id == customer.id)) {
-                            this.pinnedList.push(customer);
-                            this.unpinnedList = this.unpinnedList.filter(item => item.id != customer.id);
-                        }
-                        this.pinnedCount = this.pinnedList.length;
-                        this.unpinnedCount = this.unpinnedList.length;
-
-                        this.manualPinModalOpen = false;
-                        this.renderMarkers();
-                        this.map.setView([lat, lng], 17);
-
-                        alert('Titik koordinat rumah ' + customer.name + ' berhasil disimpan!');
-                    } else {
-                        alert('Gagal menyimpan koordinat.');
-                    }
-                } catch (e) {
-                    alert('Terjadi kesalahan koneksi.');
-                } finally {
-                    this.saving = false;
-                }
-            },
-
             startRepositionCustomer(customerId) {
                 const customer = this.allCustomersData.find(c => c.id == customerId);
                 if (!customer) return;
@@ -881,7 +1702,6 @@
             centerOnCustomerVillage(customer) {
                 if (!customer) return;
 
-                // 1. If customer already has coordinates, zoom to it
                 if (customer.latitude && customer.longitude) {
                     const lat = parseFloat(customer.latitude);
                     const lng = parseFloat(customer.longitude);
@@ -892,8 +1712,12 @@
                     }
                 }
 
-                // 2. Look for existing neighbor pins in the same village
                 if (customer.village_id) {
+                    const v = this.villagesData.find(item => item.id == customer.village_id);
+                    if (v && v.latitude && v.longitude) {
+                        this.map.setView([parseFloat(v.latitude), parseFloat(v.longitude)], 16);
+                        return;
+                    }
                     const villageNeighbors = this.pinnedList.filter(c => c.village_id == customer.village_id);
                     if (villageNeighbors.length > 0) {
                         const first = villageNeighbors[0];
@@ -904,6 +1728,7 @@
             },
 
             startPinning(customer) {
+                this.cancelCableDrawing();
                 this.pinningCustomer = customer;
                 this.pendingCoordinate = null;
                 if (this.temporaryMarker) {
@@ -913,7 +1738,6 @@
 
                 this.centerOnCustomerVillage(customer);
 
-                // Auto-scroll to map smoothly on mobile so user sees the map canvas immediately
                 const mapEl = document.getElementById('map');
                 if (mapEl) {
                     mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1001,7 +1825,6 @@
                     const data = await response.json();
 
                     if (data.success) {
-                        // Move customer from unpinned to pinned
                         const updated = this.pinningCustomer;
                         updated.latitude = this.pendingCoordinate.lat;
                         updated.longitude = this.pendingCoordinate.lng;

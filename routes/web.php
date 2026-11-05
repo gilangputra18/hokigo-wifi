@@ -28,6 +28,11 @@ Route::middleware('auth')->group(function () {
     // Peta Jaringan & Penitikan Rumah Pelanggan (Bisa diakses Owner, Admin, & Teknisi)
     Route::get('/maps', [MapController::class, 'index'])->name('maps.index');
     Route::post('/maps/customers/{customer}/location', [MapController::class, 'updateLocation'])->name('maps.update-location');
+    Route::post('/maps/nodes', [MapController::class, 'storeNode'])->name('maps.nodes.store');
+    Route::delete('/maps/nodes/{node}', [MapController::class, 'destroyNode'])->name('maps.nodes.destroy');
+    Route::post('/maps/cables', [MapController::class, 'storeCable'])->name('maps.cables.store');
+    Route::delete('/maps/cables/{cable}', [MapController::class, 'destroyCable'])->name('maps.cables.destroy');
+    Route::post('/maps/villages/{village}/location', [MapController::class, 'updateVillageLocation'])->name('maps.villages.location');
     Route::post('/maps/reset', [MapController::class, 'resetMapData'])->name('maps.reset');
 
     // Pelanggan (Bisa diakses Owner, Admin, & Teknisi)

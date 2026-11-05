@@ -27,6 +27,13 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        // Auto-migrate tables on cloud production if new network infrastructure tables do not exist yet
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasTable('cable_routes')) {
+                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+            }
+        } catch (\Throwable $e) {}
+
         // Fast In-Memory View Composer for Sidebar Badges (Prevents redundant DB queries on every page)
         View::composer('layouts.app', function ($view) {
             static $counts = null;
