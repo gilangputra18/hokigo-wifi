@@ -72,13 +72,14 @@
                         <p class="text-[10px] text-slate-400 mt-1">Pesan tagihan akan dikirimkan otomatis ke nomor ini.</p>
                     </div>
 
-                    <!-- Desa / Wilayah (Requirement 1) -->
+                    <!-- Kelompok Desa / Wilayah -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Kelompok Desa / Wilayah *</label>
-                        <select name="village_id" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <select name="village_id" id="customer_village_select" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                             <option value="">-- Pilih Desa --</option>
                             @foreach($villages as $vil)
-                                <option value="{{ $vil->id }}" {{ old('village_id') == $vil->id ? 'selected' : '' }}>
+                                <option value="{{ $vil->id }}" {{ old('village_id') == $vil->id ? 'selected' : '' }}
+                                        data-lat="{{ $vil->latitude }}" data-lng="{{ $vil->longitude }}" data-zoom="{{ $vil->zoom_level ?? 16 }}">
                                     {{ $vil->name }} {{ $vil->district ? '('.$vil->district.')' : '' }}
                                 </option>
                             @endforeach
@@ -313,22 +314,51 @@
                 </div>
 
                 <p class="text-[11px] text-slate-500 mb-3">
-                    Teknisi dapat langsung klik tombol <strong>"Gunakan Lokasi GPS Saya Saat Ini"</strong> saat berdiri di rumah pelanggan, atau klik & geser pin di peta satelit di bawah ini.
+                    Teknisi dapat langsung klik tombol <strong>"Gunakan Lokasi GPS Saya Saat Ini"</strong> saat berdiri di rumah pelanggan, atau klik & geser pin di peta di bawah ini. Anda juga bisa memilih mode tampilan peta (Google Satelit, Esri Satelit, Jalan).
                 </p>
 
-                <!-- Map Canvas -->
-                <div id="customer-picker-map" class="w-full h-72 sm:h-80 rounded-2xl border border-slate-200 overflow-hidden mb-3 relative z-0"></div>
+                <!-- Map Container with 3-Model Layer Switcher -->
+                <div class="relative w-full h-80 sm:h-96 rounded-2xl border border-slate-200 overflow-hidden mb-3 shadow-inner">
+                    
+                    <!-- Floating Map Layer Switcher Pill (3 Model Sesuai Referensi) -->
+                    <div class="absolute top-3 left-3 z-[400] flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200 text-xs select-none">
+                        <button type="button" @click="setLayer('google')" 
+                                :class="currentLayer === 'google' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 font-semibold'"
+                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] transition flex items-center gap-1.5">
+                            <span>🛰️</span> <span>Google Satelit</span>
+                        </button>
+                        <button type="button" @click="setLayer('esri')" 
+                                :class="currentLayer === 'esri' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 font-semibold'"
+                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] transition flex items-center gap-1.5">
+                            <span>🛰️</span> <span>Esri Satelit</span>
+                        </button>
+                        <button type="button" @click="setLayer('street')" 
+                                :class="currentLayer === 'street' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 font-semibold'"
+                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] transition flex items-center gap-1.5">
+                            <span>🗺️</span> <span>Jalan</span>
+                        </button>
+                    </div>
+
+                    <!-- Coordinates readout badge -->
+                    <div class="absolute bottom-3 left-3 z-[400] bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-mono px-3 py-1.5 rounded-xl shadow border border-white/10 flex items-center gap-1.5"
+                         x-show="lat && lng">
+                        <span>📍</span> <span x-text="lat"></span>, <span x-text="lng"></span>
+                    </div>
+
+                    <!-- Map Canvas -->
+                    <div id="customer-picker-map" class="w-full h-full relative z-0"></div>
+                </div>
 
                 <!-- Lat & Lng Input Values -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Latitude (Garis Lintang)</label>
-                        <input type="text" name="latitude" id="input_latitude" x-model="lat" placeholder="-7.536064"
+                        <input type="text" name="latitude" id="input_latitude" x-model="lat" @input="onManualCoordChange()" placeholder="-7.536064"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Longitude (Garis Bujur)</label>
-                        <input type="text" name="longitude" id="input_longitude" x-model="lng" placeholder="112.238402"
+                        <input type="text" name="longitude" id="input_longitude" x-model="lng" @input="onManualCoordChange()" placeholder="112.238402"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                     </div>
                 </div>
@@ -365,6 +395,10 @@
         return {
             map: null,
             marker: null,
+            currentLayer: localStorage.getItem('hokigo_picker_map_layer') || 'google',
+            googleHybridLayer: null,
+            esriSatelliteLayer: null,
+            streetLayer: null,
             lat: '{{ old('latitude', '') }}',
             lng: '{{ old('longitude', '') }}',
 
@@ -381,40 +415,117 @@
 
                 this.map = L.map('customer-picker-map', {
                     center: [initLat, initLng],
-                    zoom: hasInitial ? 16 : 13
+                    zoom: hasInitial ? 17 : 14,
+                    zoomControl: false,
+                    preferCanvas: true
                 });
 
-                // Satellite layer
-                L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                // Zoom control positioned at bottom right so it doesn't block top pill
+                L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+
+                // Model 1: Google Hybrid Satelit
+                this.googleHybridLayer = L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                    subdomains: ['0', '1', '2', '3'],
+                    maxZoom: 20,
+                    attribution: '&copy; Google Maps',
+                    updateWhenIdle: true
+                });
+
+                // Model 2: Esri World Imagery (Satelit)
+                this.esriSatelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                     attribution: 'Tiles &copy; Esri',
-                    maxZoom: 19
-                }).addTo(this.map);
+                    maxNativeZoom: 18,
+                    maxZoom: 20,
+                    updateWhenIdle: true
+                });
+
+                // Model 3: OpenStreetMap (Jalan)
+                this.streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap',
+                    maxZoom: 19,
+                    updateWhenIdle: true
+                });
+
+                // Apply initial selected layer
+                this.setLayer(this.currentLayer);
+
+                setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 200);
+                setTimeout(() => { if (this.map) this.map.invalidateSize(); }, 500);
 
                 if (hasInitial) {
-                    this.marker = L.marker([initLat, initLng], { draggable: true }).addTo(this.map);
-                    this.marker.on('dragend', (e) => {
-                        const pos = e.target.getLatLng();
-                        this.lat = pos.lat.toFixed(6);
-                        this.lng = pos.lng.toFixed(6);
-                    });
+                    this.createOrUpdateMarker(initLat, initLng);
                 }
 
+                // Map Click Listener
                 this.map.on('click', (e) => {
                     const pos = e.latlng;
                     this.lat = pos.lat.toFixed(6);
                     this.lng = pos.lng.toFixed(6);
-
-                    if (this.marker) {
-                        this.marker.setLatLng(pos);
-                    } else {
-                        this.marker = L.marker(pos, { draggable: true }).addTo(this.map);
-                        this.marker.on('dragend', (ev) => {
-                            const p = ev.target.getLatLng();
-                            this.lat = p.lat.toFixed(6);
-                            this.lng = p.lng.toFixed(6);
-                        });
-                    }
+                    this.createOrUpdateMarker(pos.lat, pos.lng);
                 });
+
+                // Listen to Village selector change to auto fly to village if no pin yet
+                const villageSelect = document.getElementById('customer_village_select') || document.querySelector('select[name="village_id"]');
+                if (villageSelect) {
+                    villageSelect.addEventListener('change', (e) => {
+                        const opt = e.target.selectedOptions[0];
+                        if (opt) {
+                            const vLat = opt.getAttribute('data-lat');
+                            const vLng = opt.getAttribute('data-lng');
+                            const vZoom = opt.getAttribute('data-zoom') || 16;
+                            if (vLat && vLng && !this.lat && !this.lng) {
+                                this.map.flyTo([parseFloat(vLat), parseFloat(vLng)], parseInt(vZoom), { duration: 1.2 });
+                            }
+                        }
+                    });
+                }
+            },
+
+            setLayer(type) {
+                this.currentLayer = type;
+                try {
+                    localStorage.setItem('hokigo_picker_map_layer', type);
+                } catch(e) {}
+
+                if (this.googleHybridLayer && this.map.hasLayer(this.googleHybridLayer)) {
+                    this.map.removeLayer(this.googleHybridLayer);
+                }
+                if (this.esriSatelliteLayer && this.map.hasLayer(this.esriSatelliteLayer)) {
+                    this.map.removeLayer(this.esriSatelliteLayer);
+                }
+                if (this.streetLayer && this.map.hasLayer(this.streetLayer)) {
+                    this.map.removeLayer(this.streetLayer);
+                }
+
+                if (type === 'google') {
+                    this.googleHybridLayer.addTo(this.map);
+                } else if (type === 'esri') {
+                    this.esriSatelliteLayer.addTo(this.map);
+                } else if (type === 'street') {
+                    this.streetLayer.addTo(this.map);
+                }
+            },
+
+            createOrUpdateMarker(lat, lng) {
+                if (this.marker) {
+                    this.marker.setLatLng([lat, lng]);
+                } else {
+                    this.marker = L.marker([lat, lng], { draggable: true }).addTo(this.map);
+                    this.marker.on('dragend', (ev) => {
+                        const p = ev.target.getLatLng();
+                        this.lat = p.lat.toFixed(6);
+                        this.lng = p.lng.toFixed(6);
+                    });
+                }
+            },
+
+            onManualCoordChange() {
+                let latVal = parseFloat(this.lat);
+                let lngVal = parseFloat(this.lng);
+                if (!isNaN(latVal) && !isNaN(lngVal) && latVal >= -90 && latVal <= 90 && lngVal >= -180 && lngVal <= 180) {
+                    this.createOrUpdateMarker(latVal, lngVal);
+                    this.map.panTo([latVal, lngVal]);
+                }
             },
 
             useCurrentGps() {
@@ -429,13 +540,8 @@
                     this.lat = pLat.toFixed(6);
                     this.lng = pLng.toFixed(6);
 
-                    this.map.setView([pLat, pLng], 17);
-
-                    if (this.marker) {
-                        this.marker.setLatLng([pLat, pLng]);
-                    } else {
-                        this.marker = L.marker([pLat, pLng], { draggable: true }).addTo(this.map);
-                    }
+                    this.map.setView([pLat, pLng], 18);
+                    this.createOrUpdateMarker(pLat, pLng);
 
                     alert('📍 Posisi GPS Anda berhasil diambil!');
                 }, (err) => {
