@@ -408,8 +408,19 @@
                     const packageName = c.package ? `${c.package.name} (${c.package.speed})` : 'Paket Standar';
                     const monthlyFee = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(c.monthly_fee || 0);
 
+                    const photoHtml = c.house_photo 
+                        ? `<div style="margin-bottom: 8px; border-radius: 8px; overflow: hidden; max-height: 110px; background: #0f172a;"><img src="${c.house_photo}" style="width: 100%; height: 100px; object-fit: cover;" alt="Foto Rumah"></div>`
+                        : '';
+                    const houseNumberHtml = c.house_number 
+                        ? `<div>🏠 <strong>${c.house_number}</strong></div>`
+                        : '';
+                    const redamanHtml = c.redaman 
+                        ? `<div>📶 Redaman: <strong style="color: #059669; background: #ecfdf5; padding: 1px 5px; border-radius: 4px; border: 1px solid #a7f3d0;">${c.redaman}</strong></div>`
+                        : '';
+
                     const popupContent = `
                         <div style="font-family: 'Plus Jakarta Sans', sans-serif; min-width: 220px; max-width: 280px; padding: 4px;">
+                            ${photoHtml}
                             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
                                 <h4 style="margin: 0; font-weight: 800; font-size: 14px; color: #0f172a;">${c.name}</h4>
                                 <span style="font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: #f1f5f9; color: #475569;">${c.customer_code}</span>
@@ -417,7 +428,9 @@
                             
                             <div style="font-size: 11px; color: #64748b; line-height: 1.4; margin-bottom: 8px;">
                                 <div>📍 <strong>${villageName}</strong></div>
+                                ${houseNumberHtml}
                                 <div>📦 ${packageName} &bull; <strong>${monthlyFee}</strong></div>
+                                ${redamanHtml}
                                 ${c.pppoe_user ? `<div>👤 PPPoE: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_user}</code></div>` : ''}
                                 ${c.pppoe_password ? `<div>🔑 Sandi: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_password}</code></div>` : ''}
                                 ${c.notes ? `<div style="margin-top: 4px; padding: 4px 6px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; color: #92400e; font-size: 10px;">📝 ${c.notes}</div>` : ''}

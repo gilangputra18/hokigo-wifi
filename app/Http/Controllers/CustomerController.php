@@ -97,14 +97,26 @@ class CustomerController extends Controller
             'due_date_day' => ['required', 'integer', 'between:1,31'],
             'installation_date' => ['nullable', 'date'],
             'router_model' => ['nullable', 'string', 'max:100'],
+            'redaman' => ['nullable', 'string', 'max:30'],
+            'house_number' => ['nullable', 'string', 'max:100'],
             'pppoe_user' => ['nullable', 'string', 'max:100'],
             'pppoe_password' => ['nullable', 'string', 'max:100'],
             'ip_address' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,isolated,inactive'],
             'notes' => ['nullable', 'string'],
+            'house_photo' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
+
+        if ($request->hasFile('house_photo_file')) {
+            $file = $request->file('house_photo_file');
+            if ($file->isValid()) {
+                $mime = $file->getMimeType();
+                $base64 = base64_encode(file_get_contents($file->getRealPath()));
+                $validated['house_photo'] = "data:{$mime};base64,{$base64}";
+            }
+        }
 
         $customer = Customer::create($validated);
 
@@ -163,14 +175,26 @@ class CustomerController extends Controller
             'due_date_day' => ['required', 'integer', 'between:1,31'],
             'installation_date' => ['nullable', 'date'],
             'router_model' => ['nullable', 'string', 'max:100'],
+            'redaman' => ['nullable', 'string', 'max:30'],
+            'house_number' => ['nullable', 'string', 'max:100'],
             'pppoe_user' => ['nullable', 'string', 'max:100'],
             'pppoe_password' => ['nullable', 'string', 'max:100'],
             'ip_address' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,isolated,inactive'],
             'notes' => ['nullable', 'string'],
+            'house_photo' => ['nullable', 'string'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
         ]);
+
+        if ($request->hasFile('house_photo_file')) {
+            $file = $request->file('house_photo_file');
+            if ($file->isValid()) {
+                $mime = $file->getMimeType();
+                $base64 = base64_encode(file_get_contents($file->getRealPath()));
+                $validated['house_photo'] = "data:{$mime};base64,{$base64}";
+            }
+        }
 
         $customer->update($validated);
 

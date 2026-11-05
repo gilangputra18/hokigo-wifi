@@ -19,7 +19,7 @@
             </a>
         </div>
 
-        <form action="{{ route('customers.update', $customer) }}" method="POST" class="space-y-6">
+        <form action="{{ route('customers.update', $customer) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
             @csrf
             @method('PUT')
 
@@ -59,9 +59,18 @@
                         </select>
                     </div>
 
-                    <div class="sm:col-span-2">
+                    <!-- No. Rumah / Gang / Blok (Requirement Pemasangan) -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">No. Rumah / Gang / Blok</label>
+                        <input type="text" name="house_number" value="{{ old('house_number', $customer->house_number) }}" placeholder="Contoh: No. 14 / Gang Mawar / Blok B-05"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    </div>
+
+                    <!-- Alamat / Dusun / RT RW -->
+                    <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Alamat Lengkap / Dusun / RT RW</label>
-                        <textarea name="address" rows="2" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">{{ old('address', $customer->address) }}</textarea>
+                        <input type="text" name="address" value="{{ old('address', $customer->address) }}" placeholder="Contoh: RT 03 RW 01, Dusun Krajan"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                     </div>
                 </div>
             </div>
@@ -110,11 +119,18 @@
                     <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 3. Data Teknis / Perangkat
                 </h3>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Model Router (ONT)</label>
                         <input type="text" name="router_model" value="{{ old('router_model', $customer->router_model) }}"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nilai Redaman (dBm)</label>
+                        <input type="text" name="redaman" value="{{ old('redaman', $customer->redaman) }}" placeholder="Contoh: -18.5 dBm"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <p class="text-[10px] text-slate-400 mt-1">Standar GPON: -16 s/d -24 dBm</p>
                     </div>
 
                     <div>
@@ -131,32 +147,103 @@
                 </div>
             </div>
 
-            <!-- Section 4: Notes (Requirement 1) -->
-            <div class="pt-4 border-t border-slate-100">
+            <!-- Section 4: Catatan Khusus & Foto Rumah Pelanggan -->
+            <div class="pt-4 border-t border-slate-100" x-data="photoUploader('{{ $customer->house_photo }}')">
                 <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> 4. Catatan Khusus Pelanggan (Note Lapangan)
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> 4. Catatan Keterangan & Foto Rumah Pelanggan
                 </h3>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Teknis & Penagihan (Note)</label>
-                    <textarea name="notes" rows="3" 
-                              class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue bg-amber-50/30">{{ old('notes', $customer->notes) }}</textarea>
-                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Left: Catatan Lapangan & Status -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">
+                                Keterangan Pemasangan & Note Lapangan
+                            </label>
+                            <textarea name="notes" rows="4" 
+                                      placeholder="Tuliskan keterangan: posisi tiang ODP, nomor port ODP, rute & panjang kabel dropcore, letak penempatan router ONT..."
+                                      class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue bg-amber-50/30">{{ old('notes', $customer->notes) }}</textarea>
+                            <p class="text-[10px] text-slate-400 mt-1">Keterangan ini tampil langsung di peta dan kartu pelanggan untuk teknisi.</p>
+                        </div>
 
-                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Pemasangan</label>
-                        <input type="date" name="installation_date" value="{{ old('installation_date', $customer->installation_date ? $customer->installation_date->format('Y-m-d') : '') }}"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Pemasangan</label>
+                                <input type="date" name="installation_date" value="{{ old('installation_date', $customer->installation_date ? $customer->installation_date->format('Y-m-d') : '') }}"
+                                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Status Pelanggan</label>
+                                <select name="status" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                                    <option value="active" {{ old('status', $customer->status) === 'active' ? 'selected' : '' }}>Aktif</option>
+                                    <option value="isolated" {{ old('status', $customer->status) === 'isolated' ? 'selected' : '' }}>Isolir</option>
+                                    <option value="inactive" {{ old('status', $customer->status) === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Right: Foto Rumah Pelanggan -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Status Pelanggan</label>
-                        <select name="status" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                            <option value="active" {{ old('status', $customer->status) === 'active' ? 'selected' : '' }}>Aktif</option>
-                            <option value="isolated" {{ old('status', $customer->status) === 'isolated' ? 'selected' : '' }}>Isolir</option>
-                            <option value="inactive" {{ old('status', $customer->status) === 'inactive' ? 'selected' : '' }}>Nonaktif</option>
-                        </select>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">
+                            Foto Rumah / Lokasi Pelanggan
+                        </label>
+
+                        <!-- Hidden base64 input -->
+                        <input type="hidden" name="house_photo" :value="photoData">
+                        <input type="file" id="camera_input" accept="image/*" capture="environment" class="hidden" @change="handleFileSelect($event)">
+                        <input type="file" id="gallery_input" accept="image/*" class="hidden" @change="handleFileSelect($event)">
+
+                        <div class="border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center hover:border-brand-blue/50 transition bg-slate-50/60">
+                            <template x-if="!photoData">
+                                <div class="py-4 space-y-3">
+                                    <div class="w-12 h-12 rounded-2xl bg-brand-blue/10 text-brand-blue flex items-center justify-center mx-auto">
+                                        <i data-lucide="camera" class="w-6 h-6"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-700">Ambil Foto Rumah Pelanggan</p>
+                                        <p class="text-[11px] text-slate-400 mt-0.5">Jepret langsung via kamera smartphone teknisi atau galeri</p>
+                                    </div>
+                                    <div class="flex items-center justify-center gap-2 pt-2">
+                                        <button type="button" @click="document.getElementById('camera_input').click()" 
+                                                class="px-3.5 py-2 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+                                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                                            <span>Buka Kamera HP</span>
+                                        </button>
+                                        <button type="button" @click="document.getElementById('gallery_input').click()" 
+                                                class="px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition flex items-center gap-1.5">
+                                            <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                                            <span>Pilih Galeri</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <template x-if="photoData">
+                                <div class="space-y-3">
+                                    <div class="relative rounded-xl overflow-hidden max-h-56 bg-slate-900 border border-slate-200">
+                                        <img :src="photoData" alt="Foto Rumah Pelanggan" class="w-full h-48 object-cover mx-auto">
+                                        <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-md font-mono">
+                                            Foto Terpilih
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button type="button" @click="document.getElementById('camera_input').click()" 
+                                                class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1">
+                                            <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                                            <span>Ganti Foto</span>
+                                        </button>
+                                        <button type="button" @click="removePhoto()" 
+                                                class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition flex items-center gap-1">
+                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                            <span>Hapus</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1.5">Foto otomatis dioptimalkan agar ringan dibuka teknisi di lapangan & disimpan permanen di database.</p>
                     </div>
                 </div>
             </div>
@@ -304,6 +391,57 @@
                 }, (err) => {
                     alert('Gagal mendeteksi GPS: ' + err.message + '. Pastikan izin GPS aktif di browser HP.');
                 }, { enableHighAccuracy: true });
+            }
+        };
+    }
+
+    function photoUploader(initialPhoto = '') {
+        return {
+            photoData: initialPhoto || '{{ old('house_photo', '') }}',
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        const maxDim = 1024;
+
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Compress to efficient JPEG (~70-90KB)
+                        this.photoData = canvas.toDataURL('image/jpeg', 0.82);
+                        if (window.lucide) {
+                            setTimeout(() => window.lucide.createIcons(), 50);
+                        }
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            },
+            removePhoto() {
+                this.photoData = '';
+                const cam = document.getElementById('camera_input');
+                const gal = document.getElementById('gallery_input');
+                if (cam) cam.value = '';
+                if (gal) gal.value = '';
             }
         };
     }

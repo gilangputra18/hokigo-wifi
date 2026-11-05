@@ -36,6 +36,11 @@
                     <span class="flex items-center gap-1 text-slate-700">
                         <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-blue"></i> {{ $customer->village?->name ?? 'Luar Wilayah' }}
                     </span>
+                    @if($customer->house_number)
+                        <span class="flex items-center gap-1 text-slate-700 font-semibold">
+                            <i data-lucide="home" class="w-3.5 h-3.5 text-amber-600"></i> {{ $customer->house_number }}
+                        </span>
+                    @endif
                     <span>Tgl Pemasangan: {{ $customer->installation_date ? $customer->installation_date->isoFormat('D MMMM Y') : '-' }}</span>
                 </div>
             </div>
@@ -74,14 +79,47 @@
     <!-- 2 Column Details: Left Details + Notes, Right Invoices -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- Left Column: Specs & Notes -->
+        <!-- Left Column: Specs, Photo & Notes -->
         <div class="space-y-6">
             
-            <!-- Notes Card (Requirement 1: Ada Note nya juga di masing-masing pelanggan) -->
+            <!-- Foto Rumah Pelanggan Card -->
+            <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <i data-lucide="image" class="w-4 h-4 text-brand-blue"></i>
+                        <span>Foto Rumah / Titik Pemasangan</span>
+                    </h3>
+                    <a href="{{ route('customers.edit', $customer) }}" class="text-[11px] font-bold text-brand-blue hover:underline">
+                        {{ $customer->house_photo ? 'Ganti Foto' : '+ Upload Foto' }}
+                    </a>
+                </div>
+
+                @if($customer->house_photo)
+                    <div class="relative group rounded-2xl overflow-hidden border border-slate-200 bg-slate-900">
+                        <img src="{{ $customer->house_photo }}" alt="Foto Rumah {{ $customer->name }}" class="w-full h-48 object-cover group-hover:scale-105 transition duration-300">
+                        <a href="{{ $customer->house_photo }}" target="_blank" 
+                           class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-bold text-xs gap-1.5">
+                            <i data-lucide="maximize-2" class="w-4 h-4"></i>
+                            <span>Buka Ukuran Penuh</span>
+                        </a>
+                    </div>
+                @else
+                    <div class="py-6 px-4 text-center rounded-2xl bg-slate-50 border border-dashed border-slate-200">
+                        <i data-lucide="camera" class="w-8 h-8 text-slate-300 mx-auto mb-2"></i>
+                        <p class="text-xs text-slate-500 font-medium">Belum ada foto rumah yang diunggah.</p>
+                        <a href="{{ route('customers.edit', $customer) }}" class="mt-2 inline-flex items-center gap-1 text-xs font-bold text-brand-blue hover:underline">
+                            <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                            <span>Jepret Foto Sekarang</span>
+                        </a>
+                    </div>
+                @endif
+            </div>
+
+            <!-- Notes Card (Catatan Khusus Pelanggan) -->
             <div class="bg-amber-50/80 rounded-3xl p-6 border border-amber-200/80 shadow-xs">
                 <div class="flex items-center gap-2 text-amber-900 font-bold text-sm mb-3">
                     <i data-lucide="sticky-note" class="w-5 h-5 text-amber-600"></i>
-                    <span>Catatan Khusus Pelanggan</span>
+                    <span>Catatan Keterangan Lapangan</span>
                 </div>
                 <div class="bg-white/80 p-4 rounded-2xl border border-amber-200/50 text-xs text-amber-950 font-medium leading-relaxed whitespace-pre-line">
                     {{ $customer->notes ?: 'Belum ada catatan khusus untuk pelanggan ini.' }}
@@ -117,6 +155,18 @@
                     </div>
 
                     <div class="flex items-center justify-between py-1 border-b border-slate-50">
+                        <span class="text-slate-400">Nilai Redaman</span>
+                        @if($customer->redaman)
+                            <span class="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-lg text-xs border border-emerald-200 flex items-center gap-1.5">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <span>{{ $customer->redaman }}</span>
+                            </span>
+                        @else
+                            <span class="text-slate-400 italic text-[11px]">-</span>
+                        @endif
+                    </div>
+
+                    <div class="flex items-center justify-between py-1 border-b border-slate-50">
                         <span class="text-slate-400">Username PPPoE</span>
                         <span class="font-mono text-slate-700 font-semibold">{{ $customer->pppoe_user ?: '-' }}</span>
                     </div>
@@ -141,11 +191,16 @@
                             <div class="flex items-center justify-between gap-2">
                                 <span class="text-amber-600 text-xs font-semibold">Belum ada titik GPS</span>
                                 <a href="{{ route('maps.index') }}" 
-                                   class="px-2 py-1 rounded-lg bg-brand-blue hover:bg-brand-blueHover text-white text-[10px] font-bold">
+                                    class="px-2 py-1 rounded-lg bg-brand-blue hover:bg-brand-blueHover text-white text-[10px] font-bold">
                                     Titik di Peta
                                 </a>
                             </div>
                         @endif
+                    </div>
+
+                    <div class="py-1 border-b border-slate-50">
+                        <span class="text-slate-400 block mb-1">No. Rumah / Gang / Blok</span>
+                        <span class="text-slate-800 font-bold">{{ $customer->house_number ?: '-' }}</span>
                     </div>
 
                     <div class="py-1">

@@ -172,6 +172,16 @@
                                             <span class="flex items-center gap-1 text-slate-700 font-medium">
                                                 <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-600"></i> {{ $customer->phone }}
                                             </span>
+                                            @if($customer->house_number)
+                                                <span class="flex items-center gap-1 text-slate-700 font-semibold">
+                                                    <i data-lucide="home" class="w-3.5 h-3.5 text-amber-600"></i> {{ $customer->house_number }}
+                                                </span>
+                                            @endif
+                                            @if($customer->redaman)
+                                                <span class="font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 text-[10px] font-bold">
+                                                    📶 {{ $customer->redaman }}
+                                                </span>
+                                            @endif
                                             <span class="flex items-center gap-1">
                                                 <i data-lucide="wifi" class="w-3.5 h-3.5 text-brand-blue"></i> {{ $customer->package?->name ?? 'Internet' }}
                                             </span>
@@ -262,9 +272,15 @@
                                 <td class="py-4 pl-6">
                                     <div class="font-bold text-slate-900">{{ $customer->name }}</div>
                                     <div class="text-xs text-slate-400 font-mono">{{ $customer->customer_code }} &bull; {{ $customer->phone }}</div>
+                                    @if($customer->house_number)
+                                        <div class="text-[11px] text-slate-600 font-semibold mt-0.5">🏠 {{ $customer->house_number }}</div>
+                                    @endif
                                 </td>
                                 <td class="py-4 text-xs font-medium text-slate-700">
-                                    {{ $customer->village?->name ?? 'Luar Wilayah' }}
+                                    <div>{{ $customer->village?->name ?? 'Luar Wilayah' }}</div>
+                                    @if($customer->redaman)
+                                        <div class="text-[10px] text-emerald-700 font-mono mt-0.5 font-bold">📶 {{ $customer->redaman }}</div>
+                                    @endif
                                 </td>
                                 <td class="py-4 text-xs">
                                     <div class="font-bold text-slate-900">Rp {{ number_format($customer->monthly_fee, 0, ',', '.') }}</div>
