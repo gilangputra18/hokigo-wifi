@@ -77,16 +77,18 @@ class CustomerController extends Controller
         $villages = Village::orderBy('name')->get();
         $packages = Package::where('is_active', true)->get();
 
-        // Generate next customer code
-        $lastCustomer = Customer::latest('id')->first();
-        $nextNum = $lastCustomer ? ($lastCustomer->id + 1) : 1;
-        $suggestedCode = 'HKG-' . str_pad($nextNum, 3, '0', STR_PAD_LEFT);
+        // Generate next customer code automatically based on highest existing number
+        $suggestedCode = Customer::generateNextCustomerCode();
 
         return view('customers.create', compact('villages', 'packages', 'suggestedCode'));
     }
 
     public function store(Request $request)
     {
+        if (empty($request->customer_code)) {
+            $request->merge(['customer_code' => Customer::generateNextCustomerCode()]);
+        }
+
         $validated = $request->validate([
             'customer_code' => ['required', 'string', 'max:30', 'unique:customers,customer_code'],
             'name' => ['required', 'string', 'max:255'],

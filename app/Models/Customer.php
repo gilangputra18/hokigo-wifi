@@ -48,6 +48,21 @@ class Customer extends Model
         'clean_phone',
     ];
 
+    public static function generateNextCustomerCode(): string
+    {
+        $codes = self::pluck('customer_code');
+        $maxNum = 0;
+        foreach ($codes as $code) {
+            if (preg_match('/(\d+)/', (string) $code, $matches)) {
+                $num = (int) $matches[1];
+                if ($num > $maxNum) {
+                    $maxNum = $num;
+                }
+            }
+        }
+        return 'HKG-' . str_pad($maxNum + 1, 3, '0', STR_PAD_LEFT);
+    }
+
     public function village(): BelongsTo
     {
         return $this->belongsTo(Village::class);

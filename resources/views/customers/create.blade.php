@@ -30,11 +30,28 @@
                 </h3>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <!-- Kode Pelanggan -->
+                    <!-- Kode Pelanggan (Otomatis Nambah Sendiri) -->
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Kode Pelanggan (ID) *</label>
-                        <input type="text" name="customer_code" value="{{ old('customer_code', $suggestedCode) }}" required
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-slate-700">Kode Pelanggan (ID) *</label>
+                            <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center gap-1">
+                                <i data-lucide="sparkles" class="w-3 h-3 text-emerald-600"></i>
+                                <span>Otomatis Nambah</span>
+                            </span>
+                        </div>
+                        <div class="relative">
+                            <input type="text" name="customer_code" id="customer_code_input" 
+                                   value="{{ old('customer_code', $suggestedCode) }}" required
+                                   class="w-full pl-3.5 pr-28 py-2.5 rounded-xl border border-slate-200 font-mono text-xs font-bold text-slate-900 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                            <button type="button" onclick="document.getElementById('customer_code_input').value = '{{ $suggestedCode }}'"
+                                    class="absolute right-1.5 top-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[10px] font-extrabold transition flex items-center gap-1"
+                                    title="Klik untuk reset ke kode otomatis">
+                                <span>Auto: {{ $suggestedCode }}</span>
+                            </button>
+                        </div>
+                        <p class="text-[10px] text-emerald-700 font-medium mt-1">
+                            ✓ ID ini otomatis bertambah sendiri berurutan (contoh: HKG-001, HKG-002, HKG-003, HKG-004 dst). Anda tidak perlu mengetik manual.
+                        </p>
                     </div>
 
                     <!-- Nama Lengkap -->
