@@ -257,9 +257,10 @@
                 </a>
                 @else
                 <!-- Quick Tambah Pelanggan Button for Teknisi -->
-                <a href="{{ route('customers.create') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold bg-brand-blue text-white hover:bg-brand-blueHover shadow-xs transition-all">
-                    <i data-lucide="user-plus" class="w-4 h-4"></i>
-                    <span>Tambah Pelanggan</span>
+                <a href="{{ route('customers.create') }}" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold bg-brand-blue text-white hover:bg-brand-blueHover shadow-xs transition-all">
+                    <i data-lucide="user-plus" class="w-4 h-4 shrink-0"></i>
+                    <span class="hidden sm:inline">Tambah Pelanggan</span>
+                    <span class="sm:hidden text-[11px]">+ Pelanggan</span>
                 </a>
                 @endif
 

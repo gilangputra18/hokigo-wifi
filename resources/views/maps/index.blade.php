@@ -944,6 +944,7 @@
             sidebarTab: 'unpinned',
 
             // Data loaded from server (lightweight)
+            isTeknisi: {{ auth()->user()->isTeknisi() ? 'true' : 'false' }},
             allCustomersData: @json($allCustomers),
             villagesData: @json($villages),
             networkNodesData: @json($networkNodes),
@@ -1890,13 +1891,15 @@
                             </a>
                             <div style="display: flex; gap: 4px;">
                                 <a href="${customerUrl}" 
-                                   style="flex: 1; text-align: center; background: #1055CC; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
+                                   style="${(!this.isTeknisi && c.phone) ? 'flex: 1;' : 'width: 100%;'} text-align: center; background: #1055CC; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
                                     Lihat Profil
                                 </a>
-                                <a href="${waUrl}" target="_blank" 
-                                   style="flex: 1; text-align: center; background: #22c55e; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
-                                    Chat WA
-                                </a>
+                                ${(!this.isTeknisi && c.phone) ? `
+                                    <a href="${waUrl}" target="_blank" 
+                                       style="flex: 1; text-align: center; background: #22c55e; color: white; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; text-decoration: none;">
+                                        Chat WA
+                                    </a>
+                                ` : ''}
                             </div>
                             <button type="button" onclick="window.mapAppInstance.startRepositionCustomer(${c.id})" 
                                     style="width: 100%; margin-top: 2px; display: flex; align-items: center; justify-content: center; gap: 4px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; padding: 5px 8px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer;">

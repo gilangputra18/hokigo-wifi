@@ -169,9 +169,11 @@
                                         </div>
 
                                         <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                                            @if(!auth()->user()->isTeknisi() && $customer->phone)
                                             <span class="flex items-center gap-1 text-slate-700 font-medium">
                                                 <i data-lucide="phone" class="w-3.5 h-3.5 text-emerald-600"></i> {{ $customer->phone }}
                                             </span>
+                                            @endif
                                             @if($customer->house_number)
                                                 <span class="flex items-center gap-1 text-slate-700 font-semibold">
                                                     <i data-lucide="home" class="w-3.5 h-3.5 text-amber-600"></i> {{ $customer->house_number }}
@@ -217,6 +219,7 @@
 
                                     <!-- Right: Actions -->
                                     <div class="flex flex-wrap items-center gap-2 shrink-0 pt-2 lg:pt-0">
+                                        @if(!auth()->user()->isTeknisi())
                                         <!-- WhatsApp Chat Button (Direct Click) -->
                                         @if($currInvoice)
                                             <a href="{{ $currInvoice->whatsapp_url }}" target="_blank"
@@ -230,6 +233,7 @@
                                                 <i data-lucide="message-circle" class="w-4 h-4"></i>
                                                 <span>Chat WA</span>
                                             </a>
+                                        @endif
                                         @endif
 
                                         <!-- Detail Button -->
@@ -276,7 +280,12 @@
                             <tr class="hover:bg-slate-50/60 transition">
                                 <td class="py-4 pl-6">
                                     <div class="font-bold text-slate-900">{{ $customer->name }}</div>
-                                    <div class="text-xs text-slate-400 font-mono">{{ $customer->customer_code }} &bull; {{ $customer->phone }}</div>
+                                    <div class="text-xs text-slate-400 font-mono">
+                                        {{ $customer->customer_code }}
+                                        @if(!auth()->user()->isTeknisi() && $customer->phone)
+                                            &bull; {{ $customer->phone }}
+                                        @endif
+                                    </div>
                                     @if($customer->house_number)
                                         <div class="text-[11px] text-slate-600 font-semibold mt-0.5">🏠 {{ $customer->house_number }}</div>
                                     @endif
@@ -319,7 +328,7 @@
                                 </td>
                                 <td class="py-4 pr-6 text-right">
                                     <div class="flex items-center justify-end gap-2">
-                                        @if($currInvoice)
+                                        @if(!auth()->user()->isTeknisi() && $currInvoice)
                                             <a href="{{ $currInvoice->whatsapp_url }}" target="_blank"
                                                class="p-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white transition shadow-xs" title="Kirim Tagihan WA">
                                                 <i data-lucide="message-circle" class="w-4 h-4"></i>

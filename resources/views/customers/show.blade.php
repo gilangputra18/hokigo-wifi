@@ -30,9 +30,11 @@
                 </div>
 
                 <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 font-medium">
+                    @if(!auth()->user()->isTeknisi() && $customer->phone)
                     <span class="flex items-center gap-1 text-emerald-600 font-bold">
                         <i data-lucide="phone" class="w-3.5 h-3.5"></i> {{ $customer->phone }}
                     </span>
+                    @endif
                     <span class="flex items-center gap-1 text-slate-700">
                         <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-blue"></i> {{ $customer->village?->name ?? 'Luar Wilayah' }}
                     </span>
@@ -48,6 +50,7 @@
 
         <!-- Action Buttons -->
         <div class="flex flex-wrap items-center gap-2">
+            @if(!auth()->user()->isTeknisi())
             <!-- Direct WA (Membuka Chat WhatsApp ke No HP Pelanggan) -->
             <a href="https://api.whatsapp.com/send?phone={{ $customer->clean_phone }}" target="_blank"
                title="Membuka chat WhatsApp langsung ke nomor pelanggan ini ({{ $customer->phone }})"
@@ -55,6 +58,7 @@
                 <i data-lucide="message-circle" class="w-4 h-4"></i>
                 <span>Chat WA Pelanggan</span>
             </a>
+            @endif
 
             <!-- Edit -->
             <a href="{{ route('customers.edit', $customer) }}" 
@@ -209,7 +213,8 @@
                     </div>
                 </div>
 
-                <!-- Delete Customer Button -->
+                @if(!auth()->user()->isTeknisi())
+                <!-- Delete Customer Button (Owner & Admin Only) -->
                 <div class="pt-4 border-t border-slate-100">
                     <form action="{{ route('customers.destroy', $customer) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pelanggan ini beserta seluruh tagihannya? Data yang terhapus tidak dapat dikembalikan.')">
                         @csrf
@@ -220,6 +225,7 @@
                         </button>
                     </form>
                 </div>
+                @endif
             </div>
 
         </div>
@@ -289,18 +295,20 @@
                                     </td>
                                     <td class="py-3.5 text-right">
                                         <div class="flex items-center justify-end gap-1.5">
-                                            @if($inv->status === 'paid')
-                                                <!-- Send WhatsApp Struk / Receipt -->
-                                                <a href="{{ $inv->whatsapp_receipt_url }}" target="_blank"
-                                                   class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition" title="Kirim Bukti Lunas WA">
-                                                    <i data-lucide="message-circle" class="w-4 h-4"></i>
-                                                </a>
-                                            @else
-                                                <!-- Send WhatsApp Bill -->
-                                                <a href="{{ $inv->whatsapp_url }}" target="_blank"
-                                                   class="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition" title="Kirim Tagihan WA">
-                                                    <i data-lucide="message-circle" class="w-4 h-4"></i>
-                                                </a>
+                                            @if(!auth()->user()->isTeknisi())
+                                                @if($inv->status === 'paid')
+                                                    <!-- Send WhatsApp Struk / Receipt -->
+                                                    <a href="{{ $inv->whatsapp_receipt_url }}" target="_blank"
+                                                       class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition" title="Kirim Bukti Lunas WA">
+                                                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                                    </a>
+                                                @else
+                                                    <!-- Send WhatsApp Bill -->
+                                                    <a href="{{ $inv->whatsapp_url }}" target="_blank"
+                                                       class="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition" title="Kirim Tagihan WA">
+                                                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                                    </a>
+                                                @endif
                                             @endif
 
                                             <!-- Print Invoice -->
