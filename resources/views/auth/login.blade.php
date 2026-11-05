@@ -41,15 +41,7 @@
 
     <style>
         [x-cloak] { display: none !important; }
-        html {
-            touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent;
-        }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        button:active {
-            transform: scale(0.985);
-            transition: transform 0.05s ease-out;
-        }
     </style>
 </head>
 <body class="min-h-[100dvh] flex flex-col justify-center items-center p-3 sm:p-6 antialiased text-slate-800 relative overflow-x-hidden bg-[#070F2B]">

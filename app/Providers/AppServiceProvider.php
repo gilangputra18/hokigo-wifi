@@ -27,22 +27,21 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        // Auto-migrate tables on cloud production if new columns or tables do not exist yet
-        try {
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('customers', 'wifi_ssid') || !\Illuminate\Support\Facades\Schema::hasTable('cable_routes')) {
-                \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-            }
-        } catch (\Throwable $e) {}
-
         // Fast In-Memory View Composer for Sidebar Badges (Prevents redundant DB queries on every page)
         View::composer('layouts.app', function ($view) {
             static $counts = null;
             if ($counts === null) {
                 try {
+                    $nowMonth = now()->format('Y-m');
+                    $today = now()->toDateString();
+                    $invRow = Invoice::whereIn('status', ['unpaid', 'overdue'])
+                        ->selectRaw("COUNT(CASE WHEN period = ? THEN 1 END) as unpaid_month, COUNT(CASE WHEN due_date <= ? THEN 1 END) as due_count", [$nowMonth, $today])
+                        ->first();
+
                     $counts = [
                         'total_customers' => Customer::count(),
-                        'unpaid_month' => Invoice::where('period', now()->format('Y-m'))->whereIn('status', ['unpaid', 'overdue'])->count(),
-                        'due_count' => Invoice::whereIn('status', ['unpaid', 'overdue'])->whereDate('due_date', '<=', now()->toDateString())->count(),
+                        'unpaid_month' => (int) ($invRow->unpaid_month ?? 0),
+                        'due_count' => (int) ($invRow->due_count ?? 0),
                     ];
                 } catch (\Throwable $e) {
                     $counts = [

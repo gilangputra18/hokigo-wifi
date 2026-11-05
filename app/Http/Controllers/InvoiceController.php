@@ -19,8 +19,14 @@ class InvoiceController extends Controller
         $selectedPeriod = $request->get('period', $currentPeriod);
         $villages = Village::orderBy('name')->get();
 
-        $query = Invoice::with(['customer.village', 'customer.package', 'creator'])
-            ->where('period', $selectedPeriod);
+        $query = Invoice::with([
+            'customer' => function ($q) {
+                $q->select('id', 'customer_code', 'name', 'phone', 'village_id', 'package_id');
+            },
+            'customer.village:id,name',
+            'customer.package:id,name',
+            'creator:id,name'
+        ])->where('period', $selectedPeriod);
 
         // Filter status
         if ($request->filled('status')) {

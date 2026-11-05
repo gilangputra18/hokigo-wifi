@@ -17,9 +17,17 @@ class CustomerController extends Controller
         $villages = Village::withCount('customers')->orderBy('name')->get();
         $packages = Package::where('is_active', true)->get();
 
-        $query = Customer::with(['village', 'package', 'invoices' => function ($q) use ($currentPeriod) {
-            $q->where('period', $currentPeriod);
-        }]);
+        $query = Customer::with([
+            'village:id,name',
+            'package:id,name,speed,price',
+            'invoices' => function ($q) use ($currentPeriod) {
+                $q->where('period', $currentPeriod)->select('id', 'customer_id', 'period', 'amount', 'status');
+            }
+        ])->select([
+            'id', 'customer_code', 'name', 'phone', 'village_id', 'package_id',
+            'monthly_fee', 'status', 'notes', 'pppoe_user', 'pppoe_password',
+            'wifi_ssid', 'wifi_password', 'house_number', 'installation_date', 'ip_address'
+        ]);
 
         // Filter Desa
         if ($request->filled('village_id')) {

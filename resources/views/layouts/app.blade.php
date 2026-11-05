@@ -51,43 +51,15 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- instant.page: Ultrafast predictive link prefetching on hover & touch -->
-    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.js" type="module" defer></script>
-
     <style>
         [x-cloak] { display: none !important; }
         html {
             scroll-behavior: smooth;
-            touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #F8FAFC;
-        }
-
-        /* Smooth page transition animation */
-        @keyframes appFadeIn {
-            0% {
-                opacity: 0.85;
-                transform: translateY(2px);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        main {
-            animation: appFadeIn 0.16s cubic-bezier(0, 0, 0.2, 1);
-        }
-
-        /* Subtle responsive tap micro-feedback */
-        a, button {
-            -webkit-tap-highlight-color: transparent;
-        }
-        a:active:not([disabled]), button:active:not([disabled]) {
-            transform: scale(0.985);
-            transition: transform 0.05s ease-out;
         }
 
         /* Sleek top-edge loading progress bar */
