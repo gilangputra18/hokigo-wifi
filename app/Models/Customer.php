@@ -26,6 +26,8 @@ class Customer extends Model
         'redaman',
         'pppoe_user',
         'pppoe_password',
+        'wifi_ssid',
+        'wifi_password',
         'ip_address',
         'status',
         'notes',

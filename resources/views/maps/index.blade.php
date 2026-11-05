@@ -1880,7 +1880,9 @@
                             <div>📦 ${packageName} &bull; <strong>${monthlyFee}</strong></div>
                             ${redamanHtml}
                             ${c.pppoe_user ? `<div>👤 PPPoE: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_user}</code></div>` : ''}
-                            ${c.pppoe_password ? `<div>🔑 Sandi: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_password}</code></div>` : ''}
+                            ${c.pppoe_password ? `<div>🔑 Sandi PPPoE: <code style="background: #e2e8f0; padding: 1px 4px; border-radius: 4px; font-weight: 600;">${c.pppoe_password}</code></div>` : ''}
+                            ${c.wifi_ssid ? `<div>📶 WiFi: <strong style="color: #0f172a;">${c.wifi_ssid}</strong></div>` : ''}
+                            ${c.wifi_password ? `<div>🔑 Sandi WiFi: <code style="background: #ecfdf5; color: #065f46; padding: 1px 4px; border-radius: 4px; font-weight: 700; border: 1px solid #a7f3d0;">${c.wifi_password}</code></div>` : ''}
                             ${c.notes ? `<div style="margin-top: 4px; padding: 4px 6px; background: #fef3c7; border-left: 3px solid #f59e0b; border-radius: 4px; color: #92400e; font-size: 10px;">📝 ${c.notes}</div>` : ''}
                         </div>
 

@@ -28,6 +28,8 @@ class MapController extends Controller
             'router_model',
             'pppoe_user',
             'pppoe_password',
+            'wifi_ssid',
+            'wifi_password',
             'status',
             'notes',
             'latitude',
@@ -47,8 +49,13 @@ class MapController extends Controller
         $allCustomers = $query->orderBy('name')->get();
 
         // Attach lightweight photo URL without loading massive base64 string into map payload
-        $allCustomers->each(function ($c) {
+        $isTeknisi = auth()->user()?->isTeknisi();
+        $allCustomers->each(function ($c) use ($isTeknisi) {
             $c->photo_url = $c->has_photo ? route('customers.photo', $c->id) : null;
+            if ($isTeknisi) {
+                $c->phone = null;
+                $c->clean_phone = null;
+            }
         });
 
         // Compute village coordinates if not manually set (use centroid of its pinned customers)

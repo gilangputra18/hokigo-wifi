@@ -132,7 +132,7 @@
                     <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 3. Data Teknis / Perangkat
                 </h3>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tipe / Model Router (ONT)</label>
                         <input type="text" name="router_model" value="{{ old('router_model', 'ZTE F609') }}" placeholder="Contoh: ZTE F609 / Huawei"
@@ -156,6 +156,26 @@
                         <label class="block text-xs font-bold text-slate-700 mb-1">Sandi PPPoE</label>
                         <input type="text" name="pppoe_password" value="{{ old('pppoe_password') }}" placeholder="Contoh: 12345 / rahasia"
                                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                            <span class="text-brand-blue font-extrabold">📶</span>
+                            <span>Nama WiFi (SSID)</span>
+                        </label>
+                        <input type="text" name="wifi_ssid" value="{{ old('wifi_ssid') }}" placeholder="Contoh: HOKIGO_WARUNG"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-bold text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <p class="text-[10px] text-slate-400 mt-1">Nama jaringan WiFi di HP pelanggan</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                            <span class="text-amber-500 font-extrabold">🔑</span>
+                            <span>Sandi WiFi (Password)</span>
+                        </label>
+                        <input type="text" name="wifi_password" value="{{ old('wifi_password') }}" placeholder="Contoh: 12345678"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <p class="text-[10px] text-slate-400 mt-1">Password untuk konek ke WiFi</p>
                     </div>
                 </div>
             </div>

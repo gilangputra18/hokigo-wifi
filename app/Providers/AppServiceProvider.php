@@ -27,9 +27,9 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        // Auto-migrate tables on cloud production if new network infrastructure tables do not exist yet
+        // Auto-migrate tables on cloud production if new columns or tables do not exist yet
         try {
-            if (!\Illuminate\Support\Facades\Schema::hasTable('cable_routes')) {
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('customers', 'wifi_ssid') || !\Illuminate\Support\Facades\Schema::hasTable('cable_routes')) {
                 \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
             }
         } catch (\Throwable $e) {}

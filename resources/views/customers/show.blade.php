@@ -180,6 +180,20 @@
                         <span class="font-mono text-blue-700 font-bold bg-blue-50 px-2 py-0.5 rounded">{{ $customer->pppoe_password ?: '-' }}</span>
                     </div>
 
+                    <div class="flex items-center justify-between py-1 border-b border-slate-50">
+                        <span class="text-slate-400 flex items-center gap-1">
+                            <span class="text-brand-blue">📶</span> Nama WiFi (SSID)
+                        </span>
+                        <span class="font-bold text-slate-800">{{ $customer->wifi_ssid ?: '-' }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between py-1 border-b border-slate-50">
+                        <span class="text-slate-400 flex items-center gap-1">
+                            <span class="text-amber-500">🔑</span> Sandi WiFi
+                        </span>
+                        <span class="font-mono text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">{{ $customer->wifi_password ?: '-' }}</span>
+                    </div>
+
                     <div class="py-1 border-b border-slate-50">
                         <span class="text-slate-400 block mb-1">Titik Lokasi GPS</span>
                         @if($customer->latitude && $customer->longitude)

@@ -91,7 +91,11 @@ class DatabaseSeeder extends Seeder
             $packages[] = Package::firstOrCreate(['name' => $p['name']], $p);
         }
 
-        // 5. Customers
+        // 5. Customers & Dummy Transactions (Hanya jika diaktifkan secara eksplisit, default 0-kan)
+        if (!config('app.seed_dummy_data', false)) {
+            return;
+        }
+
         $customersData = [
             [
                 'customer_code' => 'HKG-001',

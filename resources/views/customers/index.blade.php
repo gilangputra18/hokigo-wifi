@@ -203,6 +203,16 @@
                                                     Sandi: {{ $customer->pppoe_password }}
                                                 </span>
                                             @endif
+                                            @if($customer->wifi_ssid)
+                                                <span class="text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 text-[10px] font-bold">
+                                                    📶 WiFi: {{ $customer->wifi_ssid }}
+                                                </span>
+                                            @endif
+                                            @if($customer->wifi_password)
+                                                <span class="font-mono text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 text-[10px] font-semibold">
+                                                    🔑 Sandi: {{ $customer->wifi_password }}
+                                                </span>
+                                            @endif
                                         </div>
 
                                         <!-- Catatan Khusus Pelanggan (Requirement 1: Ada Note nya juga) -->

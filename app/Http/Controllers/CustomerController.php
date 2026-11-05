@@ -42,6 +42,7 @@ class CustomerController extends Controller
                   ->orWhere('notes', 'like', "%{$search}%")
                   ->orWhere('pppoe_user', 'like', "%{$search}%")
                   ->orWhere('pppoe_password', 'like', "%{$search}%")
+                  ->orWhere('wifi_ssid', 'like', "%{$search}%")
                   ->orWhere('ip_address', 'like', "%{$search}%");
             });
         }
@@ -101,6 +102,8 @@ class CustomerController extends Controller
             'house_number' => ['nullable', 'string', 'max:100'],
             'pppoe_user' => ['nullable', 'string', 'max:100'],
             'pppoe_password' => ['nullable', 'string', 'max:100'],
+            'wifi_ssid' => ['nullable', 'string', 'max:100'],
+            'wifi_password' => ['nullable', 'string', 'max:100'],
             'ip_address' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,isolated,inactive'],
             'notes' => ['nullable', 'string'],
@@ -179,6 +182,8 @@ class CustomerController extends Controller
             'house_number' => ['nullable', 'string', 'max:100'],
             'pppoe_user' => ['nullable', 'string', 'max:100'],
             'pppoe_password' => ['nullable', 'string', 'max:100'],
+            'wifi_ssid' => ['nullable', 'string', 'max:100'],
+            'wifi_password' => ['nullable', 'string', 'max:100'],
             'ip_address' => ['nullable', 'string', 'max:50'],
             'status' => ['required', 'in:active,isolated,inactive'],
             'notes' => ['nullable', 'string'],
