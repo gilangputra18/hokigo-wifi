@@ -245,9 +245,9 @@
 
     <!-- Modal Form: Catat Penjualan Voucher -->
     <div x-show="modalOpen" x-cloak 
-         class="fixed inset-0 z-50 overflow-y-auto bg-black/70 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 pt-10 sm:pt-6 pb-16">
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
         
-        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 relative my-auto flex flex-col max-h-[88vh] sm:max-h-[85vh] overflow-hidden"
+        <div class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 relative my-auto flex flex-col max-h-[90vh] sm:max-h-[85vh] overflow-hidden"
              @click.away="modalOpen = false" x-data="voucherCalculator()">
             
             <!-- Sticky Modal Header -->

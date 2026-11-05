@@ -254,7 +254,7 @@
 
     <!-- Modal Penitikan Pelanggan Manual (Tanpa Harus ke Rumah Pelanggan) -->
     <div x-show="manualPinModalOpen" x-cloak 
-         class="fixed inset-0 z-[2000] overflow-y-auto bg-black/70 backdrop-blur-sm flex items-start sm:items-center justify-center p-3 sm:p-6 pt-10 sm:pt-6 pb-16">
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6">
         <div @click.away="manualPinModalOpen = false" 
              class="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 relative my-auto flex flex-col max-h-[90vh] overflow-hidden">
             
@@ -362,7 +362,7 @@
 
     <!-- Modal Konfirmasi Reset Titik Peta & Pelanggan -->
     <div x-show="resetMapModalOpen" x-cloak 
-         class="fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+         class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md">
         <div @click.away="resetMapModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-rose-200 space-y-4">
             
             <div class="flex items-center justify-between pb-3 border-b border-rose-100">

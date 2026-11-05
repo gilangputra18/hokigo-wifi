@@ -219,20 +219,20 @@
     </aside>
 
     <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-hidden">
+    <div class="flex-1 flex flex-col min-w-0 min-h-screen">
         
         <!-- Top Navbar -->
-        <header class="h-20 bg-white border-b border-slate-200/80 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8 shadow-sm">
+        <header class="h-16 sm:h-20 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between px-3.5 sm:px-8 shadow-xs">
             
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <!-- Mobile Menu Button -->
-                <button @click="sidebarOpen = true" class="p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden">
+                <button @click="sidebarOpen = true" class="p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden shrink-0">
                     <i data-lucide="menu" class="w-6 h-6"></i>
                 </button>
 
                 <!-- Page Header Title / Breadcrumbs -->
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                <div class="min-w-0">
+                    <h1 class="text-sm sm:text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2 truncate max-w-[170px] xs:max-w-[240px] sm:max-w-none">
                         @yield('header_title', 'Hokigo Dashboard')
                     </h1>
                     <p class="text-xs text-slate-500 font-medium hidden sm:block">
@@ -242,7 +242,7 @@
             </div>
 
             <!-- Top Right Action Icons -->
-            <div class="flex items-center gap-3 sm:gap-4">
+            <div class="flex items-center gap-2 sm:gap-4 shrink-0">
                 
                 @if(!auth()->user()->isTeknisi())
                 <!-- Quick WhatsApp Due Reminders Button -->
@@ -255,15 +255,15 @@
                 </a>
                 @else
                 <!-- Quick Tambah Pelanggan Button for Teknisi -->
-                <a href="{{ route('customers.create') }}" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-brand-blue text-white hover:bg-brand-blueHover shadow-xs transition-all">
+                <a href="{{ route('customers.create') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold bg-brand-blue text-white hover:bg-brand-blueHover shadow-xs transition-all">
                     <i data-lucide="user-plus" class="w-4 h-4"></i>
-                    <span>Tambah Pelanggan Baru</span>
+                    <span>Tambah Pelanggan</span>
                 </a>
                 @endif
 
                 <!-- User profile pill -->
-                <div class="flex items-center gap-3 pl-3 border-l border-slate-200">
-                    <div class="w-9 h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-sm shadow-sm">
+                <div class="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-3 border-l border-slate-200">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm">
                         {{ substr(auth()->user()->name, 0, 1) }}
                     </div>
                     <div class="hidden md:block text-left">
@@ -276,7 +276,7 @@
         </header>
 
         <!-- Main Body Wrapper -->
-        <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto relative z-30">
             
             <!-- Alert Messages -->
             @if(session('success'))
