@@ -101,23 +101,28 @@
                     <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs overflow-hidden" x-data="{ open: true }">
                         
                         <!-- Village Group Header -->
-                        <div class="bg-slate-50/80 px-6 py-4 border-b border-slate-200/80 flex items-center justify-between cursor-pointer select-none"
+                        <div class="bg-slate-50/80 px-4 sm:px-6 py-4 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 cursor-pointer select-none"
                              @click="open = !open">
-                            <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-xl bg-brand-blue/10 text-brand-blue flex items-center justify-center font-bold">
-                                    <i data-lucide="map-pin" class="w-5 h-5"></i>
+                            <div class="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-9 h-9 rounded-xl bg-brand-blue/10 text-brand-blue flex items-center justify-center font-bold shrink-0">
+                                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-extrabold text-slate-900 text-base leading-tight">{{ $villageName }}</h3>
+                                        <p class="text-xs text-slate-500">{{ $customersInVillage->count() }} Pelanggan Terdaftar</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 class="font-extrabold text-slate-900 text-base">{{ $villageName }}</h3>
-                                    <p class="text-xs text-slate-500">{{ $customersInVillage->count() }} Pelanggan Terdaftar</p>
-                                </div>
+                                <button type="button" class="sm:hidden text-slate-400 hover:text-slate-600 transition p-1">
+                                    <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
+                                </button>
                             </div>
 
-                            <div class="flex items-center gap-3">
-                                <span class="text-xs font-bold px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700">
+                            <div class="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                                <span class="text-xs font-bold px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-700 shadow-xs">
                                     Total Omzet: Rp {{ number_format($customersInVillage->sum('monthly_fee'), 0, ',', '.') }}/bln
                                 </span>
-                                <button type="button" class="text-slate-400 hover:text-slate-600 transition">
+                                <button type="button" class="hidden sm:block text-slate-400 hover:text-slate-600 transition">
                                     <i data-lucide="chevron-down" class="w-5 h-5 transition-transform duration-200" :class="{ 'rotate-180': open }"></i>
                                 </button>
                             </div>

@@ -291,20 +291,20 @@
                 <div class="relative w-full h-80 sm:h-96 rounded-2xl border border-slate-200 overflow-hidden mb-3 shadow-inner">
                     
                     <!-- Floating Map Layer Switcher Pill (3 Model Sesuai Referensi) -->
-                    <div class="absolute top-3 left-3 z-[400] flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200 text-xs select-none">
+                    <div class="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-[400] flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200 text-xs select-none max-w-[calc(100%-20px)] overflow-x-auto">
                         <button type="button" @click="setLayer('google')" 
                                 :class="currentLayer === 'google' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 font-semibold'"
-                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] transition flex items-center gap-1.5">
-                            <span>🛰️</span> <span>Google Satelit</span>
+                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-[11px] transition flex items-center gap-1 shrink-0 whitespace-nowrap">
+                            <span>🛰️</span> <span class="hidden sm:inline">Google Satelit</span><span class="sm:hidden">Google</span>
                         </button>
                         <button type="button" @click="setLayer('esri')" 
                                 :class="currentLayer === 'esri' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 font-semibold'"
-                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] transition flex items-center gap-1.5">
-                            <span>🛰️</span> <span>Esri Satelit</span>
+                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-[11px] transition flex items-center gap-1 shrink-0 whitespace-nowrap">
+                            <span>🛰️</span> <span class="hidden sm:inline">Esri Satelit</span><span class="sm:hidden">Esri</span>
                         </button>
                         <button type="button" @click="setLayer('street')" 
                                 :class="currentLayer === 'street' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-700 hover:bg-slate-100 font-semibold'"
-                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] transition flex items-center gap-1.5">
+                                class="px-2.5 sm:px-3 py-1.5 rounded-xl text-[10px] sm:text-[11px] transition flex items-center gap-1 shrink-0 whitespace-nowrap">
                             <span>🗺️</span> <span>Jalan</span>
                         </button>
                     </div>

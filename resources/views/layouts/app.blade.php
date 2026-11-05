@@ -67,15 +67,21 @@
            class="fixed inset-y-0 left-0 z-50 w-64 bg-brand-dark text-white flex flex-col transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 border-r border-slate-800">
         
         <!-- Sidebar Brand / Logo Header -->
-        <div class="h-20 flex items-center px-6 border-b border-white/10 gap-3">
-            <img src="{{ asset('images/logo.png') }}" alt="Hokigo Logo" class="h-10 w-auto rounded-lg shadow-sm bg-black/30 p-1">
-            <div class="flex flex-col">
-                <span class="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
-                    Hoki<span class="text-blue-400">go</span>
-                    <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-brand-blue text-white">WiFi</span>
-                </span>
-                <span class="text-[11px] text-slate-400 font-medium">ISP & Billing System</span>
+        <div class="h-20 flex items-center justify-between px-6 border-b border-white/10 gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <img src="{{ asset('images/logo.png') }}" alt="Hokigo Logo" class="h-10 w-auto rounded-lg shadow-sm bg-black/30 p-1 shrink-0">
+                <div class="flex flex-col truncate">
+                    <span class="text-xl font-bold tracking-tight text-white flex items-center gap-1.5">
+                        Hoki<span class="text-blue-400">go</span>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-brand-blue text-white">WiFi</span>
+                    </span>
+                    <span class="text-[11px] text-slate-400 font-medium truncate">ISP & Billing System</span>
+                </div>
             </div>
+            <!-- Close Button on Mobile -->
+            <button @click="sidebarOpen = false" class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition shrink-0" aria-label="Tutup Menu">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
         </div>
 
         <!-- Current User Role Quick Badge -->
@@ -230,27 +236,27 @@
     <div class="flex-1 flex flex-col min-w-0 min-h-screen">
         
         <!-- Top Navbar -->
-        <header class="min-h-16 sm:min-h-20 py-2 sm:py-0 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between px-3.5 sm:px-8 shadow-xs" style="padding-top: max(8px, env(safe-area-inset-top, 0px));">
+        <header class="min-h-14 sm:min-h-16 lg:min-h-20 py-1.5 sm:py-0 bg-white border-b border-slate-200/80 sticky top-0 z-20 flex items-center justify-between px-3 sm:px-6 lg:px-8 shadow-xs" style="padding-top: max(6px, env(safe-area-inset-top, 0px));">
             
-            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 mr-2">
                 <!-- Mobile Menu Button -->
-                <button @click="sidebarOpen = true" class="p-2 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden shrink-0">
-                    <i data-lucide="menu" class="w-6 h-6"></i>
+                <button @click="sidebarOpen = true" class="p-2 -ml-1 rounded-xl text-slate-600 hover:bg-slate-100 lg:hidden shrink-0" aria-label="Buka Menu Navigasi">
+                    <i data-lucide="menu" class="w-5 h-5 sm:w-6 sm:h-6"></i>
                 </button>
 
                 <!-- Page Header Title / Breadcrumbs -->
-                <div class="min-w-0">
-                    <h1 class="text-sm sm:text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2 truncate max-w-[170px] xs:max-w-[240px] sm:max-w-none">
+                <div class="min-w-0 flex-1">
+                    <h1 class="text-sm sm:text-lg md:text-xl font-extrabold text-slate-900 tracking-tight truncate block">
                         @yield('header_title', 'Hokigo Dashboard')
                     </h1>
-                    <p class="text-xs text-slate-500 font-medium hidden sm:block">
+                    <p class="text-[11px] text-slate-400 font-medium hidden sm:block truncate">
                         {{ now()->isoFormat('dddd, D MMMM Y') }} &bull; Provider WiFi & Sistem Penagihan Otomatis
                     </p>
                 </div>
             </div>
 
             <!-- Top Right Action Icons -->
-            <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+            <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 
                 @if(!auth()->user()->isTeknisi())
                 <!-- Quick WhatsApp Due Reminders Button -->
@@ -261,27 +267,26 @@
                         <span class="px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[10px] font-bold">{{ $sidebarCounts['due_count'] }}</span>
                     @endif
                 </a>
-                @else
-                <!-- Quick Tambah Pelanggan Button for Teknisi -->
-                <a href="{{ route('customers.create') }}" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-semibold bg-brand-blue text-white hover:bg-brand-blueHover shadow-xs transition-all">
+                @elseif(!request()->routeIs('customers.create'))
+                <!-- Quick Tambah Pelanggan Button for Teknisi (Sembunyi saat sedang di formulir tambah pelanggan) -->
+                <a href="{{ route('customers.create') }}" class="inline-flex items-center gap-1.5 p-2 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold bg-brand-blue text-white hover:bg-brand-blueHover shadow-xs transition-all shrink-0" title="Tambah Pelanggan Baru">
                     <i data-lucide="user-plus" class="w-4 h-4 shrink-0"></i>
-                    <span class="hidden sm:inline">Tambah Pelanggan</span>
-                    <span class="sm:hidden text-[11px]">+ Pelanggan</span>
+                    <span class="hidden md:inline">Tambah Pelanggan</span>
                 </a>
                 @endif
 
                 <!-- User profile pill (Bisa diklik untuk ganti foto profil, email & kata sandi) -->
                 <button type="button" @click="profileModalOpen = true" 
-                        class="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-3 border-l border-slate-200 hover:opacity-85 transition group text-left cursor-pointer"
+                        class="flex items-center gap-2 sm:gap-3 pl-1.5 sm:pl-3 border-l border-slate-200 hover:opacity-85 transition group text-left cursor-pointer shrink-0"
                         title="Klik untuk ganti foto profil, email & kata sandi akun Anda">
-                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm group-hover:scale-105 transition overflow-hidden border border-slate-200">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm group-hover:scale-105 transition overflow-hidden border border-slate-200 shrink-0">
                         @if(auth()->user()->avatar)
                             <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-full h-full object-cover">
                         @else
                             {{ substr(auth()->user()->name, 0, 1) }}
                         @endif
                     </div>
-                    <div class="hidden md:block text-left">
+                    <div class="hidden lg:block text-left">
                         <div class="text-xs font-bold text-slate-900 leading-tight group-hover:text-brand-blue flex items-center gap-1">
                             <span>{{ auth()->user()->name }}</span>
                             <i data-lucide="chevron-down" class="w-3 h-3 text-slate-400"></i>
