@@ -65,6 +65,7 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request)
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         $validated = $request->validate([
@@ -72,11 +73,28 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'unique:users,email,' . $user->id],
             'phone' => ['nullable', 'string', 'max:25'],
             'password' => ['nullable', 'string', 'min:6'],
+            'avatar' => ['nullable', 'string'],
+            'avatar_file' => ['nullable', 'file', 'image', 'max:5120'],
+            'remove_avatar' => ['nullable'],
         ]);
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];
         $user->phone = $validated['phone'] ?? null;
+
+        // Handle Avatar Upload / Removal
+        if ($request->input('remove_avatar') == '1') {
+            $user->avatar = null;
+        } elseif ($request->hasFile('avatar_file')) {
+            $file = $request->file('avatar_file');
+            if ($file->isValid()) {
+                $mime = $file->getMimeType();
+                $base64 = base64_encode(file_get_contents($file->getRealPath()));
+                $user->avatar = "data:{$mime};base64,{$base64}";
+            }
+        } elseif (!empty($request->avatar)) {
+            $user->avatar = $request->avatar;
+        }
 
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
@@ -85,6 +103,6 @@ class AuthController extends Controller
         $user->save();
         Auth::login($user);
 
-        return back()->with('success', 'Email dan data akun Anda (' . $user->name . ') berhasil diperbarui.' . (!empty($validated['password']) ? ' Kata sandi baru Anda berhasil disimpan.' : ''));
+        return back()->with('success', 'Foto profil dan data akun Anda (' . $user->name . ') berhasil diperbarui.' . (!empty($validated['password']) ? ' Kata sandi baru Anda berhasil disimpan.' : ''));
     }
 }

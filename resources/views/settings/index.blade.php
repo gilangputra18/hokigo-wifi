@@ -15,6 +15,45 @@
     editIsActive: true,
     editPassword: '',
     showEditPassword: false,
+    editAvatar: '',
+    removeEditAvatar: false,
+    handleEditAvatarFile(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxDim = 400;
+                let width = img.width;
+                let height = img.height;
+                if (width > maxDim || height > maxDim) {
+                    if (width > height) {
+                        height = Math.round((height * maxDim) / width);
+                        width = maxDim;
+                    } else {
+                        width = Math.round((width * maxDim) / height);
+                        height = maxDim;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                this.editAvatar = canvas.toDataURL('image/jpeg', 0.85);
+                this.removeEditAvatar = false;
+            };
+            img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    },
+    clearEditAvatar() {
+        this.editAvatar = '';
+        this.removeEditAvatar = true;
+        const input = document.getElementById('edit_user_avatar_file');
+        if (input) input.value = '';
+    },
     openEditUser(u) {
         this.selectedUser = u;
         this.editName = u.name;
@@ -24,6 +63,8 @@
         this.editIsActive = !!u.is_active;
         this.editPassword = '';
         this.showEditPassword = false;
+        this.editAvatar = u.avatar || '';
+        this.removeEditAvatar = false;
         this.editUserModalOpen = true;
     }
 }">
@@ -155,8 +196,19 @@
                     @foreach($users as $user)
                         <tr class="hover:bg-slate-50/60 transition">
                             <td class="py-3.5 pl-4">
-                                <div class="font-bold text-slate-900">{{ $user->name }}</div>
-                                <div class="text-slate-400 font-mono text-[11px]">{{ $user->email }}</div>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-xl bg-slate-100 text-brand-blue flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-slate-200">
+                                        @if($user->avatar)
+                                            <img src="{{ $user->avatar }}" alt="{{ $user->name }}" class="w-full h-full object-cover">
+                                        @else
+                                            {{ substr($user->name, 0, 1) }}
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <div class="font-bold text-slate-900">{{ $user->name }}</div>
+                                        <div class="text-slate-400 font-mono text-[11px]">{{ $user->email }}</div>
+                                    </div>
+                                </div>
                             </td>
                             <td class="py-3.5">
                                 @if($user->role === 'owner')
@@ -377,9 +429,48 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
                 </button>
             </div>
 
-            <form :action="'{{ url('settings/users') }}/' + (selectedUser ? selectedUser.id : '')" method="POST" class="space-y-4" autocomplete="off">
+            <form :action="'{{ url('settings/users') }}/' + (selectedUser ? selectedUser.id : '')" method="POST" enctype="multipart/form-data" class="space-y-4" autocomplete="off">
                 @csrf
                 @method('PUT')
+
+                <!-- Upload Foto Profil -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Foto Profil Pengguna</label>
+                    <div class="flex items-center gap-3.5 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
+                        <div class="relative w-14 h-14 rounded-full bg-slate-200 border-2 border-brand-blue/30 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                            <template x-if="editAvatar">
+                                <img :src="editAvatar" alt="Foto Profil" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="!editAvatar">
+                                <div class="w-full h-full bg-brand-blue text-white font-extrabold text-lg flex items-center justify-center"
+                                     x-text="editName ? editName.charAt(0).toUpperCase() : '?'">
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="flex-1 min-w-0 space-y-1">
+                            <input type="file" id="edit_user_avatar_file" name="avatar_file" accept="image/*" @change="handleEditAvatarFile($event)" class="hidden">
+                            <input type="hidden" name="avatar" :value="editAvatar">
+                            <input type="hidden" name="remove_avatar" :value="removeEditAvatar ? '1' : '0'">
+
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="document.getElementById('edit_user_avatar_file').click()"
+                                        class="px-3 py-1.5 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+                                    <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                                    <span>Pilih Foto</span>
+                                </button>
+                                <button type="button" x-show="editAvatar" @click="clearEditAvatar()"
+                                        class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    <span>Hapus</span>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-slate-400 truncate">
+                                Format JPG/PNG. Otomatis dioptimalkan agar ringan.
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap *</label>

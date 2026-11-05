@@ -68,6 +68,9 @@ class SettingController extends Controller
             'role' => ['required', 'in:owner,admin,teknisi'],
             'phone' => ['nullable', 'string', 'max:25'],
             'is_active' => ['nullable'],
+            'avatar' => ['nullable', 'string'],
+            'avatar_file' => ['nullable', 'file', 'image', 'max:5120'],
+            'remove_avatar' => ['nullable'],
         ]);
 
         $user->name = $validated['name'];
@@ -75,6 +78,20 @@ class SettingController extends Controller
         $user->role = $validated['role'];
         $user->phone = $validated['phone'] ?? null;
         $user->is_active = $request->boolean('is_active');
+
+        // Handle Avatar
+        if ($request->input('remove_avatar') == '1') {
+            $user->avatar = null;
+        } elseif ($request->hasFile('avatar_file')) {
+            $file = $request->file('avatar_file');
+            if ($file->isValid()) {
+                $mime = $file->getMimeType();
+                $base64 = base64_encode(file_get_contents($file->getRealPath()));
+                $user->avatar = "data:{$mime};base64,{$base64}";
+            }
+        } elseif (!empty($request->avatar)) {
+            $user->avatar = $request->avatar;
+        }
 
         $passwordChanged = false;
         if (!empty($validated['password'])) {

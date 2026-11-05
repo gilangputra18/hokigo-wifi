@@ -80,9 +80,17 @@
 
         <!-- Current User Role Quick Badge -->
         <div class="px-6 py-3 bg-white/5 border-b border-white/5 flex items-center justify-between">
-            <div class="flex items-center gap-2">
-                <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                <span class="text-xs font-semibold text-slate-300 truncate max-w-[120px]">{{ auth()->user()->name }}</span>
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded-lg bg-brand-blue text-white flex-shrink-0 flex items-center justify-center font-bold text-xs overflow-hidden border border-white/10">
+                    @if(auth()->user()->avatar)
+                        <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-full h-full object-cover">
+                    @else
+                        {{ substr(auth()->user()->name, 0, 1) }}
+                    @endif
+                </div>
+                <div class="truncate">
+                    <span class="text-xs font-semibold text-slate-300 truncate max-w-[110px] block">{{ auth()->user()->name }}</span>
+                </div>
             </div>
             @if(auth()->user()->isOwner())
                 <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Owner</span>
@@ -262,12 +270,16 @@
                 </a>
                 @endif
 
-                <!-- User profile pill (Bisa diklik untuk ganti email & kata sandi) -->
+                <!-- User profile pill (Bisa diklik untuk ganti foto profil, email & kata sandi) -->
                 <button type="button" @click="profileModalOpen = true" 
                         class="flex items-center gap-2.5 sm:gap-3 pl-2 sm:pl-3 border-l border-slate-200 hover:opacity-85 transition group text-left cursor-pointer"
-                        title="Klik untuk ganti email & kata sandi akun Anda">
-                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm group-hover:scale-105 transition">
-                        {{ substr(auth()->user()->name, 0, 1) }}
+                        title="Klik untuk ganti foto profil, email & kata sandi akun Anda">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-brand-blue text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-sm group-hover:scale-105 transition overflow-hidden border border-slate-200">
+                        @if(auth()->user()->avatar)
+                            <img src="{{ auth()->user()->avatar }}" alt="{{ auth()->user()->name }}" class="w-full h-full object-cover">
+                        @else
+                            {{ substr(auth()->user()->name, 0, 1) }}
+                        @endif
                     </div>
                     <div class="hidden md:block text-left">
                         <div class="text-xs font-bold text-slate-900 leading-tight group-hover:text-brand-blue flex items-center gap-1">
@@ -276,7 +288,7 @@
                         </div>
                         <div class="text-[11px] text-slate-500 capitalize flex items-center gap-1">
                             <span>{{ auth()->user()->role }}</span>
-                            <span class="text-[10px] text-brand-blue font-semibold">&bull; Ganti Sandi</span>
+                            <span class="text-[10px] text-brand-blue font-semibold">&bull; Edit Profil</span>
                         </div>
                     </div>
                 </button>
@@ -367,10 +379,61 @@
     </div>
 
     @auth
-    <!-- Modal Ganti Kata Sandi & Email Akun (Bisa diakses Owner, Admin, & Teknisi) -->
+    <!-- Modal Ganti Kata Sandi, Email & Foto Profil Akun (Bisa diakses Owner, Admin, & Teknisi) -->
     <div x-show="profileModalOpen" x-cloak 
          class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-        <div @click.away="profileModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+        <div @click.away="profileModalOpen = false" 
+             x-data="{
+                 avatarPreview: @json(auth()->user()->avatar ?? ''),
+                 removeAvatar: false,
+                 compressing: false,
+                 handleAvatarFile(e) {
+                     const file = e.target.files[0];
+                     if (!file) return;
+                     this.compressing = true;
+                     const reader = new FileReader();
+                     reader.onload = (ev) => {
+                         const img = new Image();
+                         img.onload = () => {
+                             const canvas = document.createElement('canvas');
+                             const maxDim = 400;
+                             let width = img.width;
+                             let height = img.height;
+                             if (width > maxDim || height > maxDim) {
+                                 if (width > height) {
+                                     height = Math.round((height * maxDim) / width);
+                                     width = maxDim;
+                                 } else {
+                                     width = Math.round((width * maxDim) / height);
+                                     height = maxDim;
+                                 }
+                             }
+                             canvas.width = width;
+                             canvas.height = height;
+                             const ctx = canvas.getContext('2d');
+                             ctx.drawImage(img, 0, 0, width, height);
+                             this.avatarPreview = canvas.toDataURL('image/jpeg', 0.85);
+                             this.removeAvatar = false;
+                             this.compressing = false;
+                             if (window.lucide) {
+                                 setTimeout(() => window.lucide.createIcons(), 50);
+                             }
+                         };
+                         img.src = ev.target.result;
+                     };
+                     reader.readAsDataURL(file);
+                 },
+                 clearAvatar() {
+                     this.avatarPreview = '';
+                     this.removeAvatar = true;
+                     const fileInput = document.getElementById('user_avatar_file_input');
+                     if (fileInput) fileInput.value = '';
+                     if (window.lucide) {
+                         setTimeout(() => window.lucide.createIcons(), 50);
+                     }
+                 }
+             }"
+             class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
             
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div class="flex items-center gap-2.5">
@@ -379,7 +442,7 @@
                     </div>
                     <div>
                         <h3 class="font-extrabold text-slate-900 text-base">Profil & Kata Sandi Akun</h3>
-                        <p class="text-xs text-slate-500">Perbarui email login dan kata sandi Anda</p>
+                        <p class="text-xs text-slate-500">Perbarui foto profil, email login dan kata sandi Anda</p>
                     </div>
                 </div>
                 <button type="button" @click="profileModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
@@ -387,8 +450,52 @@
                 </button>
             </div>
 
-            <form action="{{ route('profile.update') }}" method="POST" class="space-y-4" autocomplete="off">
+            <form action="{{ route('profile.update') }}" method="POST" enctype="multipart/form-data" class="space-y-4" autocomplete="off">
                 @csrf
+
+                <!-- Upload Foto Profil -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Foto Profil</label>
+                    <div class="flex items-center gap-3.5 p-3 bg-slate-50 rounded-2xl border border-slate-200/80">
+                        <!-- Avatar Circular Preview -->
+                        <div class="relative w-14 h-14 rounded-full bg-slate-200 border-2 border-brand-blue/30 shadow-sm flex items-center justify-center overflow-hidden shrink-0">
+                            <template x-if="avatarPreview">
+                                <img :src="avatarPreview" alt="Foto Profil" class="w-full h-full object-cover">
+                            </template>
+                            <template x-if="!avatarPreview">
+                                <div class="w-full h-full bg-brand-blue text-white font-extrabold text-lg flex items-center justify-center">
+                                    {{ substr(auth()->user()->name, 0, 1) }}
+                                </div>
+                            </template>
+                            <div x-show="compressing" class="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-[10px] font-bold">
+                                Proses...
+                            </div>
+                        </div>
+
+                        <!-- Buttons & Info -->
+                        <div class="flex-1 min-w-0 space-y-1">
+                            <input type="file" id="user_avatar_file_input" name="avatar_file" accept="image/*" @change="handleAvatarFile($event)" class="hidden">
+                            <input type="hidden" name="avatar" :value="avatarPreview">
+                            <input type="hidden" name="remove_avatar" :value="removeAvatar ? '1' : '0'">
+
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="document.getElementById('user_avatar_file_input').click()"
+                                        class="px-3 py-1.5 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white text-xs font-bold shadow-xs transition flex items-center gap-1.5">
+                                    <i data-lucide="camera" class="w-3.5 h-3.5"></i>
+                                    <span>Pilih Foto</span>
+                                </button>
+                                <button type="button" x-show="avatarPreview" @click="clearAvatar()"
+                                        class="px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold transition flex items-center gap-1">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                    <span>Hapus</span>
+                                </button>
+                            </div>
+                            <p class="text-[10px] text-slate-400">
+                                JPG, PNG atau foto kamera langsung.
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap *</label>
