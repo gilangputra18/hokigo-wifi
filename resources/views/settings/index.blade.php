@@ -4,70 +4,7 @@
 @section('header_title', 'Pengaturan Hokigo & Pengguna')
 
 @section('content')
-<div class="space-y-8" x-data="{ 
-    userModalOpen: false, 
-    editUserModalOpen: false,
-    selectedUser: null,
-    editName: '',
-    editEmail: '',
-    editRole: 'admin',
-    editPhone: '',
-    editIsActive: true,
-    editPassword: '',
-    showEditPassword: false,
-    editAvatar: '',
-    removeEditAvatar: false,
-    handleEditAvatarFile(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                const maxDim = 400;
-                let width = img.width;
-                let height = img.height;
-                if (width > maxDim || height > maxDim) {
-                    if (width > height) {
-                        height = Math.round((height * maxDim) / width);
-                        width = maxDim;
-                    } else {
-                        width = Math.round((width * maxDim) / height);
-                        height = maxDim;
-                    }
-                }
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-                this.editAvatar = canvas.toDataURL('image/jpeg', 0.85);
-                this.removeEditAvatar = false;
-            };
-            img.src = ev.target.result;
-        };
-        reader.readAsDataURL(file);
-    },
-    clearEditAvatar() {
-        this.editAvatar = '';
-        this.removeEditAvatar = true;
-        const input = document.getElementById('edit_user_avatar_file');
-        if (input) input.value = '';
-    },
-    openEditUser(u) {
-        this.selectedUser = u;
-        this.editName = u.name;
-        this.editEmail = u.email;
-        this.editRole = u.role;
-        this.editPhone = u.phone || '';
-        this.editIsActive = !!u.is_active;
-        this.editPassword = '';
-        this.showEditPassword = false;
-        this.editAvatar = u.avatar || '';
-        this.removeEditAvatar = false;
-        this.editUserModalOpen = true;
-    }
-}">
+<div class="space-y-8" x-data="userSettingsApp()">
 
     <!-- Section 1: Manajemen Akun (Owner, Admin & Teknisi) -->
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
@@ -538,4 +475,73 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
     </div>
 
 </div>
+
+<script>
+    function userSettingsApp() {
+        return {
+            userModalOpen: false, 
+            editUserModalOpen: false,
+            selectedUser: null,
+            editName: '',
+            editEmail: '',
+            editRole: 'admin',
+            editPhone: '',
+            editIsActive: true,
+            editPassword: '',
+            showEditPassword: false,
+            editAvatar: '',
+            removeEditAvatar: false,
+            handleEditAvatarFile(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const maxDim = 400;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        this.editAvatar = canvas.toDataURL('image/jpeg', 0.85);
+                        this.removeEditAvatar = false;
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            },
+            clearEditAvatar() {
+                this.editAvatar = '';
+                this.removeEditAvatar = true;
+                const input = document.getElementById('edit_user_avatar_file');
+                if (input) input.value = '';
+            },
+            openEditUser(u) {
+                this.selectedUser = u;
+                this.editName = u.name;
+                this.editEmail = u.email;
+                this.editRole = u.role;
+                this.editPhone = u.phone || '';
+                this.editIsActive = !!u.is_active;
+                this.editPassword = '';
+                this.showEditPassword = false;
+                this.editAvatar = u.avatar || '';
+                this.removeEditAvatar = false;
+                this.editUserModalOpen = true;
+            }
+        };
+    }
+</script>
 @endsection

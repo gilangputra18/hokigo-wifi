@@ -386,58 +386,10 @@
     @auth
     <!-- Modal Ganti Kata Sandi, Email & Foto Profil Akun (Bisa diakses Owner, Admin, & Teknisi) -->
     <div x-show="profileModalOpen" x-cloak 
-         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+         class="fixed inset-0 z-[9999] overflow-y-auto bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4"
+         style="padding-top: max(16px, calc(env(safe-area-inset-top, 0px) + 12px)); padding-bottom: max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px));">
         <div @click.away="profileModalOpen = false" 
-             x-data="{
-                 avatarPreview: @json(auth()->user()->avatar ?? ''),
-                 removeAvatar: false,
-                 compressing: false,
-                 handleAvatarFile(e) {
-                     const file = e.target.files[0];
-                     if (!file) return;
-                     this.compressing = true;
-                     const reader = new FileReader();
-                     reader.onload = (ev) => {
-                         const img = new Image();
-                         img.onload = () => {
-                             const canvas = document.createElement('canvas');
-                             const maxDim = 400;
-                             let width = img.width;
-                             let height = img.height;
-                             if (width > maxDim || height > maxDim) {
-                                 if (width > height) {
-                                     height = Math.round((height * maxDim) / width);
-                                     width = maxDim;
-                                 } else {
-                                     width = Math.round((width * maxDim) / height);
-                                     height = maxDim;
-                                 }
-                             }
-                             canvas.width = width;
-                             canvas.height = height;
-                             const ctx = canvas.getContext('2d');
-                             ctx.drawImage(img, 0, 0, width, height);
-                             this.avatarPreview = canvas.toDataURL('image/jpeg', 0.85);
-                             this.removeAvatar = false;
-                             this.compressing = false;
-                             if (window.lucide) {
-                                 setTimeout(() => window.lucide.createIcons(), 50);
-                             }
-                         };
-                         img.src = ev.target.result;
-                     };
-                     reader.readAsDataURL(file);
-                 },
-                 clearAvatar() {
-                     this.avatarPreview = '';
-                     this.removeAvatar = true;
-                     const fileInput = document.getElementById('user_avatar_file_input');
-                     if (fileInput) fileInput.value = '';
-                     if (window.lucide) {
-                         setTimeout(() => window.lucide.createIcons(), 50);
-                     }
-                 }
-             }"
+             x-data="userProfileModalComponent()"
              class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
             
             <div class="flex items-center justify-between pb-3 border-b border-slate-100">
@@ -547,6 +499,61 @@
 
         </div>
     </div>
+
+    <script>
+        function userProfileModalComponent() {
+            return {
+                avatarPreview: @json(auth()->user()->avatar ?? ''),
+                removeAvatar: false,
+                compressing: false,
+                handleAvatarFile(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    this.compressing = true;
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            const maxDim = 400;
+                            let width = img.width;
+                            let height = img.height;
+                            if (width > maxDim || height > maxDim) {
+                                if (width > height) {
+                                    height = Math.round((height * maxDim) / width);
+                                    width = maxDim;
+                                } else {
+                                    width = Math.round((width * maxDim) / height);
+                                    height = maxDim;
+                                }
+                            }
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            this.avatarPreview = canvas.toDataURL('image/jpeg', 0.85);
+                            this.removeAvatar = false;
+                            this.compressing = false;
+                            if (window.lucide) {
+                                setTimeout(() => window.lucide.createIcons(), 50);
+                            }
+                        };
+                        img.src = ev.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                },
+                clearAvatar() {
+                    this.avatarPreview = '';
+                    this.removeAvatar = true;
+                    const fileInput = document.getElementById('user_avatar_file_input');
+                    if (fileInput) fileInput.value = '';
+                    if (window.lucide) {
+                        setTimeout(() => window.lucide.createIcons(), 50);
+                    }
+                }
+            };
+        }
+    </script>
     @endauth
 
     <!-- Initialize Lucide Icons -->
