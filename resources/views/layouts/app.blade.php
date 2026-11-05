@@ -51,12 +51,65 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <!-- instant.page: Ultrafast predictive link prefetching on hover & touch -->
+    <script src="https://cdn.jsdelivr.net/npm/instant.page@5.2.0/instantpage.js" type="module" defer></script>
+
     <style>
         [x-cloak] { display: none !important; }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #F8FAFC; }
+        html {
+            scroll-behavior: smooth;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #F8FAFC;
+        }
+
+        /* Smooth page transition animation */
+        @keyframes appFadeIn {
+            0% {
+                opacity: 0.85;
+                transform: translateY(2px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        main {
+            animation: appFadeIn 0.16s cubic-bezier(0, 0, 0.2, 1);
+        }
+
+        /* Subtle responsive tap micro-feedback */
+        a, button {
+            -webkit-tap-highlight-color: transparent;
+        }
+        a:active:not([disabled]), button:active:not([disabled]) {
+            transform: scale(0.985);
+            transition: transform 0.05s ease-out;
+        }
+
+        /* Sleek top-edge loading progress bar */
+        #top-progress-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #1055CC 0%, #0ea5e9 50%, #38bdf8 100%);
+            box-shadow: 0 0 10px rgba(14, 165, 233, 0.7), 0 0 4px rgba(16, 85, 204, 0.5);
+            z-index: 999999;
+            pointer-events: none;
+            transition: width 0.25s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.2s ease;
+            width: 0%;
+            opacity: 0;
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased min-h-screen flex" x-data="{ sidebarOpen: false, profileModalOpen: false, showProfilePassword: false }">
+
+    <!-- Top-edge instant navigation progress indicator -->
+    <div id="top-progress-bar"></div>
 
     <!-- Mobile Sidebar Backdrop -->
     <div x-show="sidebarOpen" x-cloak @click="sidebarOpen = false" 
@@ -560,6 +613,62 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
         });
+    </script>
+
+    <!-- Instant Page Transition & Progress Bar Controller -->
+    <script>
+        (function() {
+            const bar = document.getElementById('top-progress-bar');
+            if (!bar) return;
+
+            let progressTimeout = null;
+
+            function startProgress() {
+                clearTimeout(progressTimeout);
+                bar.style.transition = 'width 0.25s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.1s ease';
+                bar.style.opacity = '1';
+                bar.style.width = '72%';
+            }
+
+            function finishProgress() {
+                bar.style.transition = 'width 0.15s ease-out, opacity 0.2s ease 0.1s';
+                bar.style.width = '100%';
+                bar.style.opacity = '0';
+                progressTimeout = setTimeout(() => {
+                    bar.style.transition = 'none';
+                    bar.style.width = '0%';
+                }, 350);
+            }
+
+            // Listen to clicks on standard navigation links
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a');
+                if (!link) return;
+
+                const href = link.getAttribute('href');
+                if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('tel:') || href.startsWith('mailto:')) return;
+                if (link.getAttribute('target') === '_blank' || link.hasAttribute('download')) return;
+                if (link.origin && link.origin !== window.location.origin) return;
+
+                startProgress();
+            });
+
+            // Listen to form submissions
+            document.addEventListener('submit', function(e) {
+                if (!e.defaultPrevented) {
+                    startProgress();
+                }
+            });
+
+            window.addEventListener('beforeunload', function() {
+                startProgress();
+                bar.style.width = '96%';
+            });
+
+            window.addEventListener('pageshow', function() {
+                finishProgress();
+            });
+        })();
     </script>
     @stack('scripts')
 </body>

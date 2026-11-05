@@ -41,7 +41,15 @@
 
     <style>
         [x-cloak] { display: none !important; }
+        html {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        button:active {
+            transform: scale(0.985);
+            transition: transform 0.05s ease-out;
+        }
     </style>
 </head>
 <body class="min-h-[100dvh] flex flex-col justify-center items-center p-3 sm:p-6 antialiased text-slate-800 relative overflow-x-hidden bg-[#070F2B]">
@@ -114,7 +122,7 @@
             @endif
 
             <!-- Form Login -->
-            <form action="{{ route('login.post') }}" method="POST" class="space-y-3 sm:space-y-3.5" x-data="{ showPassword: false }">
+            <form action="{{ route('login.post') }}" method="POST" class="space-y-3 sm:space-y-3.5" x-data="{ showPassword: false, submitting: false }" @submit="submitting = true">
                 @csrf
 
                 <!-- Email Input -->
@@ -162,43 +170,21 @@
                 </div>
 
                 <!-- Submit Button -->
-                <button type="submit" 
-                        class="w-full py-3 px-4 bg-gradient-to-r from-[#1055CC] via-[#1A64E8] to-[#0D44A6] hover:from-[#0E49B0] hover:to-[#0A398D] active:scale-[0.99] text-white rounded-xl font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-blue-600/35 hover:shadow-blue-600/50 transition-all duration-200 flex items-center justify-center gap-2">
-                    <i data-lucide="log-in" class="w-4 h-4"></i>
-                    <span>Masuk ke Dashboard</span>
+                <button type="submit" :disabled="submitting"
+                        class="w-full py-3 px-4 bg-gradient-to-r from-[#1055CC] via-[#1A64E8] to-[#0D44A6] hover:from-[#0E49B0] hover:to-[#0A398D] active:scale-[0.99] text-white rounded-xl font-bold text-xs sm:text-sm tracking-wide shadow-lg shadow-blue-600/35 hover:shadow-blue-600/50 transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-75 disabled:cursor-wait">
+                    <span x-show="!submitting" class="flex items-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i>
+                        <span>Masuk ke Dashboard</span>
+                    </span>
+                    <span x-show="submitting" x-cloak class="flex items-center gap-2">
+                        <svg class="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                        </svg>
+                        <span>Memproses Masuk...</span>
+                    </span>
                 </button>
             </form>
-
-            <!-- Quick Demo Credentials Box -->
-            <div class="mt-4 pt-3.5 border-t border-slate-100">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center mb-2">Akun Akses Cepat</p>
-                <div class="grid grid-cols-3 gap-1.5">
-                    <button type="button" onclick="fillAccount('owner@hokigo.net', 'password')" 
-                            class="p-2 bg-slate-50 hover:bg-blue-50/60 active:bg-blue-100/60 border border-slate-200/80 hover:border-blue-200 rounded-xl text-left transition group">
-                        <span class="block text-[10px] font-bold text-slate-800 flex items-center gap-1 truncate">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span> Owner
-                        </span>
-                        <span class="text-[9px] text-slate-400 font-mono truncate block group-hover:text-blue-600">owner</span>
-                    </button>
-                    
-                    <button type="button" onclick="fillAccount('admin@hokigo.net', 'password')" 
-                            class="p-2 bg-slate-50 hover:bg-blue-50/60 active:bg-blue-100/60 border border-slate-200/80 hover:border-blue-200 rounded-xl text-left transition group">
-                        <span class="block text-[10px] font-bold text-slate-800 flex items-center gap-1 truncate">
-                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span> Admin
-                        </span>
-                        <span class="text-[9px] text-slate-400 font-mono truncate block group-hover:text-blue-600">admin</span>
-                    </button>
-
-                    <button type="button" onclick="fillAccount('teknisi@hokigo.net', 'password')" 
-                            class="p-2 bg-slate-50 hover:bg-cyan-50/60 active:bg-cyan-100/60 border border-slate-200/80 hover:border-cyan-300 rounded-xl text-left transition group">
-                        <span class="block text-[10px] font-bold text-slate-800 flex items-center gap-1 truncate">
-                            <span class="w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0"></span> Teknisi
-                        </span>
-                        <span class="text-[9px] text-slate-400 font-mono truncate block group-hover:text-cyan-600">teknisi</span>
-                    </button>
-                </div>
-                <p class="text-[10px] text-slate-400 text-center mt-1.5">Password default: <code class="bg-slate-100 px-1 py-0.2 rounded text-slate-700 font-mono">password</code></p>
-            </div>
 
         </div>
 
@@ -218,21 +204,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
         });
-
-        function fillAccount(email, password) {
-            const emailInput = document.getElementById('email');
-            const passInput = document.getElementById('password');
-            emailInput.value = email;
-            passInput.value = password;
-
-            // Subtle flash effect on inputs
-            emailInput.classList.add('ring-2', 'ring-blue-500');
-            passInput.classList.add('ring-2', 'ring-blue-500');
-            setTimeout(() => {
-                emailInput.classList.remove('ring-2', 'ring-blue-500');
-                passInput.classList.remove('ring-2', 'ring-blue-500');
-            }, 400);
-        }
     </script>
 </body>
 </html>
