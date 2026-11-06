@@ -12,7 +12,13 @@
         <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-blue-200 text-xs font-semibold uppercase tracking-wider backdrop-blur-md mb-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Periode Berjalan: {{ now()->translatedFormat('F Y') }}
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span> 
+                    Periode: {{ $periodDate->translatedFormat('F Y') }}
+                    @if($selectedVillage)
+                        &bull; 📍 Wilayah {{ $selectedVillage->name }}
+                    @else
+                        &bull; 🌐 Semua Wilayah Desa
+                    @endif
                 </span>
                 <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Hokigo WiFi Control Center</h2>
                 <p class="text-slate-300 text-sm mt-1 max-w-xl">
@@ -37,6 +43,51 @@
         </div>
     </div>
 
+    <!-- Filter Bar: Periode Bulan & Wilayah/Desa -->
+    <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center shrink-0">
+                <i data-lucide="filter" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Filter Data Dashboard</h3>
+                <p class="text-[11px] text-slate-500">Sesuaikan periode bulan atau pantau performa khusus per desa</p>
+            </div>
+        </div>
+
+        <form method="GET" action="{{ route('dashboard') }}" class="flex flex-wrap items-center gap-2.5">
+            <!-- 1. Filter Periode Bulan -->
+            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl px-3 py-1.5 transition">
+                <i data-lucide="calendar" class="w-4 h-4 text-slate-400"></i>
+                <label for="period" class="text-[11px] font-bold text-slate-500">Bulan:</label>
+                <input type="month" id="period" name="period" value="{{ $currentPeriod }}" onchange="this.form.submit()" 
+                       class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer">
+            </div>
+
+            <!-- 2. Filter Wilayah / Desa -->
+            <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl px-3 py-1.5 transition">
+                <i data-lucide="map-pin" class="w-4 h-4 text-slate-400"></i>
+                <label for="village_id" class="text-[11px] font-bold text-slate-500">Wilayah:</label>
+                <select id="village_id" name="village_id" onchange="this.form.submit()" 
+                        class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-2">
+                    <option value="">Semua Wilayah / Desa</option>
+                    @foreach($villages as $v)
+                        <option value="{{ $v->id }}" {{ $villageId == $v->id ? 'selected' : '' }}>
+                            {{ $v->name }} ({{ $v->customers_count }} Pelanggan)
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            @if(request()->filled('period') || request()->filled('village_id'))
+                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 text-xs font-bold transition" title="Kembali ke Bulan Sekarang & Semua Desa">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    <span>Reset</span>
+                </a>
+            @endif
+        </form>
+    </div>
+
     <!-- 2. Financial & Core Metrics Cards (Requirements 3, 4, 5) -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
@@ -44,8 +95,13 @@
         <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition flex flex-col justify-between">
             <div>
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Omzet Bulan Ini</span>
-                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                        <span>Total Omzet ({{ $periodDate->translatedFormat('M Y') }})</span>
+                        @if($selectedVillage)
+                            <span class="text-[10px] text-blue-700 font-bold bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 normal-case">{{ $selectedVillage->name }}</span>
+                        @endif
+                    </span>
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center shrink-0">
                         <i data-lucide="trending-up" class="w-5 h-5"></i>
                     </div>
                 </div>
@@ -192,7 +248,10 @@
                     <h3 class="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
                         <span>Finansial Khusus Voucher Hotspot</span>
                         <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                            {{ now()->translatedFormat('F Y') }}
+                            {{ $periodDate->translatedFormat('F Y') }}
+                            @if($selectedVillage)
+                                &bull; {{ $selectedVillage->name }}
+                            @endif
                         </span>
                     </h3>
                     <p class="text-xs text-slate-500 mt-0.5">Grand total omzet kotor, pengeluaran bagi hasil reseller & laba bersih voucher</p>

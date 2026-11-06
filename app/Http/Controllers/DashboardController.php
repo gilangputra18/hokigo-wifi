@@ -15,81 +15,42 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $now = Carbon::now();
-        $currentMonth = $now->month;
-        $currentYear = $now->year;
-        $currentPeriod = $now->format('Y-m');
-        $prevMonthDate = $now->copy()->subMonth();
+        $selectedPeriod = $request->get('period', $now->format('Y-m'));
 
-        // 1. Fetch 6-Month Transactions in ONE SINGLE QUERY (Avoids 12 cross-continent roundtrips!)
-        $sixMonthsAgo = $now->copy()->subMonths(5)->startOfMonth()->toDateString();
-        $transactions6Months = FinancialTransaction::where('transaction_date', '>=', $sixMonthsAgo)
+        try {
+            $periodDate = Carbon::createFromFormat('Y-m', $selectedPeriod)->startOfMonth();
+        } catch (\Exception $e) {
+            $periodDate = $now->copy()->startOfMonth();
+            $selectedPeriod = $now->format('Y-m');
+        }
+
+        $currentMonth = $periodDate->month;
+        $currentYear = $periodDate->year;
+        $currentPeriod = $selectedPeriod;
+        $prevMonthDate = $periodDate->copy()->subMonth();
+
+        $villageId = $request->get('village_id');
+        $selectedVillage = null;
+        if ($villageId) {
+            $selectedVillage = Village::find($villageId);
+            if (!$selectedVillage) {
+                $villageId = null;
+            }
+        }
+
+        // 1. Fetch 6-Month Transactions in ONE SINGLE QUERY
+        $sixMonthsAgo = $periodDate->copy()->subMonths(5)->startOfMonth()->toDateString();
+        $endOfPeriod = $periodDate->copy()->endOfMonth()->toDateString();
+        $transactions6Months = FinancialTransaction::whereBetween('transaction_date', [$sixMonthsAgo, $endOfPeriod])
             ->select('type', 'amount', 'category', 'transaction_date')
             ->get();
 
-        // Calculate this month & previous month totals in memory
-        $omzetBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
-            $d = Carbon::parse($t->transaction_date);
-            return $t->type === 'income' && $d->year === $currentYear && $d->month === $currentMonth;
-        })->sum('amount');
-
-        // Khusus pemisah omzet: Voucher Hotspot vs Langganan Bulanan
-        $omzetVoucherBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
-            $d = Carbon::parse($t->transaction_date);
-            return $t->type === 'income' && $t->category === 'Voucher Hotspot' && $d->year === $currentYear && $d->month === $currentMonth;
-        })->sum('amount');
-
-        $omzetLanggananBulanIni = $omzetBulanIni - $omzetVoucherBulanIni;
-
-        // Metrik Lengkap Khusus Finansial Voucher Hotspot (Bulan Ini)
-        $voucherStatsBulanIni = VoucherSale::where('period', $currentPeriod)
-            ->selectRaw("
-                COALESCE(SUM(quantity_sold), 0) as total_sold,
-                COALESCE(SUM(total_gross_amount), 0) as total_gross,
-                COALESCE(SUM(total_seller_fee), 0) as total_fee,
-                COALESCE(SUM(net_amount), 0) as total_net,
-                COALESCE(SUM(CASE WHEN status = 'deposited' THEN net_amount ELSE 0 END), 0) as total_deposited,
-                COALESCE(SUM(CASE WHEN status = 'pending' THEN net_amount ELSE 0 END), 0) as total_pending
-            ")->first();
-
-        $voucherOmzetKotor = (float) ($voucherStatsBulanIni->total_gross ?? 0);
-        $voucherPengeluaranFee = (float) ($voucherStatsBulanIni->total_fee ?? 0);
-        $voucherLabaBersih = (float) ($voucherStatsBulanIni->total_net ?? 0);
-        $voucherTotalSold = (int) ($voucherStatsBulanIni->total_sold ?? 0);
-        $voucherDeposited = (float) ($voucherStatsBulanIni->total_deposited ?? 0);
-        $voucherPending = (float) ($voucherStatsBulanIni->total_pending ?? 0);
-
-        // Grand Total Kumulatif Sepanjang Waktu khusus Voucher
-        $voucherAllTimeStats = VoucherSale::selectRaw("
-            COALESCE(SUM(quantity_sold), 0) as total_sold,
-            COALESCE(SUM(total_gross_amount), 0) as total_gross,
-            COALESCE(SUM(total_seller_fee), 0) as total_fee,
-            COALESCE(SUM(net_amount), 0) as total_net
-        ")->first();
-
-        $voucherAllTimeGross = (float) ($voucherAllTimeStats->total_gross ?? 0);
-        $voucherAllTimeFee = (float) ($voucherAllTimeStats->total_fee ?? 0);
-        $voucherAllTimeNet = (float) ($voucherAllTimeStats->total_net ?? 0);
-        $voucherAllTimeSold = (int) ($voucherAllTimeStats->total_sold ?? 0);
-
-        $pengeluaranBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
-            $d = Carbon::parse($t->transaction_date);
-            return $t->type === 'expense' && $d->year === $currentYear && $d->month === $currentMonth;
-        })->sum('amount');
-
-        $labaBersihBulanIni = $omzetBulanIni - $pengeluaranBulanIni;
-
-        $omzetBulanLalu = $transactions6Months->filter(function ($t) use ($prevMonthDate) {
-            $d = Carbon::parse($t->transaction_date);
-            return $t->type === 'income' && $d->year === $prevMonthDate->year && $d->month === $prevMonthDate->month;
-        })->sum('amount');
-
-        $growthOmzet = 0;
-        if ($omzetBulanLalu > 0) {
-            $growthOmzet = round((($omzetBulanIni - $omzetBulanLalu) / $omzetBulanLalu) * 100, 1);
+        // 2. Customer Counts
+        $customerStatsQuery = Customer::query();
+        if ($villageId) {
+            $customerStatsQuery->where('village_id', $villageId);
         }
-
-        // 2. Customer Counts in ONE SINGLE QUERY
-        $customerStats = Customer::selectRaw("
+        $customerStats = $customerStatsQuery->selectRaw("
             COUNT(*) as total,
             COUNT(CASE WHEN status = 'active' THEN 1 END) as active,
             COUNT(CASE WHEN status = 'isolated' THEN 1 END) as isolated,
@@ -101,8 +62,12 @@ class DashboardController extends Controller
         $isolatedCustomers = $customerStats->isolated ?? 0;
         $inactiveCustomers = $customerStats->inactive ?? 0;
 
-        // 3. Current Month Invoices in ONE QUERY
-        $invoicesCurrentMonth = Invoice::where('period', $currentPeriod)->get();
+        // 3. Invoices in Selected Period
+        $invoicesQuery = Invoice::where('period', $currentPeriod);
+        if ($villageId) {
+            $invoicesQuery->whereHas('customer', fn($q) => $q->where('village_id', $villageId));
+        }
+        $invoicesCurrentMonth = $invoicesQuery->get();
         $totalTagihanNominal = $invoicesCurrentMonth->sum('amount');
 
         $tagihanLunas = $invoicesCurrentMonth->where('status', 'paid');
@@ -113,28 +78,111 @@ class DashboardController extends Controller
         $tagihanBelumBayarNominal = $tagihanBelumBayar->sum('amount');
         $tagihanBelumBayarCount = $tagihanBelumBayar->count();
 
-        // Overdue count
-        $overdueCount = Invoice::whereIn('status', ['unpaid', 'overdue'])
-            ->whereDate('due_date', '<', $now->toDateString())
-            ->count();
+        // 4. Metrik Lengkap Khusus Finansial Voucher Hotspot
+        $voucherStatsQuery = VoucherSale::where('period', $currentPeriod);
+        if ($villageId) {
+            $voucherStatsQuery->where('village_id', $villageId);
+        }
+        $voucherStatsBulanIni = $voucherStatsQuery->selectRaw("
+            COALESCE(SUM(quantity_sold), 0) as total_sold,
+            COALESCE(SUM(total_gross_amount), 0) as total_gross,
+            COALESCE(SUM(total_seller_fee), 0) as total_fee,
+            COALESCE(SUM(net_amount), 0) as total_net,
+            COALESCE(SUM(CASE WHEN status = 'deposited' THEN net_amount ELSE 0 END), 0) as total_deposited,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN net_amount ELSE 0 END), 0) as total_pending
+        ")->first();
 
-        // 4. WhatsApp Due Date Reminders (Due today or past due and unpaid)
-        $dueTodayInvoices = Invoice::with(['customer.village', 'customer.package'])
+        $voucherOmzetKotor = (float) ($voucherStatsBulanIni->total_gross ?? 0);
+        $voucherPengeluaranFee = (float) ($voucherStatsBulanIni->total_fee ?? 0);
+        $voucherLabaBersih = (float) ($voucherStatsBulanIni->total_net ?? 0);
+        $voucherTotalSold = (int) ($voucherStatsBulanIni->total_sold ?? 0);
+        $voucherDeposited = (float) ($voucherStatsBulanIni->total_deposited ?? 0);
+        $voucherPending = (float) ($voucherStatsBulanIni->total_pending ?? 0);
+
+        // Grand Total Kumulatif Sepanjang Waktu khusus Voucher
+        $voucherAllTimeQuery = VoucherSale::query();
+        if ($villageId) {
+            $voucherAllTimeQuery->where('village_id', $villageId);
+        }
+        $voucherAllTimeStats = $voucherAllTimeQuery->selectRaw("
+            COALESCE(SUM(quantity_sold), 0) as total_sold,
+            COALESCE(SUM(total_gross_amount), 0) as total_gross,
+            COALESCE(SUM(total_seller_fee), 0) as total_fee,
+            COALESCE(SUM(net_amount), 0) as total_net
+        ")->first();
+
+        $voucherAllTimeGross = (float) ($voucherAllTimeStats->total_gross ?? 0);
+        $voucherAllTimeFee = (float) ($voucherAllTimeStats->total_fee ?? 0);
+        $voucherAllTimeNet = (float) ($voucherAllTimeStats->total_net ?? 0);
+        $voucherAllTimeSold = (int) ($voucherAllTimeStats->total_sold ?? 0);
+
+        // 5. Kalkulasi Omzet & Pengeluaran
+        if ($villageId) {
+            // Khusus filter desa
+            $omzetLanggananBulanIni = (float) $tagihanLunasNominal;
+            $omzetVoucherBulanIni = (float) $voucherDeposited;
+            $omzetBulanIni = $omzetLanggananBulanIni + $omzetVoucherBulanIni;
+            $pengeluaranBulanIni = 0; // Pengeluaran umum/sentral ISP
+            $labaBersihBulanIni = $omzetBulanIni - $pengeluaranBulanIni;
+            $growthOmzet = 0;
+        } else {
+            // Semua Desa (Keseluruhan)
+            $omzetBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
+                $d = Carbon::parse($t->transaction_date);
+                return $t->type === 'income' && $d->year === $currentYear && $d->month === $currentMonth;
+            })->sum('amount');
+
+            $omzetVoucherBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
+                $d = Carbon::parse($t->transaction_date);
+                return $t->type === 'income' && $t->category === 'Voucher Hotspot' && $d->year === $currentYear && $d->month === $currentMonth;
+            })->sum('amount');
+
+            $omzetLanggananBulanIni = $omzetBulanIni - $omzetVoucherBulanIni;
+
+            $pengeluaranBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
+                $d = Carbon::parse($t->transaction_date);
+                return $t->type === 'expense' && $d->year === $currentYear && $d->month === $currentMonth;
+            })->sum('amount');
+
+            $labaBersihBulanIni = $omzetBulanIni - $pengeluaranBulanIni;
+
+            $omzetBulanLalu = $transactions6Months->filter(function ($t) use ($prevMonthDate) {
+                $d = Carbon::parse($t->transaction_date);
+                return $t->type === 'income' && $d->year === $prevMonthDate->year && $d->month === $prevMonthDate->month;
+            })->sum('amount');
+
+            $growthOmzet = 0;
+            if ($omzetBulanLalu > 0) {
+                $growthOmzet = round((($omzetBulanIni - $omzetBulanLalu) / $omzetBulanLalu) * 100, 1);
+            }
+        }
+
+        // Overdue count
+        $overdueQuery = Invoice::whereIn('status', ['unpaid', 'overdue'])
+            ->whereDate('due_date', '<', $now->toDateString());
+        if ($villageId) {
+            $overdueQuery->whereHas('customer', fn($q) => $q->where('village_id', $villageId));
+        }
+        $overdueCount = $overdueQuery->count();
+
+        // 6. WhatsApp Due Date Reminders
+        $dueTodayQuery = Invoice::with(['customer.village', 'customer.package'])
             ->where('period', $currentPeriod)
             ->whereIn('status', ['unpaid', 'overdue'])
-            ->whereDate('due_date', '<=', $now->toDateString())
-            ->orderBy('due_date', 'asc')
-            ->take(10)
-            ->get();
+            ->whereDate('due_date', '<=', $now->toDateString());
+        if ($villageId) {
+            $dueTodayQuery->whereHas('customer', fn($q) => $q->where('village_id', $villageId));
+        }
+        $dueTodayInvoices = $dueTodayQuery->orderBy('due_date', 'asc')->take(10)->get();
 
-        // 5. Build 6-Month Chart Data from memory (Instant calculation, 0 DB roundtrips)
+        // 7. Build 6-Month Chart Data
         $chartMonths = [];
         $chartIncome = [];
         $chartExpense = [];
         $chartProfit = [];
 
         for ($i = 5; $i >= 0; $i--) {
-            $date = $now->copy()->subMonths($i);
+            $date = $periodDate->copy()->subMonths($i);
             $y = $date->year;
             $m = $date->month;
             $label = $date->translatedFormat('M Y');
@@ -203,8 +251,12 @@ class DashboardController extends Controller
             'chartProfit',
             'villageLabels',
             'villageCounts',
+            'villages',
+            'villageId',
+            'selectedVillage',
             'recentTransactions',
-            'currentPeriod'
+            'currentPeriod',
+            'periodDate'
         ));
     }
 }
