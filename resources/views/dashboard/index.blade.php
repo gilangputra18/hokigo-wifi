@@ -136,15 +136,15 @@
 
     </div>
 
-    <!-- 3. Status Tagihan & Penjualan Voucher Periode Ini -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    <!-- 3. Status Tagihan Langganan Bulanan Periode Ini -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         
         <!-- Total Tagihan Terbit -->
         <div class="bg-slate-900 text-white rounded-2xl p-5 flex items-center justify-between shadow-xs">
             <div>
-                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Tagihan Periode Ini</span>
+                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Tagihan Langganan Terbit</span>
                 <div class="text-xl font-bold text-white mt-1">Rp {{ number_format($totalTagihanNominal, 0, ',', '.') }}</div>
-                <div class="text-xs text-slate-400 mt-0.5">{{ $tagihanLunasCount + $tagihanBelumBayarCount }} Lembar Tagihan</div>
+                <div class="text-xs text-slate-400 mt-0.5">{{ $tagihanLunasCount + $tagihanBelumBayarCount }} Lembar Tagihan Pelanggan</div>
             </div>
             <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-blue-400">
                 <i data-lucide="layers" class="w-6 h-6"></i>
@@ -179,27 +179,91 @@
             </div>
         </div>
 
-        <!-- Setoran Voucher Hotspot -->
-        <div class="bg-indigo-50/60 border border-indigo-200/80 rounded-2xl p-5 flex items-center justify-between shadow-xs">
-            <div>
-                <span class="text-xs text-indigo-900 uppercase font-bold tracking-wider flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> Setoran Voucher
-                </span>
-                <div class="text-xl font-bold text-indigo-950 mt-1">Rp {{ number_format($omzetVoucherBulanIni, 0, ',', '.') }}</div>
-                <div class="text-xs text-indigo-700 font-semibold mt-0.5">
-                    {{ number_format($voucherPcsTerjual, 0, ',', '.') }} pcs
-                    @if($voucherPendingNominal > 0)
-                        &bull; <span class="text-amber-700 font-bold">Rp {{ number_format($voucherPendingNominal, 0, ',', '.') }} pending</span>
-                    @else
-                        &bull; <span class="text-emerald-700">Semua disetor</span>
-                    @endif
+    </div>
+
+    <!-- 3.1. Grand Total Finansial Khusus Voucher Hotspot -->
+    <div class="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs relative overflow-hidden">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100 shrink-0">
+                    <i data-lucide="ticket" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                        <span>Finansial Khusus Voucher Hotspot</span>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                            {{ now()->translatedFormat('F Y') }}
+                        </span>
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Grand total omzet kotor, pengeluaran bagi hasil reseller & laba bersih voucher</p>
                 </div>
             </div>
-            <a href="{{ route('vouchers.index') }}" title="Kelola Penjualan Voucher" class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-700 hover:bg-indigo-500/30 flex items-center justify-center transition">
-                <i data-lucide="ticket" class="w-6 h-6"></i>
+            <a href="{{ route('vouchers.index') }}" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-bold text-white transition self-start sm:self-auto shadow-xs">
+                <i data-lucide="list" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Buka Rekap Penjualan Voucher</span>
             </a>
         </div>
 
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
+            <!-- 1. Grand Total Omzet Kotor Voucher -->
+            <div class="p-4 rounded-2xl bg-amber-50/60 border border-amber-200/70 space-y-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                        <i data-lucide="coins" class="w-4 h-4 text-amber-600"></i>
+                        <span>Grand Total Omzet Kotor</span>
+                    </span>
+                    <span class="text-[10px] font-semibold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">Bruto</span>
+                </div>
+                <div class="text-2xl font-black text-amber-900 tracking-tight">
+                    Rp {{ number_format($voucherOmzetKotor, 0, ',', '.') }}
+                </div>
+                <div class="pt-2 border-t border-amber-200/50 flex items-center justify-between text-[11px] text-amber-800 font-medium">
+                    <span>Terjual: <strong>{{ number_format($voucherTotalSold, 0, ',', '.') }} lembar</strong></span>
+                    <span class="text-slate-500">All-Time: Rp {{ number_format($voucherAllTimeGross, 0, ',', '.') }}</span>
+                </div>
+            </div>
+
+            <!-- 2. Pengeluaran / Bagi Hasil Mitra Warung -->
+            <div class="p-4 rounded-2xl bg-rose-50/60 border border-rose-200/70 space-y-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1.5">
+                        <i data-lucide="handshake" class="w-4 h-4 text-rose-600"></i>
+                        <span>Pengeluaran (Fee Reseller)</span>
+                    </span>
+                    <span class="text-[10px] font-semibold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">Bagi Hasil</span>
+                </div>
+                <div class="text-2xl font-black text-rose-900 tracking-tight">
+                    Rp {{ number_format($voucherPengeluaranFee, 0, ',', '.') }}
+                </div>
+                <div class="pt-2 border-t border-rose-200/50 flex items-center justify-between text-[11px] text-rose-800 font-medium">
+                    <span>Komisi Mitra Warung</span>
+                    <span class="text-slate-500">All-Time: Rp {{ number_format($voucherAllTimeFee, 0, ',', '.') }}</span>
+                </div>
+            </div>
+
+            <!-- 3. Laba Bersih Voucher Hokigo -->
+            <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/70 space-y-1">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Laba Bersih Voucher</span>
+                    </span>
+                    <span class="text-[10px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">Kas Masuk</span>
+                </div>
+                <div class="text-2xl font-black text-emerald-900 tracking-tight">
+                    Rp {{ number_format($voucherLabaBersih, 0, ',', '.') }}
+                </div>
+                <div class="pt-2 border-t border-emerald-200/50 flex items-center justify-between text-[11px] font-medium">
+                    <span class="text-emerald-800">
+                        Disetor: <strong>Rp {{ number_format($voucherDeposited, 0, ',', '.') }}</strong>
+                        @if($voucherPending > 0)
+                            &bull; <span class="text-amber-700 font-bold">Pending: Rp {{ number_format($voucherPending, 0, ',', '.') }}</span>
+                        @endif
+                    </span>
+                    <span class="text-slate-500">All-Time: Rp {{ number_format($voucherAllTimeNet, 0, ',', '.') }}</span>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- 4. Interactive Charts Section -->

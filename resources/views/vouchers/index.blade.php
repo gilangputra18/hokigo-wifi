@@ -84,7 +84,7 @@
             <p class="text-xl sm:text-2xl font-black text-amber-600">
                 Rp {{ number_format($stats->total_gross ?? 0, 0, ',', '.') }}
             </p>
-            <p class="text-[11px] text-slate-500">Sebelum dipotong komisi</p>
+            <p class="text-[11px] text-slate-500">Sebelum dipotong komisi &bull; <span class="text-slate-400 font-medium">All-Time: Rp {{ number_format($allTimeStats->total_gross ?? 0, 0, ',', '.') }}</span></p>
         </div>
 
         <!-- Fee Penjual -->
@@ -96,7 +96,7 @@
             <p class="text-xl sm:text-2xl font-black text-rose-600">
                 Rp {{ number_format($stats->total_fee ?? 0, 0, ',', '.') }}
             </p>
-            <p class="text-[11px] text-slate-500">Bagi hasil mitra warung</p>
+            <p class="text-[11px] text-slate-500">Bagi hasil mitra warung &bull; <span class="text-slate-400 font-medium">All-Time: Rp {{ number_format($allTimeStats->total_fee ?? 0, 0, ',', '.') }}</span></p>
         </div>
 
         <!-- Laba Bersih Hokigo -->
@@ -108,7 +108,7 @@
             <p class="text-xl sm:text-2xl font-black text-emerald-400">
                 Rp {{ number_format($stats->total_net ?? 0, 0, ',', '.') }}
             </p>
-            <p class="text-[11px] text-blue-200/70">Pendapatan bersih masuk kas</p>
+            <p class="text-[11px] text-blue-200/70">Pendapatan bersih masuk kas &bull; <span class="text-emerald-300 font-semibold">All-Time: Rp {{ number_format($allTimeStats->total_net ?? 0, 0, ',', '.') }}</span></p>
         </div>
     </div>
 

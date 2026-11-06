@@ -40,13 +40,36 @@ class DashboardController extends Controller
 
         $omzetLanggananBulanIni = $omzetBulanIni - $omzetVoucherBulanIni;
 
-        // Metrik setoran voucher di reseller bulan ini
-        $voucherPendingNominal = VoucherSale::where('period', $currentPeriod)
-            ->where('status', 'pending')
-            ->sum('net_amount');
+        // Metrik Lengkap Khusus Finansial Voucher Hotspot (Bulan Ini)
+        $voucherStatsBulanIni = VoucherSale::where('period', $currentPeriod)
+            ->selectRaw("
+                COALESCE(SUM(quantity_sold), 0) as total_sold,
+                COALESCE(SUM(total_gross_amount), 0) as total_gross,
+                COALESCE(SUM(total_seller_fee), 0) as total_fee,
+                COALESCE(SUM(net_amount), 0) as total_net,
+                COALESCE(SUM(CASE WHEN status = 'deposited' THEN net_amount ELSE 0 END), 0) as total_deposited,
+                COALESCE(SUM(CASE WHEN status = 'pending' THEN net_amount ELSE 0 END), 0) as total_pending
+            ")->first();
 
-        $voucherPcsTerjual = VoucherSale::where('period', $currentPeriod)
-            ->sum('quantity_sold');
+        $voucherOmzetKotor = (float) ($voucherStatsBulanIni->total_gross ?? 0);
+        $voucherPengeluaranFee = (float) ($voucherStatsBulanIni->total_fee ?? 0);
+        $voucherLabaBersih = (float) ($voucherStatsBulanIni->total_net ?? 0);
+        $voucherTotalSold = (int) ($voucherStatsBulanIni->total_sold ?? 0);
+        $voucherDeposited = (float) ($voucherStatsBulanIni->total_deposited ?? 0);
+        $voucherPending = (float) ($voucherStatsBulanIni->total_pending ?? 0);
+
+        // Grand Total Kumulatif Sepanjang Waktu khusus Voucher
+        $voucherAllTimeStats = VoucherSale::selectRaw("
+            COALESCE(SUM(quantity_sold), 0) as total_sold,
+            COALESCE(SUM(total_gross_amount), 0) as total_gross,
+            COALESCE(SUM(total_seller_fee), 0) as total_fee,
+            COALESCE(SUM(net_amount), 0) as total_net
+        ")->first();
+
+        $voucherAllTimeGross = (float) ($voucherAllTimeStats->total_gross ?? 0);
+        $voucherAllTimeFee = (float) ($voucherAllTimeStats->total_fee ?? 0);
+        $voucherAllTimeNet = (float) ($voucherAllTimeStats->total_net ?? 0);
+        $voucherAllTimeSold = (int) ($voucherAllTimeStats->total_sold ?? 0);
 
         $pengeluaranBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
             $d = Carbon::parse($t->transaction_date);
@@ -150,8 +173,16 @@ class DashboardController extends Controller
             'omzetBulanIni',
             'omzetLanggananBulanIni',
             'omzetVoucherBulanIni',
-            'voucherPendingNominal',
-            'voucherPcsTerjual',
+            'voucherOmzetKotor',
+            'voucherPengeluaranFee',
+            'voucherLabaBersih',
+            'voucherTotalSold',
+            'voucherDeposited',
+            'voucherPending',
+            'voucherAllTimeGross',
+            'voucherAllTimeFee',
+            'voucherAllTimeNet',
+            'voucherAllTimeSold',
             'pengeluaranBulanIni',
             'labaBersihBulanIni',
             'growthOmzet',

@@ -43,10 +43,19 @@ class VoucherController extends Controller
             COALESCE(SUM(CASE WHEN status = 'pending' THEN net_amount ELSE 0 END), 0) as total_pending
         ")->first();
 
+        // Grand Total Sepanjang Waktu
+        $allTimeStats = VoucherSale::selectRaw("
+            COALESCE(SUM(quantity_sold), 0) as total_sold,
+            COALESCE(SUM(total_gross_amount), 0) as total_gross,
+            COALESCE(SUM(total_seller_fee), 0) as total_fee,
+            COALESCE(SUM(net_amount), 0) as total_net,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN net_amount ELSE 0 END), 0) as total_pending
+        ")->first();
+
         // Villages that have voucher enabled (voucher or hybrid)
         $villages = Village::orderBy('name')->get();
 
-        return view('vouchers.index', compact('sales', 'stats', 'villages', 'currentPeriod', 'villageId', 'status'));
+        return view('vouchers.index', compact('sales', 'stats', 'allTimeStats', 'villages', 'currentPeriod', 'villageId', 'status'));
     }
 
     public function store(Request $request)
