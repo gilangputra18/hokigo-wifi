@@ -337,7 +337,7 @@
                     <button type="button" @click="bulkModalOpen = true" 
                             class="px-4 py-2 rounded-xl bg-brand-blue text-white text-xs font-bold hover:bg-brand-blueHover transition shadow-xs flex items-center gap-1.5">
                         <i data-lucide="layers" class="w-4 h-4"></i>
-                        <span>Buat Massal Akun (Contoh: Hokigo1 s/d Hokigo50)</span>
+                        <span>Buat Massal Akun (Contoh: Hokigo1 s/d Hokigo65)</span>
                     </button>
                 </div>
             </div>
@@ -537,7 +537,7 @@ function bulkGeneratorPreview() {
     return {
         prefix: 'Hokigo',
         from: 1,
-        to: 50,
+        to: 65,
         password: 'Irzaq09042003'
     };
 }

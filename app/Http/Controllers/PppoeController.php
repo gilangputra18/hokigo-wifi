@@ -60,11 +60,7 @@ class PppoeController extends Controller
                     }
                 }
 
-                $target = max(50, $highestNum + 30);
-
-                if ($existingCount >= $target) {
-                    continue;
-                }
+                $target = max(65, $highestNum + 30);
 
                 $existing = PppoeAccount::where('village_id', $vId)->pluck('username')->all();
                 $existingMap = array_change_key_case(array_flip($existing), CASE_LOWER);
@@ -89,6 +85,27 @@ class PppoeController extends Controller
                 if (!empty($inserts)) {
                     foreach (array_chunk($inserts, 100) as $chunk) {
                         PppoeAccount::insert($chunk);
+                    }
+                }
+
+                // If village has unused auto-generated accounts above 65, safely trim them to 65
+                if ($highestNum <= 35) {
+                    $excessAccounts = PppoeAccount::where('village_id', $vId)
+                        ->where('notes', 'Otomatis dibuat sistem')
+                        ->get();
+
+                    foreach ($excessAccounts as $acc) {
+                        if (preg_match('/^hokigo(\d+)$/i', $acc->username, $m)) {
+                            $n = (int) $m[1];
+                            if ($n > 65) {
+                                $isUsed = Customer::where('village_id', $vId)
+                                    ->whereRaw('LOWER(pppoe_user) = ?', [strtolower($acc->username)])
+                                    ->exists();
+                                if (!$isUsed) {
+                                    $acc->delete();
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -320,7 +337,7 @@ class PppoeController extends Controller
 
     /**
      * Bulk generate PPPoE accounts for a village in a number range
-     * e.g., Hokigo1 to Hokigo50 with password Irzaq09042003
+     * e.g., Hokigo1 to Hokigo65 with password Irzaq09042003
      */
     public function bulkGenerate(Request $request)
     {
