@@ -41,40 +41,53 @@ class PppoeController extends Controller
                 return;
             }
 
+            $allowedUsernames = [];
+            for ($i = 1; $i <= 65; $i++) {
+                $allowedUsernames[$i] = 'Hokigo' . $i;
+            }
+            $allowedLowerMap = [];
+            foreach ($allowedUsernames as $num => $uname) {
+                $allowedLowerMap[strtolower($uname)] = $num;
+            }
+
             foreach ($villageIds as $vId) {
-                // 1. Fetch customers in this village and ensure any customer using Hokigo > 65
-                // is remapped to the lowest free slot (1..65)
+                // 1. Fetch all customers in this village and ensure any customer with rogue / out-of-range username
+                // is remapped to the lowest free slot (Hokigo1..Hokigo65)
                 $villageCustomers = Customer::where('village_id', $vId)
                     ->whereNotNull('pppoe_user')
                     ->where('pppoe_user', '!=', '')
                     ->get();
 
-                $usedHokigoSlots = [];
+                $usedSlots = [];
+                $customersNeedingRemap = [];
+
                 foreach ($villageCustomers as $c) {
-                    if (preg_match('/^hokigo(\d+)$/i', trim($c->pppoe_user), $m)) {
-                        $n = (int) $m[1];
-                        if ($n <= 65) {
-                            $usedHokigoSlots[$n] = true;
+                    $uLower = strtolower(trim($c->pppoe_user));
+                    if (isset($allowedLowerMap[$uLower])) {
+                        $slotNum = $allowedLowerMap[$uLower];
+                        $usedSlots[$slotNum] = true;
+                    } else {
+                        $customersNeedingRemap[] = $c;
+                    }
+                }
+
+                foreach ($customersNeedingRemap as $c) {
+                    for ($slot = 1; $slot <= 65; $slot++) {
+                        if (!isset($usedSlots[$slot])) {
+                            $newUname = 'Hokigo' . $slot;
+                            $c->update(['pppoe_user' => $newUname]);
+                            $usedSlots[$slot] = true;
+                            break;
                         }
                     }
                 }
 
-                foreach ($villageCustomers as $c) {
-                    if (preg_match('/^hokigo(\d+)$/i', trim($c->pppoe_user), $m)) {
-                        $n = (int) $m[1];
-                        if ($n > 65) {
-                            for ($slot = 1; $slot <= 65; $slot++) {
-                                if (!isset($usedHokigoSlots[$slot])) {
-                                    $c->update(['pppoe_user' => 'Hokigo' . $slot]);
-                                    $usedHokigoSlots[$slot] = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
+                // 2. Delete ANY rogue or excess account in pppoe_accounts that is NOT Hokigo1..Hokigo65
+                PppoeAccount::where('village_id', $vId)
+                    ->whereNotIn(DB::raw('LOWER(username)'), array_keys($allowedLowerMap))
+                    ->delete();
 
-                // 2. Ensure exactly Hokigo1 through Hokigo65 exist for this village
+                // 3. Ensure exactly Hokigo1 through Hokigo65 exist for this village
                 $existing = PppoeAccount::where('village_id', $vId)->pluck('username')->all();
                 $existingMap = array_change_key_case(array_flip($existing), CASE_LOWER);
 
@@ -98,17 +111,6 @@ class PppoeController extends Controller
                 if (!empty($inserts)) {
                     foreach (array_chunk($inserts, 100) as $chunk) {
                         PppoeAccount::insert($chunk);
-                    }
-                }
-
-                // 3. Delete ANY account with Hokigo number > 65 so total stays at exactly 65
-                $excessAccounts = PppoeAccount::where('village_id', $vId)->get();
-                foreach ($excessAccounts as $acc) {
-                    if (preg_match('/^hokigo(\d+)$/i', trim($acc->username), $m)) {
-                        $num = (int) $m[1];
-                        if ($num > 65) {
-                            $acc->delete();
-                        }
                     }
                 }
             }
