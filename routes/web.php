@@ -49,7 +49,7 @@ Route::middleware('auth')->group(function () {
 
     // Pencarian & Manajemen Akun PPPoE (Dapat diakses Owner, Admin, & Teknisi)
     Route::get('/pppoe', [PppoeController::class, 'index'])->name('pppoe.index');
-    Route::get('/api/pppoe/available', [PppoeController::class, 'availableByVillage'])->name('pppoe.available');
+    Route::get('/pppoe/available-accounts', [PppoeController::class, 'availableByVillage'])->name('pppoe.available');
     Route::post('/pppoe', [PppoeController::class, 'store'])->name('pppoe.store');
     Route::post('/pppoe/bulk', [PppoeController::class, 'bulkGenerate'])->name('pppoe.bulk');
     Route::post('/pppoe/sync', [PppoeController::class, 'syncFromCustomers'])->name('pppoe.sync');
