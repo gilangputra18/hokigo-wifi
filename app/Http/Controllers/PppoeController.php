@@ -42,33 +42,22 @@ class PppoeController extends Controller
             }
 
             foreach ($villageIds as $vId) {
-                $existingCount = PppoeAccount::where('village_id', $vId)->count();
-
-                // Find highest Hokigo number among existing customers in this specific village
-                $customerUsers = Customer::where('village_id', $vId)
+                // Fetch used usernames strictly within this specific village
+                $usedUsernamesInVillage = Customer::where('village_id', $vId)
                     ->whereNotNull('pppoe_user')
                     ->where('pppoe_user', '!=', '')
-                    ->pluck('pppoe_user');
-
-                $highestNum = 0;
-                foreach ($customerUsers as $cu) {
-                    if (preg_match('/(?:hokigo)?(\d+)/i', trim((string)$cu), $m)) {
-                        $num = (int)$m[1];
-                        if ($num > $highestNum) {
-                            $highestNum = $num;
-                        }
-                    }
-                }
-
-                $target = max(65, $highestNum + 30);
+                    ->pluck('pppoe_user')
+                    ->map(fn($u) => strtolower(trim($u)))
+                    ->all();
 
                 $existing = PppoeAccount::where('village_id', $vId)->pluck('username')->all();
                 $existingMap = array_change_key_case(array_flip($existing), CASE_LOWER);
 
+                // 1. Ensure Hokigo1 through Hokigo65 exist for this village
                 $inserts = [];
                 $now = now();
 
-                for ($i = 1; $i <= $target; $i++) {
+                for ($i = 1; $i <= 65; $i++) {
                     $cand = 'Hokigo' . $i;
                     if (!isset($existingMap[strtolower($cand)])) {
                         $inserts[] = [
@@ -88,22 +77,14 @@ class PppoeController extends Controller
                     }
                 }
 
-                // If village has unused auto-generated accounts above 65, safely trim them to 65
-                if ($highestNum <= 35) {
-                    $excessAccounts = PppoeAccount::where('village_id', $vId)
-                        ->where('notes', 'Otomatis dibuat sistem')
-                        ->get();
-
-                    foreach ($excessAccounts as $acc) {
-                        if (preg_match('/^hokigo(\d+)$/i', $acc->username, $m)) {
-                            $n = (int) $m[1];
-                            if ($n > 65) {
-                                $isUsed = Customer::where('village_id', $vId)
-                                    ->whereRaw('LOWER(pppoe_user) = ?', [strtolower($acc->username)])
-                                    ->exists();
-                                if (!$isUsed) {
-                                    $acc->delete();
-                                }
+                // 2. Clean up any unused Hokigo accounts > 65 so every village stays at exactly 65
+                $allAccounts = PppoeAccount::where('village_id', $vId)->get();
+                foreach ($allAccounts as $acc) {
+                    if (preg_match('/^hokigo(\d+)$/i', trim($acc->username), $m)) {
+                        $num = (int) $m[1];
+                        if ($num > 65) {
+                            if (!in_array(strtolower(trim($acc->username)), $usedUsernamesInVillage)) {
+                                $acc->delete();
                             }
                         }
                     }
