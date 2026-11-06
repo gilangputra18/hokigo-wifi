@@ -13,6 +13,9 @@ use App\Http\Controllers\VillageController;
 use App\Http\Controllers\VoucherController;
 use Illuminate\Support\Facades\Route;
 
+// Public / Cron Routes
+Route::get('/cron/whatsapp-reminders', [InvoiceController::class, 'cronReminders'])->name('cron.whatsapp-reminders');
+
 // Guest Routes
 Route::middleware('guest')->group(function () {
     Route::get('/', function () {
@@ -67,7 +70,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/invoices/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
         Route::post('/invoices/{invoice}/mark-unpaid', [InvoiceController::class, 'markUnpaid'])->name('invoices.mark-unpaid');
         Route::post('/invoices/{invoice}/mark-wa-sent', [InvoiceController::class, 'markWaSent'])->name('invoices.mark-wa-sent');
+        Route::post('/invoices/{invoice}/send-gateway', [InvoiceController::class, 'sendViaGateway'])->name('invoices.send-gateway');
         Route::get('/invoices/reminders', [InvoiceController::class, 'reminders'])->name('invoices.reminders');
+        Route::post('/invoices/reminders/send-batch', [InvoiceController::class, 'sendBatchViaGateway'])->name('invoices.send-batch-gateway');
         Route::get('/invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
 
@@ -98,6 +103,8 @@ Route::middleware('auth')->group(function () {
         // Settings
         Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
         Route::post('/settings/general', [SettingController::class, 'updateGeneral'])->name('settings.general');
+        Route::post('/settings/whatsapp', [SettingController::class, 'updateWhatsApp'])->name('settings.whatsapp');
+        Route::post('/settings/whatsapp/test', [SettingController::class, 'testWhatsApp'])->name('settings.whatsapp.test');
         Route::post('/settings/users', [SettingController::class, 'storeUser'])->name('settings.users.store');
         Route::put('/settings/users/{user}', [SettingController::class, 'updateUser'])->name('settings.users.update');
         Route::delete('/settings/users/{user}', [SettingController::class, 'destroyUser'])->name('settings.users.destroy');

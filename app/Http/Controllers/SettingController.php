@@ -17,6 +17,11 @@ class SettingController extends Controller
             'company_phone' => Setting::get('company_phone', '081234567890'),
             'company_address' => Setting::get('company_address', 'Jl. Poros Utama No. 88'),
             'bank_accounts' => Setting::get('bank_accounts', "MUHAMMAD IRZAQ IRAWAN\n7233297792 BSI"),
+            'wa_gateway_provider' => Setting::get('wa_gateway_provider', 'fonnte'),
+            'wa_gateway_token' => Setting::get('wa_gateway_token', ''),
+            'wa_auto_reminder' => Setting::get('wa_auto_reminder', '1'),
+            'wa_reminder_time' => Setting::get('wa_reminder_time', '08:00'),
+            'wa_cron_secret' => Setting::get('wa_cron_secret', 'hokigo_cron_secret'),
         ];
 
         $users = User::orderBy('name')->get();
@@ -39,6 +44,41 @@ class SettingController extends Controller
         }
 
         return back()->with('success', 'Pengaturan usaha Hokigo berhasil disimpan!');
+    }
+
+    public function updateWhatsApp(Request $request)
+    {
+        $validated = $request->validate([
+            'wa_gateway_provider' => ['required', 'in:fonnte,wablas'],
+            'wa_gateway_token' => ['nullable', 'string', 'max:255'],
+            'wa_auto_reminder' => ['nullable'],
+            'wa_reminder_time' => ['required', 'string', 'max:10'],
+        ]);
+
+        Setting::set('wa_gateway_provider', $validated['wa_gateway_provider']);
+        Setting::set('wa_gateway_token', $validated['wa_gateway_token'] ?? '');
+        Setting::set('wa_auto_reminder', $request->has('wa_auto_reminder') ? '1' : '0');
+        Setting::set('wa_reminder_time', $validated['wa_reminder_time']);
+
+        return back()->with('success', 'Pengaturan WhatsApp Gateway berhasil diperbarui!');
+    }
+
+    public function testWhatsApp(Request $request)
+    {
+        $request->validate([
+            'test_phone' => ['required', 'string', 'max:25'],
+        ]);
+
+        $companyName = Setting::get('company_name', 'Hokigo Starlink');
+        $msg = "Halo! Ini adalah pesan uji coba dari sistem WiFi {$companyName}.\nKoneksi WhatsApp Gateway Anda berhasil aktif dan siap digunakan untuk penagihan otomatis! ✅";
+
+        $res = \App\Services\WhatsAppGatewayService::sendMessage($request->test_phone, $msg);
+
+        if ($res['success']) {
+            return back()->with('success', "Uji coba berhasil! Pesan WhatsApp terkirim ke {$request->test_phone}.");
+        } else {
+            return back()->withErrors(['test_phone' => "Gagal mengirim: {$res['message']}"]);
+        }
     }
 
     public function storeUser(Request $request)

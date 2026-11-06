@@ -227,11 +227,22 @@
                                             </button>
                                         </form>
                                     @else
+                                        @if(\App\Services\WhatsAppGatewayService::isConfigured())
+                                            <!-- Kirim Otomatis via Gateway API -->
+                                            <form action="{{ route('invoices.send-gateway', $inv) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit" class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs" title="Kirim Otomatis via WhatsApp Gateway">
+                                                    <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+                                                    <span>Kirim WA</span>
+                                                </button>
+                                            </form>
+                                        @endif
+
                                         <!-- Send WhatsApp Bill (Direct Click to WhatsApp) -->
                                         <a href="{{ $inv->whatsapp_url }}" target="_blank"
-                                           class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition shadow-xs" title="Chat Tagihan WhatsApp">
-                                            <i data-lucide="message-circle" class="w-3.5 h-3.5"></i>
-                                            <span>Chat WA</span>
+                                           class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition" title="Buka Aplikasi WhatsApp">
+                                            <i data-lucide="message-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                            <span>Buka WA</span>
                                         </a>
 
                                         <!-- Mark Paid Modal Trigger -->

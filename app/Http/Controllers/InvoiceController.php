@@ -205,6 +205,65 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Send single invoice reminder via WhatsApp Gateway API
+     */
+    public function sendViaGateway(Invoice $invoice)
+    {
+        $res = \App\Services\WhatsAppGatewayService::sendInvoiceReminder($invoice);
+
+        if ($res['success']) {
+            return back()->with('success', "Tagihan berhasil dikirim via WhatsApp ke {$invoice->customer?->name} ({$invoice->customer?->phone})!");
+        } else {
+            return back()->withErrors(['error' => "Gagal mengirim WhatsApp: {$res['message']}"]);
+        }
+    }
+
+    /**
+     * Send batch reminders for today/overdue via WhatsApp Gateway API
+     */
+    public function sendBatchViaGateway(Request $request)
+    {
+        $filter = $request->get('filter', 'today');
+        $res = \App\Services\WhatsAppGatewayService::sendBatchReminders($filter);
+
+        if ($res['success']) {
+            return back()->with('success', "Proses pengiriman otomatis selesai! Berhasil: {$res['sent_count']} pelanggan, Gagal: {$res['failed_count']}.");
+        } else {
+            return back()->withErrors(['error' => $res['message']]);
+        }
+    }
+
+    /**
+     * Automated Cron Endpoint for Vercel Cron or scheduled ping
+     */
+    public function cronReminders(Request $request)
+    {
+        $isAutoEnabled = Setting::get('wa_auto_reminder', '1') === '1';
+        if (!$isAutoEnabled) {
+            return response()->json([
+                'status' => 'skipped',
+                'message' => 'Pengingat otomatis dinonaktifkan di pengaturan.',
+            ]);
+        }
+
+        // Optional key protection
+        $configuredSecret = Setting::get('wa_cron_secret');
+        if (!empty($configuredSecret) && $request->get('key') !== $configuredSecret) {
+            if ($request->header('x-vercel-cron') !== '1') {
+                return response()->json(['error' => 'Unauthorized cron key'], 401);
+            }
+        }
+
+        $res = \App\Services\WhatsAppGatewayService::sendBatchReminders('today');
+
+        return response()->json([
+            'status' => 'ok',
+            'timestamp' => now()->toIso8601String(),
+            'result' => $res,
+        ]);
+    }
+
+    /**
      * Due date WhatsApp reminders center
      */
     public function reminders(Request $request)

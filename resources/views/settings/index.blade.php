@@ -294,6 +294,134 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
 
     </div>
 
+    <!-- Section 3: Integrasi WhatsApp Gateway & Penjadwalan Chat Otomatis -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+                <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    <i data-lucide="bot" class="w-6 h-6 text-emerald-600"></i>
+                    <span>Integrasi WhatsApp Gateway & Chat Tagihan Otomatis</span>
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Hubungkan WhatsApp kantor Hokigo agar server dapat mengirim tagihan secara otomatis setiap hari tanpa perlu membuka aplikasi WhatsApp
+                </p>
+            </div>
+            <div>
+                @if(!empty($settings['wa_gateway_token']))
+                    <span class="px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold flex items-center gap-1.5 border border-emerald-300">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Gateway Terhubung ({{ strtoupper($settings['wa_gateway_provider']) }})</span>
+                    </span>
+                @else
+                    <span class="px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold flex items-center gap-1.5 border border-amber-300">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span>Gateway Belum Terhubung</span>
+                    </span>
+                @endif
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Form Pengaturan Gateway -->
+            <div class="lg:col-span-7 space-y-4">
+                <form action="{{ route('settings.whatsapp') }}" method="POST" class="space-y-4">
+                    @csrf
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Penyedia Gateway (Provider) *</label>
+                            <select name="wa_gateway_provider" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 bg-white">
+                                <option value="fonnte" {{ ($settings['wa_gateway_provider'] ?? 'fonnte') === 'fonnte' ? 'selected' : '' }}>
+                                    Fonnte (Rekomendasi - Sangat Mudah)
+                                </option>
+                                <option value="wablas" {{ ($settings['wa_gateway_provider'] ?? '') === 'wablas' ? 'selected' : '' }}>
+                                    Wablas
+                                </option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Jadwal Jam Kirim Otomatis *</label>
+                            <select name="wa_reminder_time" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 bg-white">
+                                <option value="07:00" {{ ($settings['wa_reminder_time'] ?? '08:00') === '07:00' ? 'selected' : '' }}>07:00 WIB (Pagi)</option>
+                                <option value="08:00" {{ ($settings['wa_reminder_time'] ?? '08:00') === '08:00' ? 'selected' : '' }}>08:00 WIB (Standar - Rekomendasi)</option>
+                                <option value="09:00" {{ ($settings['wa_reminder_time'] ?? '08:00') === '09:00' ? 'selected' : '' }}>09:00 WIB (Pagi)</option>
+                                <option value="10:00" {{ ($settings['wa_reminder_time'] ?? '08:00') === '10:00' ? 'selected' : '' }}>10:00 WIB (Siang)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">API Token WhatsApp Gateway *</label>
+                        <input type="text" name="wa_gateway_token" value="{{ old('wa_gateway_token', $settings['wa_gateway_token']) }}" 
+                               placeholder="Tempelkan token API dari Fonnte / Wablas di sini"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono font-bold focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+                        <p class="text-[11px] text-slate-400 mt-1">
+                            Dapatkan token dengan mendaftar di <strong>fonnte.com</strong>, lalu sambungkan WhatsApp dengan scan QR di menu Device.
+                        </p>
+                    </div>
+
+                    <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                        <div class="space-y-0.5">
+                            <span class="text-xs font-bold text-slate-900 block">Kirim Otomatis Setiap Hari</span>
+                            <span class="text-[11px] text-slate-500 block">Sistem otomatis mengirim WA ke semua pelanggan yang jatuh tempo hari ini pada jam di atas.</span>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" name="wa_auto_reminder" value="1" {{ ($settings['wa_auto_reminder'] ?? '1') === '1' ? 'checked' : '' }} class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="pt-2 flex justify-end">
+                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/30 transition flex items-center gap-2">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span>Simpan Pengaturan Gateway</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Card Tes Kirim WhatsApp & Petunjuk -->
+            <div class="lg:col-span-5 space-y-4">
+                <div class="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-3">
+                    <h4 class="text-xs font-extrabold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                        <i data-lucide="send" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Uji Coba Kirim WhatsApp</span>
+                    </h4>
+                    <p class="text-xs text-emerald-800">
+                        Kirim pesan uji coba ke nomor Anda untuk memastikan koneksi WhatsApp Gateway berhasil aktif.
+                    </p>
+
+                    <form action="{{ route('settings.whatsapp.test') }}" method="POST" class="space-y-2.5">
+                        @csrf
+                        <div class="relative">
+                            <input type="text" name="test_phone" value="{{ old('test_phone', $settings['company_phone']) }}" required
+                                   placeholder="Contoh: 081227391262"
+                                   class="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-white text-xs font-mono font-bold focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+                        </div>
+                        <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition">
+                            <i data-lucide="message-square" class="w-4 h-4"></i>
+                            <span>Kirim Pesan Uji Coba Sekarang</span>
+                        </button>
+                    </form>
+                </div>
+
+                <div class="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2">
+                    <span class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-brand-blue"></i>
+                        <span>Cara Menghubungkan WhatsApp Hokigo:</span>
+                    </span>
+                    <ol class="list-decimal list-inside space-y-1 text-[11px] text-slate-500">
+                        <li>Buka website <strong>fonnte.com</strong> dan daftar akun.</li>
+                        <li>Masuk ke menu <strong>Device</strong> lalu klik <strong>Scan QR</strong> menggunakan WhatsApp nomor kantor.</li>
+                        <li>Salin <strong>API Token</strong> dan tempelkan pada kolom token di samping.</li>
+                        <li>Klik <strong>Simpan Pengaturan Gateway</strong> dan lakukan uji coba kirim pesan.</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal 1: Tambah Pengguna Baru -->
     <div x-show="userModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div @click.away="userModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">

@@ -50,9 +50,27 @@
             </a>
         </div>
 
-        <a href="{{ route('invoices.index') }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1">
-            <span>Kembali ke Semua Tagihan</span> &rarr;
-        </a>
+        <div class="flex items-center gap-2">
+            @if($todayCount > 0 && \App\Services\WhatsAppGatewayService::isConfigured())
+                <form action="{{ route('invoices.send-batch-gateway') }}" method="POST" onsubmit="return confirm('Kirim chat WhatsApp otomatis via Gateway ke {{ $todayCount }} pelanggan yang jatuh tempo hari ini?');" class="inline">
+                    @csrf
+                    <input type="hidden" name="filter" value="today">
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-xs transition">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                        <span>Kirim Semua Hari Ini via Gateway ({{ $todayCount }})</span>
+                    </button>
+                </form>
+            @endif
+
+            <a href="{{ route('settings.index') }}" class="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold flex items-center gap-1.5 transition" title="Pengaturan Gateway">
+                <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                <span>Atur Gateway WA</span>
+            </a>
+
+            <a href="{{ route('invoices.index') }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 ml-1">
+                <span>Semua Tagihan</span> &rarr;
+            </a>
+        </div>
     </div>
 
     <!-- Customer Reminder Cards Grid -->
@@ -132,23 +150,39 @@
                     </div>
 
                     <!-- Bottom Buttons -->
-                    <div class="pt-3 border-t border-slate-100 flex items-center gap-2">
-                        <!-- 1-Click WhatsApp Button (Requirement 2) -->
-                        <a href="{{ $inv->whatsapp_url }}" target="_blank"
-                           class="flex-1 py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition">
-                            <i data-lucide="message-circle" class="w-4 h-4"></i>
-                            <span>Kirim Chat WA</span>
-                        </a>
+                    <div class="pt-3 border-t border-slate-100 flex flex-col gap-2">
+                        <div class="flex items-center gap-2">
+                            @if(\App\Services\WhatsAppGatewayService::isConfigured())
+                                <!-- Kirim Otomatis via Gateway API -->
+                                <form action="{{ route('invoices.send-gateway', $inv) }}" method="POST" class="flex-1">
+                                    @csrf
+                                    <button type="submit" 
+                                            class="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition"
+                                            title="Kirim langsung dari server via Gateway API">
+                                        <i data-lucide="bot" class="w-4 h-4"></i>
+                                        <span>Kirim Otomatis (Gateway)</span>
+                                    </button>
+                                </form>
+                            @endif
 
-                        <!-- Quick Mark Lunas -->
-                        <form action="{{ route('invoices.mark-paid', $inv) }}" method="POST">
-                            @csrf
-                            <input type="hidden" name="payment_method" value="cash">
-                            <button type="submit" onclick="return confirm('Tandai tagihan {{ $inv->customer->name }} lunas tunai?')"
-                                    class="py-2.5 px-3 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs shadow-xs transition" title="Tandai Lunas">
-                                <i data-lucide="check" class="w-4 h-4"></i>
-                            </button>
-                        </form>
+                            <!-- Manual WhatsApp Direct Link Button -->
+                            <a href="{{ $inv->whatsapp_url }}" target="_blank"
+                               class="{{ \App\Services\WhatsAppGatewayService::isConfigured() ? 'px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1 transition' : 'flex-1 py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-xs transition' }}"
+                               title="Buka obrolan WhatsApp manual">
+                                <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                <span>{{ \App\Services\WhatsAppGatewayService::isConfigured() ? 'Buka WA' : 'Kirim Chat WA' }}</span>
+                            </a>
+
+                            <!-- Quick Mark Lunas -->
+                            <form action="{{ route('invoices.mark-paid', $inv) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="payment_method" value="cash">
+                                <button type="submit" onclick="return confirm('Tandai tagihan {{ $inv->customer->name }} lunas tunai?')"
+                                        class="py-2.5 px-3 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs shadow-xs transition" title="Tandai Lunas">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
                 </div>
