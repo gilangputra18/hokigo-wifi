@@ -41,27 +41,45 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         <!-- Omzet Bulan Ini -->
-        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition">
-            <div class="flex items-center justify-between mb-3">
-                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Omzet Bulan Ini</span>
-                <div class="w-10 h-10 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center">
-                    <i data-lucide="trending-up" class="w-5 h-5"></i>
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-xs hover:shadow-md transition flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Omzet Bulan Ini</span>
+                    <div class="w-10 h-10 rounded-xl bg-blue-50 text-brand-blue flex items-center justify-center">
+                        <i data-lucide="trending-up" class="w-5 h-5"></i>
+                    </div>
+                </div>
+                <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
+                    Rp {{ number_format($omzetBulanIni, 0, ',', '.') }}
+                </div>
+                <div class="flex items-center gap-1.5 mt-2 text-xs">
+                    @if($growthOmzet >= 0)
+                        <span class="text-emerald-600 font-bold flex items-center">
+                            <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 inline"></i> +{{ $growthOmzet }}%
+                        </span>
+                    @else
+                        <span class="text-rose-600 font-bold flex items-center">
+                            <i data-lucide="arrow-down-right" class="w-3.5 h-3.5 inline"></i> {{ $growthOmzet }}%
+                        </span>
+                    @endif
+                    <span class="text-slate-400">vs bulan lalu</span>
                 </div>
             </div>
-            <div class="text-2xl font-extrabold text-slate-900 tracking-tight">
-                Rp {{ number_format($omzetBulanIni, 0, ',', '.') }}
-            </div>
-            <div class="flex items-center gap-1.5 mt-2 text-xs">
-                @if($growthOmzet >= 0)
-                    <span class="text-emerald-600 font-bold flex items-center">
-                        <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 inline"></i> +{{ $growthOmzet }}%
+
+            <!-- Pemisah Khusus: Langganan vs Voucher -->
+            <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs">
+                <div class="flex items-center justify-between text-slate-600">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-blue-600"></span> Pelanggan:
                     </span>
-                @else
-                    <span class="text-rose-600 font-bold flex items-center">
-                        <i data-lucide="arrow-down-right" class="w-3.5 h-3.5 inline"></i> {{ $growthOmzet }}%
+                    <span class="font-bold text-slate-800">Rp {{ number_format($omzetLanggananBulanIni, 0, ',', '.') }}</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-600">
+                    <span class="flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span> Voucher:
                     </span>
-                @endif
-                <span class="text-slate-400">vs bulan lalu</span>
+                    <span class="font-bold text-amber-700">Rp {{ number_format($omzetVoucherBulanIni, 0, ',', '.') }}</span>
+                </div>
             </div>
         </div>
 
@@ -118,8 +136,8 @@
 
     </div>
 
-    <!-- 3. Status Tagihan Bulan Ini (Requirement 3: Mana yg udah bayar apa belum) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <!-- 3. Status Tagihan & Penjualan Voucher Periode Ini -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         
         <!-- Total Tagihan Terbit -->
         <div class="bg-slate-900 text-white rounded-2xl p-5 flex items-center justify-between shadow-xs">
@@ -159,6 +177,27 @@
             <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-700 flex items-center justify-center">
                 <i data-lucide="clock" class="w-6 h-6"></i>
             </div>
+        </div>
+
+        <!-- Setoran Voucher Hotspot -->
+        <div class="bg-indigo-50/60 border border-indigo-200/80 rounded-2xl p-5 flex items-center justify-between shadow-xs">
+            <div>
+                <span class="text-xs text-indigo-900 uppercase font-bold tracking-wider flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span> Setoran Voucher
+                </span>
+                <div class="text-xl font-bold text-indigo-950 mt-1">Rp {{ number_format($omzetVoucherBulanIni, 0, ',', '.') }}</div>
+                <div class="text-xs text-indigo-700 font-semibold mt-0.5">
+                    {{ number_format($voucherPcsTerjual, 0, ',', '.') }} pcs
+                    @if($voucherPendingNominal > 0)
+                        &bull; <span class="text-amber-700 font-bold">Rp {{ number_format($voucherPendingNominal, 0, ',', '.') }} pending</span>
+                    @else
+                        &bull; <span class="text-emerald-700">Semua disetor</span>
+                    @endif
+                </div>
+            </div>
+            <a href="{{ route('vouchers.index') }}" title="Kelola Penjualan Voucher" class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-700 hover:bg-indigo-500/30 flex items-center justify-center transition">
+                <i data-lucide="ticket" class="w-6 h-6"></i>
+            </a>
         </div>
 
     </div>

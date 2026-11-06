@@ -6,6 +6,7 @@ use App\Models\Customer;
 use App\Models\FinancialTransaction;
 use App\Models\Invoice;
 use App\Models\Village;
+use App\Models\VoucherSale;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -22,7 +23,7 @@ class DashboardController extends Controller
         // 1. Fetch 6-Month Transactions in ONE SINGLE QUERY (Avoids 12 cross-continent roundtrips!)
         $sixMonthsAgo = $now->copy()->subMonths(5)->startOfMonth()->toDateString();
         $transactions6Months = FinancialTransaction::where('transaction_date', '>=', $sixMonthsAgo)
-            ->select('type', 'amount', 'transaction_date')
+            ->select('type', 'amount', 'category', 'transaction_date')
             ->get();
 
         // Calculate this month & previous month totals in memory
@@ -30,6 +31,22 @@ class DashboardController extends Controller
             $d = Carbon::parse($t->transaction_date);
             return $t->type === 'income' && $d->year === $currentYear && $d->month === $currentMonth;
         })->sum('amount');
+
+        // Khusus pemisah omzet: Voucher Hotspot vs Langganan Bulanan
+        $omzetVoucherBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
+            $d = Carbon::parse($t->transaction_date);
+            return $t->type === 'income' && $t->category === 'Voucher Hotspot' && $d->year === $currentYear && $d->month === $currentMonth;
+        })->sum('amount');
+
+        $omzetLanggananBulanIni = $omzetBulanIni - $omzetVoucherBulanIni;
+
+        // Metrik setoran voucher di reseller bulan ini
+        $voucherPendingNominal = VoucherSale::where('period', $currentPeriod)
+            ->where('status', 'pending')
+            ->sum('net_amount');
+
+        $voucherPcsTerjual = VoucherSale::where('period', $currentPeriod)
+            ->sum('quantity_sold');
 
         $pengeluaranBulanIni = $transactions6Months->filter(function ($t) use ($currentYear, $currentMonth) {
             $d = Carbon::parse($t->transaction_date);
@@ -131,6 +148,10 @@ class DashboardController extends Controller
 
         return view('dashboard.index', compact(
             'omzetBulanIni',
+            'omzetLanggananBulanIni',
+            'omzetVoucherBulanIni',
+            'voucherPendingNominal',
+            'voucherPcsTerjual',
             'pengeluaranBulanIni',
             'labaBersihBulanIni',
             'growthOmzet',
