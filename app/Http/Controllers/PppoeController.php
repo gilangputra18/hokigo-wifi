@@ -42,18 +42,42 @@ class PppoeController extends Controller
             }
 
             foreach ($villageIds as $vId) {
-                // Fetch used usernames strictly within this specific village
-                $usedUsernamesInVillage = Customer::where('village_id', $vId)
+                // 1. Fetch customers in this village and ensure any customer using Hokigo > 65
+                // is remapped to the lowest free slot (1..65)
+                $villageCustomers = Customer::where('village_id', $vId)
                     ->whereNotNull('pppoe_user')
                     ->where('pppoe_user', '!=', '')
-                    ->pluck('pppoe_user')
-                    ->map(fn($u) => strtolower(trim($u)))
-                    ->all();
+                    ->get();
 
+                $usedHokigoSlots = [];
+                foreach ($villageCustomers as $c) {
+                    if (preg_match('/^hokigo(\d+)$/i', trim($c->pppoe_user), $m)) {
+                        $n = (int) $m[1];
+                        if ($n <= 65) {
+                            $usedHokigoSlots[$n] = true;
+                        }
+                    }
+                }
+
+                foreach ($villageCustomers as $c) {
+                    if (preg_match('/^hokigo(\d+)$/i', trim($c->pppoe_user), $m)) {
+                        $n = (int) $m[1];
+                        if ($n > 65) {
+                            for ($slot = 1; $slot <= 65; $slot++) {
+                                if (!isset($usedHokigoSlots[$slot])) {
+                                    $c->update(['pppoe_user' => 'Hokigo' . $slot]);
+                                    $usedHokigoSlots[$slot] = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 2. Ensure exactly Hokigo1 through Hokigo65 exist for this village
                 $existing = PppoeAccount::where('village_id', $vId)->pluck('username')->all();
                 $existingMap = array_change_key_case(array_flip($existing), CASE_LOWER);
 
-                // 1. Ensure Hokigo1 through Hokigo65 exist for this village
                 $inserts = [];
                 $now = now();
 
@@ -77,15 +101,13 @@ class PppoeController extends Controller
                     }
                 }
 
-                // 2. Clean up any unused Hokigo accounts > 65 so every village stays at exactly 65
-                $allAccounts = PppoeAccount::where('village_id', $vId)->get();
-                foreach ($allAccounts as $acc) {
+                // 3. Delete ANY account with Hokigo number > 65 so total stays at exactly 65
+                $excessAccounts = PppoeAccount::where('village_id', $vId)->get();
+                foreach ($excessAccounts as $acc) {
                     if (preg_match('/^hokigo(\d+)$/i', trim($acc->username), $m)) {
                         $num = (int) $m[1];
                         if ($num > 65) {
-                            if (!in_array(strtolower(trim($acc->username)), $usedUsernamesInVillage)) {
-                                $acc->delete();
-                            }
+                            $acc->delete();
                         }
                     }
                 }
