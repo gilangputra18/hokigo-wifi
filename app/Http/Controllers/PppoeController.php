@@ -121,13 +121,13 @@ class PppoeController extends Controller
     {
         $this->ensureTableExists();
 
+        // Always ensure ALL villages have 65 accounts ready out of the box
+        $this->autoPopulateVillageAccounts(null);
+
         $villages = Village::orderBy('name')->get();
         $selectedVillageId = $request->get('village_id');
         $statusFilter = $request->get('status', 'available'); // default: available
         $search = trim($request->get('search', ''));
-
-        // Auto-seed initial accounts so user NEVER has to manually click "Buat Massal"
-        $this->autoPopulateVillageAccounts($selectedVillageId ? (int)$selectedVillageId : null);
 
         // Fetch all customers with pppoe_user to map strictly by village_id + username
         $customerQuery = Customer::whereNotNull('pppoe_user')
@@ -255,6 +255,8 @@ class PppoeController extends Controller
 
         if ($villageId) {
             $this->autoPopulateVillageAccounts((int)$villageId);
+        } else {
+            $this->autoPopulateVillageAccounts(null);
         }
 
         $query = PppoeAccount::with('village:id,name');

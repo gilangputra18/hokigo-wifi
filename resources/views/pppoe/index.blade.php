@@ -20,7 +20,7 @@
                             <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Semua Role</span>
                         </h2>
                         <p class="text-xs text-slate-500">
-                            Pencarian akun PPPoE siap pakai per desa. Akun yang sudah terpasang otomatis tersembunyi, dan akan muncul kembali jika pelanggan dihapus/berhenti.
+                            Setiap desa otomatis memiliki default <strong>65 akun PPPoE</strong> siap pakai (Hokigo1 s/d Hokigo65, kata sandi: Irzaq09042003). Akun yang terpasang otomatis tersembunyi, dan Anda tetap bisa menambah akun manual kapan saja.
                         </p>
                     </div>
                 </div>
