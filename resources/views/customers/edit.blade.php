@@ -115,10 +115,17 @@
             </div>
 
             <!-- Section 3: Teknis -->
-            <div class="pt-4 border-t border-slate-100">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-1.5">
-                    <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 3. Data Teknis / Perangkat
-                </h3>
+            <div class="pt-4 border-t border-slate-100" x-data="customerPppoeHelper()">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-indigo-500"></span> 3. Data Teknis / Perangkat
+                    </h3>
+                    <a href="{{ route('pppoe.index') }}" target="_blank" 
+                       class="text-[11px] font-bold text-brand-blue hover:underline flex items-center gap-1">
+                        <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        <span>Katalog Akun PPPoE &rarr;</span>
+                    </a>
+                </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
@@ -134,18 +141,56 @@
                         <p class="text-[10px] text-slate-400 mt-1">Standar GPON: -16 s/d -24 dBm</p>
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Username PPPoE</label>
-                        <input type="text" name="pppoe_user" value="{{ old('pppoe_user', $customer->pppoe_user) }}"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                    <!-- Username PPPoE with Available Account Picker -->
+                    <div class="relative">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-bold text-slate-700">Username PPPoE</label>
+                            <button type="button" @click="pickerOpen = true" 
+                                    class="text-[10px] font-bold text-brand-blue hover:text-blue-700 hover:underline flex items-center gap-1">
+                                <i data-lucide="search" class="w-2.5 h-2.5"></i>
+                                <span>Pilih PPPoE Desa</span>
+                            </button>
+                        </div>
+                        <input type="text" name="pppoe_user" id="pppoe_user_input" x-model="pppoeUser" 
+                               placeholder="Contoh: Hokigo40"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        
+                        <!-- Quick Suggestions Chips for Available PPPoE in Selected Village -->
+                        <div class="mt-1.5 space-y-1">
+                            <template x-if="loading">
+                                <span class="text-[10px] text-slate-400 flex items-center gap-1">
+                                    <svg class="animate-spin w-3 h-3 text-brand-blue" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                                    Memeriksa PPPoE tersedia...
+                                </span>
+                            </template>
+                            <template x-if="!loading && availablePppoe.length > 0">
+                                <div class="flex flex-wrap items-center gap-1 text-[11px]">
+                                    <span class="text-slate-400 text-[10px]">Tersedia:</span>
+                                    <template x-for="item in availablePppoe.slice(0, 4)" :key="item.id">
+                                        <button type="button" @click="selectPppoe(item)" 
+                                                class="px-2 py-0.5 rounded-md font-mono text-[10px] font-bold transition border"
+                                                :class="item.username === pppoeUser ? 'bg-blue-100 text-blue-900 border-blue-300' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'"
+                                                :title="'Pilih ' + item.username">
+                                            <span x-text="item.username"></span>
+                                        </button>
+                                    </template>
+                                    <button type="button" @click="pickerOpen = true" class="text-[10px] text-brand-blue font-bold hover:underline pl-0.5">
+                                        +<span x-text="availablePppoe.length"></span> akun
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
                     </div>
 
+                    <!-- Sandi PPPoE -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Sandi PPPoE</label>
-                        <input type="text" name="pppoe_password" value="{{ old('pppoe_password', $customer->pppoe_password) }}" placeholder="Contoh: 12345 / rahasia"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <input type="text" name="pppoe_password" id="pppoe_password_input" x-model="pppoePassword" 
+                               placeholder="Contoh: Irzaq09042003"
+                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 font-mono text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                     </div>
 
+                    <!-- WiFi SSID -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                             <span class="text-brand-blue font-extrabold">📶</span>
@@ -156,6 +201,7 @@
                         <p class="text-[10px] text-slate-400 mt-1">Nama jaringan WiFi di HP pelanggan</p>
                     </div>
 
+                    <!-- WiFi Password -->
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
                             <span class="text-amber-500 font-extrabold">🔑</span>
@@ -166,6 +212,59 @@
                         <p class="text-[10px] text-slate-400 mt-1">Password untuk konek ke WiFi</p>
                     </div>
                 </div>
+
+                <!-- Modal Picker PPPoE Popover -->
+                <div x-show="pickerOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                    <div @click.away="pickerOpen = false" class="bg-white rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-100 space-y-4">
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                            <div>
+                                <h4 class="font-extrabold text-slate-900 text-sm flex items-center gap-1.5">
+                                    <i data-lucide="key-round" class="w-4 h-4 text-brand-blue"></i>
+                                    <span>Pilih Akun PPPoE Tersedia</span>
+                                </h4>
+                                <p class="text-[11px] text-slate-500">Khusus desa pelanggan ini</p>
+                            </div>
+                            <button type="button" @click="pickerOpen = false" class="text-slate-400 hover:text-slate-600">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+
+                        <div>
+                            <input type="text" x-model="pickerSearch" placeholder="Ketik nomor / username..." 
+                                   class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        </div>
+
+                        <div class="max-h-60 overflow-y-auto divide-y divide-slate-100 pr-1">
+                            <template x-for="item in filteredAccounts()" :key="item.id">
+                                <div class="py-2.5 px-3 hover:bg-blue-50/60 rounded-xl cursor-pointer flex items-center justify-between transition group"
+                                     @click="selectPppoe(item)">
+                                    <div>
+                                        <div class="font-mono text-xs font-extrabold text-slate-900 group-hover:text-brand-blue" x-text="item.username"></div>
+                                        <div class="text-[10px] text-slate-400 font-mono" x-text="'Sandi: ' + item.password"></div>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                                          :class="item.username === pppoeUser ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'">
+                                        <span x-text="item.username === pppoeUser ? 'Akun Saat Ini' : 'Pilih &rarr;'"></span>
+                                    </span>
+                                </div>
+                            </template>
+                            <div x-show="filteredAccounts().length === 0" class="py-6 text-center text-xs text-slate-400">
+                                Tidak ada akun PPPoE tersedia di desa ini.<br>
+                                <span class="text-[10px]">Silakan pilih desa di formulir atau tambah akun baru di menu PPPoE.</span>
+                            </div>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                            <a href="{{ route('pppoe.index') }}" target="_blank" class="text-[11px] text-brand-blue font-bold hover:underline">
+                                Buka Menu PPPoE &rarr;
+                            </a>
+                            <button type="button" @click="pickerOpen = false" class="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
             <!-- Section 4: Catatan Khusus & Foto Rumah Pelanggan -->
@@ -568,6 +667,69 @@
                 const gal = document.getElementById('gallery_input');
                 if (cam) cam.value = '';
                 if (gal) gal.value = '';
+            }
+        };
+    }
+
+    function customerPppoeHelper() {
+        return {
+            pppoeUser: @json(old('pppoe_user', $customer->pppoe_user ?? '')),
+            pppoePassword: @json(old('pppoe_password', $customer->pppoe_password ?? '')),
+            availablePppoe: [],
+            loading: false,
+            pickerOpen: false,
+            pickerSearch: '',
+            selectedVillageId: '{{ $customer->village_id }}',
+            currentUsername: '{{ $customer->pppoe_user }}',
+
+            init() {
+                const villageSelect = document.getElementById('customer_village_select') || document.querySelector('select[name="village_id"]');
+                if (villageSelect) {
+                    this.selectedVillageId = villageSelect.value || '{{ $customer->village_id }}';
+                    if (this.selectedVillageId) {
+                        this.fetchAvailable();
+                    }
+                    villageSelect.addEventListener('change', (e) => {
+                        this.selectedVillageId = e.target.value;
+                        this.fetchAvailable();
+                    });
+                } else if (this.selectedVillageId) {
+                    this.fetchAvailable();
+                }
+            },
+
+            fetchAvailable() {
+                if (!this.selectedVillageId) {
+                    this.availablePppoe = [];
+                    return;
+                }
+                this.loading = true;
+                fetch(`{{ route('pppoe.available') }}?village_id=${this.selectedVillageId}&current_username=${encodeURIComponent(this.currentUsername)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        this.availablePppoe = Array.isArray(data) ? data : [];
+                        this.loading = false;
+                        if (window.lucide) {
+                            setTimeout(() => window.lucide.createIcons(), 50);
+                        }
+                    })
+                    .catch(() => {
+                        this.loading = false;
+                    });
+            },
+
+            selectPppoe(item) {
+                this.pppoeUser = item.username;
+                if (item.password) {
+                    this.pppoePassword = item.password;
+                }
+                this.pickerOpen = false;
+            },
+
+            filteredAccounts() {
+                if (!this.pickerSearch) return this.availablePppoe;
+                const q = this.pickerSearch.toLowerCase();
+                return this.availablePppoe.filter(item => item.username.toLowerCase().includes(q));
             }
         };
     }

@@ -133,6 +133,21 @@ class CustomerController extends Controller
 
         $customer = Customer::create($validated);
 
+        // Auto-register PPPoE into catalog if not exists
+        try {
+            if (!empty($customer->pppoe_user) && !empty($customer->village_id)) {
+                \App\Models\PppoeAccount::firstOrCreate(
+                    [
+                        'village_id' => $customer->village_id,
+                        'username' => $customer->pppoe_user,
+                    ],
+                    [
+                        'password' => $customer->pppoe_password ?: 'Irzaq09042003',
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {}
+
         // Auto create invoice for current month if active
         if ($customer->status === 'active') {
             $currentPeriod = Carbon::now()->format('Y-m');
@@ -212,6 +227,21 @@ class CustomerController extends Controller
         }
 
         $customer->update($validated);
+
+        // Auto-register PPPoE into catalog if not exists
+        try {
+            if (!empty($customer->pppoe_user) && !empty($customer->village_id)) {
+                \App\Models\PppoeAccount::firstOrCreate(
+                    [
+                        'village_id' => $customer->village_id,
+                        'username' => $customer->pppoe_user,
+                    ],
+                    [
+                        'password' => $customer->pppoe_password ?: 'Irzaq09042003',
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {}
 
         return redirect()->route('customers.show', $customer)
             ->with('success', "Data pelanggan {$customer->name} berhasil diperbarui.");

@@ -169,6 +169,16 @@
                 </span>
             </a>
 
+            <!-- Pencarian & Katalog Akun PPPoE (Semua Role: Owner, Admin, & Teknisi) -->
+            <a href="{{ route('pppoe.index') }}" 
+               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('pppoe.*') ? 'bg-brand-blue text-white shadow-lg shadow-blue-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="key-round" class="w-5 h-5 text-indigo-400"></i>
+                    <span>Akun PPPoE</span>
+                </div>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-400/20 text-indigo-300 border border-indigo-400/30">Cari</span>
+            </a>
+
             @if(!auth()->user()->isTeknisi())
             <!-- Tagihan & Pembayaran -->
             <a href="{{ route('invoices.index') }}" 

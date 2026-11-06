@@ -47,6 +47,11 @@ class Village extends Model
         return $this->hasMany(CableRoute::class);
     }
 
+    public function pppoeAccounts(): HasMany
+    {
+        return $this->hasMany(PppoeAccount::class);
+    }
+
     public function isVoucherEnabled(): bool
     {
         return in_array($this->system_type, ['voucher', 'hybrid']);

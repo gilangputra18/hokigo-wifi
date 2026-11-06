@@ -68,6 +68,11 @@ class Customer extends Model
         return $this->belongsTo(Village::class);
     }
 
+    public function pppoeAccount(): BelongsTo
+    {
+        return $this->belongsTo(PppoeAccount::class, 'pppoe_user', 'username');
+    }
+
     public function package(): BelongsTo
     {
         return $this->belongsTo(Package::class);

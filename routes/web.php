@@ -7,6 +7,7 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\PackageController;
+use App\Http\Controllers\PppoeController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\VillageController;
 use App\Http\Controllers\VoucherController;
@@ -45,6 +46,14 @@ Route::middleware('auth')->group(function () {
 
     // Kelompok Desa - Tampilan Read-Only untuk Teknisi
     Route::get('/villages', [VillageController::class, 'index'])->name('villages.index');
+
+    // Pencarian & Manajemen Akun PPPoE (Dapat diakses Owner, Admin, & Teknisi)
+    Route::get('/pppoe', [PppoeController::class, 'index'])->name('pppoe.index');
+    Route::get('/api/pppoe/available', [PppoeController::class, 'availableByVillage'])->name('pppoe.available');
+    Route::post('/pppoe', [PppoeController::class, 'store'])->name('pppoe.store');
+    Route::post('/pppoe/bulk', [PppoeController::class, 'bulkGenerate'])->name('pppoe.bulk');
+    Route::post('/pppoe/sync', [PppoeController::class, 'syncFromCustomers'])->name('pppoe.sync');
+    Route::delete('/pppoe/{pppoeAccount}', [PppoeController::class, 'destroy'])->name('pppoe.destroy');
 
     // Routes Khusus Owner & Admin (Finansial, Tagihan, Settings, Paket, Master Data, Manajemen Voucher)
     Route::middleware('role:owner,admin')->group(function () {
