@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Masuk - Hokigo Starlink Management</title>
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="author" content="Hokigo Network">
+    <meta name="description" content="Portal Internal Manajemen Layanan Hokigo WiFi">
+    <title>Masuk - Hokigo WiFi Portal</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 
     <!-- Google Fonts -->
@@ -53,7 +56,7 @@
         <div class="absolute -bottom-[20%] -right-[10%] w-[650px] h-[650px] rounded-full bg-gradient-to-tl from-[#1055CC]/40 via-sky-500/20 to-transparent blur-[140px]"></div>
         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-blue-700/15 blur-[160px]"></div>
         
-        <!-- Subtle Starlink / High-Tech Geometric Grid Lines -->
+        <!-- Subtle High-Tech Geometric Grid Lines -->
         <svg class="absolute inset-0 w-full h-full opacity-[0.07]" xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <pattern id="network-grid" width="48" height="48" patternUnits="userSpaceOnUse">
@@ -88,7 +91,7 @@
                 </div>
                 
                 <div class="flex items-center justify-center gap-1.5 mb-1">
-                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Hokigo <span class="text-[#1055CC]">Starlink</span></h1>
+                    <h1 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">Hokigo <span class="text-[#1055CC]">WiFi</span></h1>
                 </div>
                 
                 <p class="text-[11px] sm:text-xs text-slate-500 font-medium">Sistem Manajemen Pelanggan, Tagihan & Keuangan</p>
@@ -124,7 +127,8 @@
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                             <i data-lucide="mail" class="w-4 h-4"></i>
                         </div>
-                        <input type="email" id="email" name="email" value="{{ old('email', 'owner@hokigo.net') }}" required
+                        <input type="email" id="email" name="email" value="{{ old('email') }}" required
+                               autocomplete="username"
                                placeholder="nama@hokigo.net"
                                class="w-full pl-10 pr-3.5 py-2.5 sm:py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-[#1055CC] text-xs sm:text-sm transition bg-white/80">
                     </div>
@@ -137,7 +141,8 @@
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                             <i data-lucide="lock" class="w-4 h-4"></i>
                         </div>
-                        <input :type="showPassword ? 'text' : 'password'" id="password" name="password" value="password" required
+                        <input :type="showPassword ? 'text' : 'password'" id="password" name="password" value="" required
+                               autocomplete="current-password"
                                placeholder="••••••••"
                                class="w-full pl-10 pr-11 py-2.5 sm:py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-4 focus:ring-blue-500/15 focus:border-[#1055CC] text-xs sm:text-sm transition bg-white/80">
                         
@@ -183,7 +188,7 @@
         <!-- Luxury Watermark footer with soft blue glow -->
         <div class="text-center mt-3.5 space-y-0.5">
             <p class="text-[11px] text-blue-200/80 font-medium tracking-wide">
-                &copy; {{ date('Y') }} Hokigo Starlink &bull; Sistem Terpadu
+                &copy; {{ date('Y') }} Hokigo WiFi &bull; Sistem Terpadu
             </p>
             <p class="text-[10px] text-blue-300/40">
                 Layanan Internet Cepat & Stabil
