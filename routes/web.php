@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/maps/reset', [MapController::class, 'resetMapData'])->name('maps.reset');
 
     // Pelanggan (Bisa diakses Owner, Admin, & Teknisi)
+    Route::get('/customers/next-code', [CustomerController::class, 'nextCode'])->name('customers.next-code');
     Route::get('/customers/{customer}/photo', [CustomerController::class, 'photo'])->name('customers.photo');
     Route::resource('customers', CustomerController::class);
     Route::post('/customers/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');

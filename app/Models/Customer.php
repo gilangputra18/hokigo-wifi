@@ -50,17 +50,27 @@ class Customer extends Model
 
     public static function generateNextCustomerCode(): string
     {
-        $codes = self::pluck('customer_code');
-        $maxNum = 0;
-        foreach ($codes as $code) {
-            if (preg_match('/(\d+)/', (string) $code, $matches)) {
-                $num = (int) $matches[1];
-                if ($num > $maxNum) {
-                    $maxNum = $num;
+        try {
+            $codes = self::whereNotNull('customer_code')->pluck('customer_code');
+            $maxNum = 0;
+            foreach ($codes as $code) {
+                $codeStr = trim((string) $code);
+                if (preg_match('/(\d+)$/', $codeStr, $matches)) {
+                    $num = (int) $matches[1];
+                    if ($num > $maxNum) {
+                        $maxNum = $num;
+                    }
+                } elseif (preg_match('/(\d+)/', $codeStr, $matches)) {
+                    $num = (int) $matches[1];
+                    if ($num > $maxNum) {
+                        $maxNum = $num;
+                    }
                 }
             }
+            return 'HKG-' . str_pad((string)($maxNum + 1), 3, '0', STR_PAD_LEFT);
+        } catch (\Throwable $e) {
+            return 'HKG-001';
         }
-        return 'HKG-' . str_pad($maxNum + 1, 3, '0', STR_PAD_LEFT);
     }
 
     public function village(): BelongsTo

@@ -23,7 +23,11 @@ class VillageController extends Controller
             'notes' => ['nullable', 'string'],
         ]);
 
-        Village::create($validated);
+        $village = Village::create($validated);
+
+        try {
+            (new PppoeController())->autoPopulateVillageAccounts($village->id);
+        } catch (\Throwable $e) {}
 
         return back()->with('success', "Desa {$validated['name']} berhasil ditambahkan!");
     }

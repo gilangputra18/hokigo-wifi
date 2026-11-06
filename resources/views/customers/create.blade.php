@@ -42,6 +42,7 @@
                         <div class="relative">
                             <input type="text" name="customer_code" id="customer_code_input" 
                                    value="{{ old('customer_code', $suggestedCode) }}" required
+                                   autocomplete="off"
                                    class="w-full pl-3.5 pr-28 py-2.5 rounded-xl border border-slate-200 font-mono text-xs font-bold text-slate-900 bg-emerald-50/20 focus:bg-white focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                             <button type="button" onclick="document.getElementById('customer_code_input').value = '{{ $suggestedCode }}'"
                                     class="absolute right-1.5 top-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[10px] font-extrabold transition flex items-center gap-1"

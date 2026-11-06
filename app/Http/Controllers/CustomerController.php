@@ -80,6 +80,13 @@ class CustomerController extends Controller
         ));
     }
 
+    public function nextCode()
+    {
+        return response()->json([
+            'code' => Customer::generateNextCustomerCode(),
+        ]);
+    }
+
     public function create()
     {
         $villages = Village::orderBy('name')->get();
@@ -93,7 +100,8 @@ class CustomerController extends Controller
 
     public function store(Request $request)
     {
-        if (empty($request->customer_code)) {
+        $code = trim((string) $request->customer_code);
+        if (empty($code) || Customer::where('customer_code', $code)->exists()) {
             $request->merge(['customer_code' => Customer::generateNextCustomerCode()]);
         }
 
