@@ -6,6 +6,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="author" content="Hokigo Network">
     <meta name="description" content="Portal Internal Manajemen Layanan Hokigo WiFi">
+    <meta name="google-site-verification" content="googlea6015a19596336f6" />
     <title>Masuk - Hokigo WiFi Portal</title>
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 

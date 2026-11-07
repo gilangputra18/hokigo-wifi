@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Route;
 
 // Public / Cron Routes
 Route::get('/cron/whatsapp-reminders', [InvoiceController::class, 'cronReminders'])->name('cron.whatsapp-reminders');
+Route::get('/googlea6015a19596336f6.html', function () {
+    return response('google-site-verification: googlea6015a19596336f6.html', 200)
+        ->header('Content-Type', 'text/html');
+});
 
 // Guest Routes
 Route::middleware('guest')->group(function () {
