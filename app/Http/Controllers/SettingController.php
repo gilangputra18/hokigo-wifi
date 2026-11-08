@@ -12,7 +12,7 @@ class SettingController extends Controller
     public function index()
     {
         $settings = [
-            'company_name' => Setting::get('company_name', 'Hokigo Starlink'),
+            'company_name' => Setting::get('company_name', 'Hokigo WiFi'),
             'company_tagline' => Setting::get('company_tagline', 'Provider Internet Cepat & Hemat'),
             'company_phone' => Setting::get('company_phone', '081234567890'),
             'company_address' => Setting::get('company_address', 'Jl. Poros Utama No. 88'),
@@ -69,7 +69,7 @@ class SettingController extends Controller
             'test_phone' => ['required', 'string', 'max:25'],
         ]);
 
-        $companyName = Setting::get('company_name', 'Hokigo Starlink');
+        $companyName = Setting::get('company_name', 'Hokigo WiFi');
         $msg = "Halo! Ini adalah pesan uji coba dari sistem WiFi {$companyName}.\nKoneksi WhatsApp Gateway Anda berhasil aktif dan siap digunakan untuk penagihan otomatis! ✅";
 
         $res = \App\Services\WhatsAppGatewayService::sendMessage($request->test_phone, $msg);

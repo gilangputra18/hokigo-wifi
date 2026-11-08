@@ -53,7 +53,7 @@ class DatabaseSeeder extends Seeder
 
         // 2. Settings
         $settings = [
-            'company_name' => 'Hokigo Starlink',
+            'company_name' => 'Hokigo WiFi',
             'company_tagline' => 'Provider Internet Cepat, Stabil & Hemat untuk Warga Desa',
             'company_phone' => '081227391262',
             'company_address' => 'Jl. Poros Desa Utama No. 88, Jawa Timur',

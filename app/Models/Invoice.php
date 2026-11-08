@@ -49,7 +49,7 @@ class Invoice extends Model
 
     /**
      * Generate WhatsApp reminder URL matching the exact format:
-     * Yth, Pelanggan Hokigo Starlink..
+     * Yth, Pelanggan Hokigo WiFi..
      * Sebagai pengingat, Hari ini pembayaran wifi🙏🏻
      * Bisa dibayarkan melalui rekening berikut:
      * MUHAMMAD IRZAQ IRAWAN 
@@ -62,7 +62,7 @@ class Invoice extends Model
             return '#';
         }
 
-        $companyName = Setting::get('company_name', 'Hokigo Starlink');
+        $companyName = Setting::get('company_name', 'Hokigo WiFi');
         $bankInfo = Setting::get('bank_accounts', "MUHAMMAD IRZAQ IRAWAN\n7233297792 BSI");
         $dueDate = $this->due_date ? $this->due_date->isoFormat('D MMMM Y') : '-';
         $formattedAmount = 'Rp ' . number_format($this->amount, 0, ',', '.');
@@ -93,7 +93,7 @@ class Invoice extends Model
             return '#';
         }
 
-        $companyName = Setting::get('company_name', 'Hokigo Starlink');
+        $companyName = Setting::get('company_name', 'Hokigo WiFi');
         $formattedAmount = 'Rp ' . number_format($this->amount, 0, ',', '.');
         $paidDate = $this->paid_at ? $this->paid_at->isoFormat('D MMMM Y HH:mm') : now()->isoFormat('D MMMM Y HH:mm');
         $periodName = \Carbon\Carbon::createFromFormat('Y-m', $this->period)->isoFormat('MMMM Y');

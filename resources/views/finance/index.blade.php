@@ -470,7 +470,7 @@
             <div class="p-3.5 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-800 text-xs space-y-2 leading-relaxed">
                 <p class="font-bold">⚠️ Perhatian Khusus Owner:</p>
                 <p>Tindakan ini akan mengosongkan seluruh catatan buku kas, transaksi pemasukan, dan pengeluaran demo sehingga angka Omzet, Biaya, dan Laba Bersih di sistem kembali bersih menjadi <strong>Rp 0</strong>.</p>
-                <p class="text-[11px] text-rose-600">Gunakan fitur ini saat Anda siap memulai pencatatan uang nyata bisnis Hokigo Starlink.</p>
+                <p class="text-[11px] text-rose-600">Gunakan fitur ini saat Anda siap memulai pencatatan uang nyata bisnis Hokigo WiFi.</p>
             </div>
 
             <form action="{{ route('finance.reset') }}" method="POST" class="space-y-4" x-data="{ confirmText: '' }">

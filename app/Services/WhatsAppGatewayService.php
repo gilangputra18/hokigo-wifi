@@ -137,7 +137,7 @@ class WhatsAppGatewayService
             ];
         }
 
-        $companyName = Setting::get('company_name', 'Hokigo Starlink');
+        $companyName = Setting::get('company_name', 'Hokigo WiFi');
         $bankInfo = Setting::get('bank_accounts', "MUHAMMAD IRZAQ IRAWAN\n7233297792 BSI");
         $dueDate = $invoice->due_date ? $invoice->due_date->isoFormat('D MMMM Y') : '-';
         $formattedAmount = 'Rp ' . number_format($invoice->amount, 0, ',', '.');

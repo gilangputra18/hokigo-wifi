@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Peta Jaringan, Server Starlink, ODP & Jalur Kabel')
+@section('title', 'Peta Jaringan, Server Satelit, ODP & Jalur Kabel')
 @section('header_title', 'Peta Jaringan & Infrastruktur WiFi')
 
 @section('content')
@@ -178,7 +178,7 @@
                                                   x-text="node.type === 'server' || node.type === 'starlink' ? '🛰️' : '🔲'"></span>
                                             <div class="min-w-0">
                                                 <p class="text-xs font-bold text-slate-900 group-hover:text-amber-800 truncate" x-text="node.name"></p>
-                                                <p class="text-[10px] text-slate-500 truncate" x-text="(node.type === 'server' ? 'Server Pusat' : (node.type === 'starlink' ? 'Dish Starlink' : 'Kotak ODP')) + (node.capacity ? ' • ' + node.capacity : '')"></p>
+                                                <p class="text-[10px] text-slate-500 truncate" x-text="(node.type === 'server' ? 'Server Pusat' : (node.type === 'starlink' ? 'Antena Satelit' : 'Kotak ODP')) + (node.capacity ? ' • ' + node.capacity : '')"></p>
                                             </div>
                                         </div>
                                         <span class="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
@@ -422,7 +422,7 @@
                         <span class="w-3 h-3 rounded-md bg-blue-600 inline-block shadow-xs"></span> Rumah Aktif
                     </span>
                     <span class="flex items-center gap-1">
-                        <span class="w-3 h-3 rounded-md bg-amber-500 inline-block shadow-xs"></span> 🛰️ Server / Starlink
+                        <span class="w-3 h-3 rounded-md bg-amber-500 inline-block shadow-xs"></span> 🛰️ Server / Satelit
                     </span>
                     <span class="flex items-center gap-1">
                         <span class="w-3 h-3 rounded-md bg-indigo-600 inline-block shadow-xs"></span> 🔲 Kotak ODP
@@ -606,7 +606,7 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Perangkat *</label>
                         <select x-model="newNodeType" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
-                            <option value="starlink">🛰️ Dish Antena Starlink</option>
+                            <option value="starlink">🛰️ Dish Antena Satelit</option>
                             <option value="server">🖥️ Server Utama / NOC / Mikrotik</option>
                             <option value="odp">🔲 Kotak ODP (Optical Distribution Point)</option>
                             <option value="switch">🔀 Switch / Router Distribusi</option>
@@ -812,7 +812,7 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Perangkat *</label>
                     <select x-model="newNodeType" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
-                        <option value="starlink">🛰️ Dish Antena Starlink</option>
+                        <option value="starlink">🛰️ Dish Antena Satelit</option>
                         <option value="server">🖥️ Server Utama / NOC / Mikrotik</option>
                         <option value="odp">🔲 Kotak ODP (Optical Distribution Point)</option>
                         <option value="switch">🔀 Switch / Router Distribusi</option>
@@ -1597,7 +1597,7 @@
                 this.newNodeModalOpen = true;
                 this.newNodeCoordinate = (lat && lng) ? { lat, lng } : null;
                 this.newNodeName = '';
-                this.newNodeCapacity = this.newNodeType === 'odp' ? '8 Port' : (this.newNodeType === 'starlink' ? 'Starlink Standard' : '');
+                this.newNodeCapacity = this.newNodeType === 'odp' ? '8 Port' : (this.newNodeType === 'starlink' ? 'Satelit Standard' : '');
                 this.newNodeNotes = '';
                 this.map.closePopup();
             },
@@ -1735,7 +1735,7 @@
 
                     const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
                     const villageName = node.village ? node.village.name : 'Umum / Pusat';
-                    const typeLabel = node.type === 'server' ? 'Server Pusat / NOC' : (node.type === 'starlink' ? 'Dish Antena Starlink' : (node.type === 'odp' ? 'Kotak ODP FO' : 'Perangkat Jaringan'));
+                    const typeLabel = node.type === 'server' ? 'Server Pusat / NOC' : (node.type === 'starlink' ? 'Dish Antena Satelit' : (node.type === 'odp' ? 'Kotak ODP FO' : 'Perangkat Jaringan'));
 
                     marker.bindPopup(`
                         <div style="font-family: inherit; font-size: 12px; min-width: 220px; padding: 4px;">
