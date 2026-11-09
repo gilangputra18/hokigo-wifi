@@ -175,10 +175,10 @@
                                             class="w-full text-left p-2.5 hover:bg-amber-50/80 transition flex items-center justify-between gap-2 group">
                                         <div class="flex items-center gap-2.5 min-w-0">
                                             <span class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 text-sm"
-                                                  x-text="node.type === 'server' || node.type === 'starlink' ? '🛰️' : '🔲'"></span>
+                                                  x-text="node.type === 'server' || node.type === 'satellite' || node.type === 'starlink' ? '🛰️' : '🔲'"></span>
                                             <div class="min-w-0">
                                                 <p class="text-xs font-bold text-slate-900 group-hover:text-amber-800 truncate" x-text="node.name"></p>
-                                                <p class="text-[10px] text-slate-500 truncate" x-text="(node.type === 'server' ? 'Server Pusat' : (node.type === 'starlink' ? 'Antena Satelit' : 'Kotak ODP')) + (node.capacity ? ' • ' + node.capacity : '')"></p>
+                                                <p class="text-[10px] text-slate-500 truncate" x-text="(node.type === 'server' ? 'Server Pusat' : (node.type === 'satellite' || node.type === 'starlink' ? 'Antena Satelit' : 'Kotak ODP')) + (node.capacity ? ' • ' + node.capacity : '')"></p>
                                             </div>
                                         </div>
                                         <span class="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md shrink-0 flex items-center gap-1">
@@ -485,7 +485,7 @@
                     <template x-for="node in networkNodesData" :key="'infra_' + node.id">
                         <div class="py-2.5 px-2 rounded-xl hover:bg-slate-50 transition flex items-center justify-between gap-2">
                             <div class="min-w-0">
-                                <p class="text-xs font-bold text-slate-800 truncate" x-text="(node.type === 'server' || node.type === 'starlink' ? '🛰️ ' : '🔲 ') + node.name"></p>
+                                <p class="text-xs font-bold text-slate-800 truncate" x-text="(node.type === 'server' || node.type === 'satellite' || node.type === 'starlink' ? '🛰️ ' : '🔲 ') + node.name"></p>
                                 <p class="text-[10px] text-slate-500 truncate" x-text="(node.village ? node.village.name : 'Pusat') + (node.capacity ? ' • ' + node.capacity : '')"></p>
                             </div>
                             
@@ -606,7 +606,7 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Perangkat *</label>
                         <select x-model="newNodeType" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
-                            <option value="starlink">🛰️ Dish Antena Satelit</option>
+                            <option value="satellite">🛰️ Dish Antena Satelit</option>
                             <option value="server">🖥️ Server Utama / NOC / Mikrotik</option>
                             <option value="odp">🔲 Kotak ODP (Optical Distribution Point)</option>
                             <option value="switch">🔀 Switch / Router Distribusi</option>
@@ -812,7 +812,7 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Perangkat *</label>
                     <select x-model="newNodeType" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold">
-                        <option value="starlink">🛰️ Dish Antena Satelit</option>
+                        <option value="satellite">🛰️ Dish Antena Satelit</option>
                         <option value="server">🖥️ Server Utama / NOC / Mikrotik</option>
                         <option value="odp">🔲 Kotak ODP (Optical Distribution Point)</option>
                         <option value="switch">🔀 Switch / Router Distribusi</option>
@@ -1014,7 +1014,7 @@
 
             // New Node Modal State
             newNodeModalOpen: false,
-            newNodeType: 'starlink',
+            newNodeType: 'satellite',
             newNodeName: '',
             newNodeVillageId: '',
             newNodeCapacity: '8 Port',
@@ -1592,12 +1592,12 @@
                 });
             },
 
-            // --- NETWORK NODES (SERVER, STARLINK, ODP) ---
+            // --- NETWORK NODES (SERVER, SATELIT, ODP) ---
             openAddNodeModal(lat = null, lng = null) {
                 this.newNodeModalOpen = true;
                 this.newNodeCoordinate = (lat && lng) ? { lat, lng } : null;
                 this.newNodeName = '';
-                this.newNodeCapacity = this.newNodeType === 'odp' ? '8 Port' : (this.newNodeType === 'starlink' ? 'Satelit Standard' : '');
+                this.newNodeCapacity = this.newNodeType === 'odp' ? '8 Port' : (this.newNodeType === 'satellite' || this.newNodeType === 'starlink' ? 'Satelit Standard' : '');
                 this.newNodeNotes = '';
                 this.map.closePopup();
             },
@@ -1735,7 +1735,7 @@
 
                     const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
                     const villageName = node.village ? node.village.name : 'Umum / Pusat';
-                    const typeLabel = node.type === 'server' ? 'Server Pusat / NOC' : (node.type === 'starlink' ? 'Dish Antena Satelit' : (node.type === 'odp' ? 'Kotak ODP FO' : 'Perangkat Jaringan'));
+                    const typeLabel = node.type === 'server' ? 'Server Pusat / NOC' : (node.type === 'satellite' || node.type === 'starlink' ? 'Dish Antena Satelit' : (node.type === 'odp' ? 'Kotak ODP FO' : 'Perangkat Jaringan'));
 
                     marker.bindPopup(`
                         <div style="font-family: inherit; font-size: 12px; min-width: 220px; padding: 4px;">

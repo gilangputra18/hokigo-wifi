@@ -422,6 +422,52 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
         </div>
     </div>
 
+    <!-- Section 4: Cadangan & Pemulihan Database (Backup & Restore) -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+                <h2 class="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                    <i data-lucide="database-backup" class="w-6 h-6 text-emerald-600"></i>
+                    <span>Cadangan & Pemulihan Database (Backup & Restore)</span>
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Unduh file cadangan mandiri ke HP/Laptop atau pulihkan seluruh data pelanggan, tagihan, dan konfigurasi sistem.
+                </p>
+            </div>
+            <a href="{{ route('backup.index') }}" 
+               class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition">
+                <i data-lucide="external-link" class="w-4 h-4"></i>
+                <span>Buka Pusat Backup & Restore</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-emerald-900 block">Unduh Salinan Cadangan (.json)</span>
+                    <span class="text-[11px] text-emerald-700 block">1-klik unduh seluruh database lengkap ke perangkat Anda untuk disimpan di Google Drive.</span>
+                </div>
+                <a href="{{ route('backup.download') }}" 
+                   class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shrink-0 shadow-xs transition">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Unduh Sekarang</span>
+                </a>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 flex items-center justify-between gap-4">
+                <div class="space-y-1">
+                    <span class="text-xs font-bold text-slate-900 block">Unduh Data Pelanggan Excel (.csv)</span>
+                    <span class="text-[11px] text-slate-600 block">Format tabel spreadsheet praktis dibuka di Microsoft Excel atau Google Sheets.</span>
+                </div>
+                <a href="{{ route('backup.export-customers-csv') }}" 
+                   class="px-4 py-2.5 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs flex items-center gap-2 shrink-0 shadow-xs transition">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i>
+                    <span>Unduh Excel</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal 1: Tambah Pengguna Baru -->
     <div x-show="userModalOpen" x-cloak class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div @click.away="userModalOpen = false" class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">

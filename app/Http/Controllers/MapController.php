@@ -80,7 +80,7 @@ class MapController extends Controller
             return is_null($c->latitude) || is_null($c->longitude);
         })->values();
 
-        // Network Infrastructure Nodes (Server, Starlink Dish, ODP, Tiang)
+        // Network Infrastructure Nodes (Server, Dish Satelit, ODP, Tiang)
         $networkNodes = NetworkNode::with('village:id,name')->get();
 
         // Cable Routes (Dropcore, Distribution, Backbone)
@@ -134,7 +134,7 @@ class MapController extends Controller
         $validated = $request->validate([
             'village_id' => ['nullable', 'exists:villages,id'],
             'name' => ['required', 'string', 'max:255'],
-            'type' => ['required', 'string', 'in:server,starlink,odp,switch,pole'],
+            'type' => ['required', 'string', 'in:server,satellite,starlink,odp,switch,pole'],
             'capacity' => ['nullable', 'string', 'max:100'],
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],

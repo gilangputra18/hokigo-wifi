@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinanceController;
@@ -112,6 +113,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/settings/users', [SettingController::class, 'storeUser'])->name('settings.users.store');
         Route::put('/settings/users/{user}', [SettingController::class, 'updateUser'])->name('settings.users.update');
         Route::delete('/settings/users/{user}', [SettingController::class, 'destroyUser'])->name('settings.users.destroy');
+
+        // Cadangan & Pemulihan Database (Backup & Restore)
+        Route::get('/backup', [BackupController::class, 'index'])->name('backup.index');
+        Route::get('/backup/download', [BackupController::class, 'download'])->name('backup.download');
+        Route::get('/backup/export-customers-csv', [BackupController::class, 'exportCustomersCsv'])->name('backup.export-customers-csv');
+        Route::post('/backup/restore', [BackupController::class, 'restore'])->name('backup.restore');
 
         // Reset Data Keuangan ke 0 (Bisa diakses Owner & Admin)
         Route::post('/finance/reset', [FinanceController::class, 'resetData'])->name('finance.reset');

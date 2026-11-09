@@ -253,6 +253,16 @@
                 <i data-lucide="settings" class="w-5 h-5"></i>
                 <span>Pengaturan Sistem</span>
             </a>
+
+            <!-- Cadangan & Pemulihan Database (Backup & Restore) -->
+            <a href="{{ route('backup.index') }}" 
+               class="flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all {{ request()->routeIs('backup.*') ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 font-semibold' : 'text-slate-300 hover:bg-white/10 hover:text-white' }}">
+                <div class="flex items-center gap-3">
+                    <i data-lucide="database-backup" class="w-5 h-5 text-emerald-400"></i>
+                    <span>Backup & Restore</span>
+                </div>
+                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-400/20 text-emerald-300 border border-emerald-400/30">Aman</span>
+            </a>
             @endif
         </nav>
 

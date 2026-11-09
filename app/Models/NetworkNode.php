@@ -35,7 +35,7 @@ class NetworkNode extends Model
     {
         return match ($this->type) {
             'server' => 'Server Pusat / NOC',
-            'starlink' => 'Dish Antena Satelit',
+            'satellite', 'starlink' => 'Dish Antena Satelit',
             'odp' => 'Kotak ODP (Fiber Optic)',
             'switch' => 'Switch / Router Distribusi',
             'pole' => 'Tiang Distribusi',
@@ -47,7 +47,7 @@ class NetworkNode extends Model
     {
         return match ($this->type) {
             'server' => '🖥️',
-            'starlink' => '🛰️',
+            'satellite', 'starlink' => '🛰️',
             'odp' => '🔲',
             'switch' => '🔀',
             'pole' => '📍',
