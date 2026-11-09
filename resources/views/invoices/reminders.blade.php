@@ -33,44 +33,69 @@
         </div>
     </div>
 
-    <!-- Filter Tabs -->
-    <div class="bg-white rounded-3xl p-4 border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2">
-            <a href="{{ route('invoices.reminders', ['filter' => 'today_or_overdue']) }}" 
-               class="px-4 py-2 rounded-xl text-xs font-bold transition {{ $filter === 'today_or_overdue' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                Semua Perlu Follow-Up ({{ $todayCount + $overdueCount }})
-            </a>
-            <a href="{{ route('invoices.reminders', ['filter' => 'today']) }}" 
-               class="px-4 py-2 rounded-xl text-xs font-bold transition {{ $filter === 'today' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                Jatuh Tempo Hari Ini ({{ $todayCount }})
-            </a>
-            <a href="{{ route('invoices.reminders', ['filter' => 'overdue']) }}" 
-               class="px-4 py-2 rounded-xl text-xs font-bold transition {{ $filter === 'overdue' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                Terlambat / Overdue ({{ $overdueCount }})
-            </a>
+    <!-- Filter Tabs & Quick Search -->
+    <div class="bg-white rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs space-y-3">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="{{ route('invoices.reminders', ['filter' => 'today_or_overdue', 'search' => request('search')]) }}" 
+                   class="px-4 py-2 rounded-xl text-xs font-bold transition {{ $filter === 'today_or_overdue' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                    Semua Perlu Follow-Up ({{ $todayCount + $overdueCount }})
+                </a>
+                <a href="{{ route('invoices.reminders', ['filter' => 'today', 'search' => request('search')]) }}" 
+                   class="px-4 py-2 rounded-xl text-xs font-bold transition {{ $filter === 'today' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                    Jatuh Tempo Hari Ini ({{ $todayCount }})
+                </a>
+                <a href="{{ route('invoices.reminders', ['filter' => 'overdue', 'search' => request('search')]) }}" 
+                   class="px-4 py-2 rounded-xl text-xs font-bold transition {{ $filter === 'overdue' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                    Terlambat / Overdue ({{ $overdueCount }})
+                </a>
+                <a href="{{ route('invoices.reminders', ['filter' => 'all_month', 'search' => request('search')]) }}" 
+                   class="px-4 py-2 rounded-xl text-xs font-bold transition {{ $filter === 'all_month' ? 'bg-brand-blue text-white shadow-xs' : 'bg-blue-50 text-brand-blue hover:bg-blue-100' }}">
+                    Semua Tagihan Bulan Ini ({{ $allMonthCount ?? 0 }})
+                </a>
+            </div>
+
+            <div class="flex items-center gap-2">
+                @if($todayCount > 0 && \App\Services\WhatsAppGatewayService::isConfigured())
+                    <form action="{{ route('invoices.send-batch-gateway') }}" method="POST" onsubmit="return confirm('Kirim chat WhatsApp otomatis via Gateway ke {{ $todayCount }} pelanggan yang jatuh tempo hari ini?');" class="inline">
+                        @csrf
+                        <input type="hidden" name="filter" value="today">
+                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-xs transition">
+                            <i data-lucide="zap" class="w-4 h-4"></i>
+                            <span>Kirim Semua Hari Ini via Gateway ({{ $todayCount }})</span>
+                        </button>
+                    </form>
+                @endif
+
+                <a href="{{ route('settings.index') }}" class="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold flex items-center gap-1.5 transition" title="Pengaturan Gateway">
+                    <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+                    <span>Atur Gateway WA</span>
+                </a>
+
+                <a href="{{ route('invoices.index') }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 ml-1">
+                    <span>Semua Tagihan</span> &rarr;
+                </a>
+            </div>
         </div>
 
-        <div class="flex items-center gap-2">
-            @if($todayCount > 0 && \App\Services\WhatsAppGatewayService::isConfigured())
-                <form action="{{ route('invoices.send-batch-gateway') }}" method="POST" onsubmit="return confirm('Kirim chat WhatsApp otomatis via Gateway ke {{ $todayCount }} pelanggan yang jatuh tempo hari ini?');" class="inline">
-                    @csrf
-                    <input type="hidden" name="filter" value="today">
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-xs transition">
-                        <i data-lucide="zap" class="w-4 h-4"></i>
-                        <span>Kirim Semua Hari Ini via Gateway ({{ $todayCount }})</span>
-                    </button>
-                </form>
+        <!-- Search Bar: Cari Pelanggan yang Ingin Bayar Lebih Awal -->
+        <form method="GET" action="{{ route('invoices.reminders') }}" class="flex items-center gap-2 pt-2 border-t border-slate-100">
+            <input type="hidden" name="filter" value="{{ $filter }}">
+            <div class="relative flex-1">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                <input type="text" name="search" value="{{ request('search') }}" 
+                       placeholder="Cari nama pelanggan untuk pelunasan lebih awal (misal: bayar duluan sebelum jatuh tempo)..."
+                       class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+            </div>
+            @if(request('search'))
+                <a href="{{ route('invoices.reminders', ['filter' => $filter]) }}" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition">
+                    Reset
+                </a>
             @endif
-
-            <a href="{{ route('settings.index') }}" class="px-3.5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold flex items-center gap-1.5 transition" title="Pengaturan Gateway">
-                <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-                <span>Atur Gateway WA</span>
-            </a>
-
-            <a href="{{ route('invoices.index') }}" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 ml-1">
-                <span>Semua Tagihan</span> &rarr;
-            </a>
-        </div>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs">
+                Cari
+            </button>
+        </form>
     </div>
 
     <!-- Customer Reminder Cards Grid -->
@@ -177,9 +202,10 @@
                             <form action="{{ route('invoices.mark-paid', $inv) }}" method="POST">
                                 @csrf
                                 <input type="hidden" name="payment_method" value="cash">
-                                <button type="submit" onclick="return confirm('Tandai tagihan {{ $inv->customer->name }} lunas tunai?')"
-                                        class="py-2.5 px-3 rounded-xl bg-brand-blue hover:bg-brand-blueHover text-white font-bold text-xs shadow-xs transition" title="Tandai Lunas">
+                                <button type="submit" onclick="return confirm('Tandai tagihan {{ $inv->customer->name }} LUNAS? Setelah lunas, pesan pengingat WhatsApp otomatis TIDAK AKAN dikirim pada tanggal jatuh tempo.')"
+                                        class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition flex items-center gap-1" title="Tandai Lunas">
                                     <i data-lucide="check" class="w-4 h-4"></i>
+                                    <span class="hidden sm:inline">Lunas</span>
                                 </button>
                             </form>
                         </div>

@@ -338,9 +338,9 @@
                            class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                 </div>
 
-                <div class="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-[11px] font-medium border border-emerald-100 flex items-center gap-2">
-                    <i data-lucide="info" class="w-4 h-4 shrink-0 text-emerald-600"></i>
-                    <span>Saat disimpan, sistem akan otomatis mencatat uang ini ke <strong>Omzet & Pemasukan</strong> bulan berjalan.</span>
+                <div class="p-3 rounded-xl bg-emerald-50 text-emerald-800 text-[11px] font-medium border border-emerald-100 flex items-start gap-2">
+                    <i data-lucide="shield-check" class="w-4 h-4 shrink-0 text-emerald-600 mt-0.5"></i>
+                    <span>Saat disimpan, sistem mencatat ke <strong>Omzet & Pemasukan</strong> dan <strong>TIDAK AKAN</strong> mengirimkan pesan penagihan WhatsApp otomatis pada tanggal jatuh tempo karena sudah lunas.</span>
                 </div>
 
                 <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">

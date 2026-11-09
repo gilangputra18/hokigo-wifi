@@ -104,7 +104,7 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tgl Jatuh Tempo (Setiap Bulan) *</label>
                         <select name="due_date_day" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
-                            @for($d = 1; $d <= 28; $d++)
+                            @for($d = 1; $d <= 31; $d++)
                                 <option value="{{ $d }}" {{ old('due_date_day', $customer->due_date_day) == $d ? 'selected' : '' }}>
                                     Setiap Tanggal {{ $d }}
                                 </option>

@@ -73,6 +73,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::post('/invoices/generate', [InvoiceController::class, 'generate'])->name('invoices.generate');
         Route::post('/invoices/{invoice}/mark-paid', [InvoiceController::class, 'markPaid'])->name('invoices.mark-paid');
+        Route::post('/customers/{customer}/pay-current', [InvoiceController::class, 'payCustomerCurrent'])->name('customers.pay-current');
         Route::post('/invoices/{invoice}/mark-unpaid', [InvoiceController::class, 'markUnpaid'])->name('invoices.mark-unpaid');
         Route::post('/invoices/{invoice}/mark-wa-sent', [InvoiceController::class, 'markWaSent'])->name('invoices.mark-wa-sent');
         Route::post('/invoices/{invoice}/send-gateway', [InvoiceController::class, 'sendViaGateway'])->name('invoices.send-gateway');

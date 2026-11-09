@@ -101,8 +101,9 @@ class InvoiceController extends Controller
                 ->exists();
 
             if (!$exists) {
-                $day = min($customer->due_date_day ?: 10, 28);
-                $dueDate = Carbon::createFromFormat('Y-m', $period)->setDay($day);
+                $periodDate = Carbon::createFromFormat('Y-m', $period);
+                $day = min($customer->due_date_day ?: 10, $periodDate->daysInMonth);
+                $dueDate = $periodDate->copy()->setDay($day);
 
                 $status = Carbon::now()->gt($dueDate) ? 'overdue' : 'unpaid';
 
@@ -164,6 +165,77 @@ class InvoiceController extends Controller
         });
 
         return back()->with('success', "Tagihan {$invoice->invoice_number} berhasil ditandai LUNAS! Omzet bulan ini otomatis diperbarui.");
+    }
+
+    /**
+     * Mark customer invoice as paid directly (supports paying early before due date, creates invoice if not exists)
+     */
+    public function payCustomerCurrent(Request $request, Customer $customer)
+    {
+        $request->validate([
+            'payment_method' => ['required', 'string'],
+            'paid_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string'],
+            'period' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
+        ]);
+
+        $period = $request->input('period') ?: now()->format('Y-m');
+        $paidAt = $request->filled('paid_at') ? Carbon::parse($request->paid_at) : now();
+        $paymentMethod = $request->input('payment_method', 'cash');
+
+        $invoice = DB::transaction(function () use ($request, $customer, $period, $paidAt, $paymentMethod) {
+            $inv = Invoice::where('customer_id', $customer->id)
+                ->where('period', $period)
+                ->first();
+
+            if (!$inv) {
+                $periodDate = Carbon::createFromFormat('Y-m', $period);
+                $day = min($customer->due_date_day ?: 10, $periodDate->daysInMonth);
+                $dueDate = $periodDate->copy()->setDay($day);
+
+                $inv = Invoice::create([
+                    'invoice_number' => 'INV-' . str_replace('-', '', $period) . '-' . str_pad($customer->id, 4, '0', STR_PAD_LEFT),
+                    'customer_id' => $customer->id,
+                    'period' => $period,
+                    'amount' => $customer->monthly_fee,
+                    'due_date' => $dueDate->format('Y-m-d'),
+                    'status' => 'paid',
+                    'payment_method' => $paymentMethod,
+                    'paid_at' => $paidAt,
+                    'notes' => $request->notes ?: 'Pelunasan lebih awal / tepat waktu',
+                    'created_by' => auth()->id(),
+                ]);
+            } else {
+                $inv->update([
+                    'status' => 'paid',
+                    'payment_method' => $paymentMethod,
+                    'paid_at' => $paidAt,
+                    'notes' => $request->notes ?: $inv->notes,
+                ]);
+            }
+
+            // Record or update FinancialTransaction
+            $transactionCode = 'TRX-' . $inv->invoice_number;
+            FinancialTransaction::updateOrCreate(
+                ['invoice_id' => $inv->id],
+                [
+                    'transaction_code' => $transactionCode,
+                    'type' => 'income',
+                    'category' => 'Tagihan WiFi',
+                    'amount' => $inv->amount,
+                    'transaction_date' => $paidAt->format('Y-m-d'),
+                    'user_id' => auth()->id(),
+                    'payment_method' => $paymentMethod,
+                    'description' => "Pembayaran tagihan {$customer->name} ({$customer->customer_code}) periode {$period}",
+                ]
+            );
+
+            return $inv;
+        });
+
+        $periodName = Carbon::createFromFormat('Y-m', $period)->translatedFormat('F Y');
+
+        return back()->with('success', "Alhamdulillah! Tagihan {$customer->name} periode {$periodName} berhasil ditandai LUNAS. Sistem dipastikan TIDAK AKAN mengirim chat tagihan otomatis pada tanggal jatuh tempo karena sudah tercatat lunas.");
     }
 
     /**
@@ -279,9 +351,21 @@ class InvoiceController extends Controller
             $query->whereDate('due_date', $now->toDateString());
         } elseif ($filter === 'overdue') {
             $query->whereDate('due_date', '<', $now->toDateString());
+        } elseif ($filter === 'all_month') {
+            $query->where('period', $currentPeriod);
         } else {
             // today or overdue
             $query->whereDate('due_date', '<=', $now->toDateString());
+        }
+
+        // Search customer name / code / phone
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('customer', function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('customer_code', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
+            });
         }
 
         $invoices = $query->orderBy('due_date', 'asc')->paginate(30)->withQueryString();
@@ -294,7 +378,11 @@ class InvoiceController extends Controller
             ->whereDate('due_date', '<', $now->toDateString())
             ->count();
 
-        return view('invoices.reminders', compact('invoices', 'todayCount', 'overdueCount', 'filter', 'currentPeriod'));
+        $allMonthCount = Invoice::whereIn('status', ['unpaid', 'overdue'])
+            ->where('period', $currentPeriod)
+            ->count();
+
+        return view('invoices.reminders', compact('invoices', 'todayCount', 'overdueCount', 'allMonthCount', 'filter', 'currentPeriod'));
     }
 
     /**

@@ -4,7 +4,13 @@
 @section('header_title', 'Detail Pelanggan: ' . $customer->name)
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="customerShowApp()">
+
+    @php
+        $currentPeriod = now()->format('Y-m');
+        $currentPeriodName = now()->translatedFormat('F Y');
+        $currentInv = $customer->invoices->firstWhere('period', $currentPeriod);
+    @endphp
 
     <!-- Top Card / Profile Header -->
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -79,6 +85,85 @@
         </div>
 
     </div>
+
+    <!-- Status Tagihan Bulan Ini (Highlight Banner) -->
+    @if($currentInv && $currentInv->status === 'paid')
+        <div class="p-5 rounded-3xl bg-emerald-50 border border-emerald-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                    <i data-lucide="check-check" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">Status Pembayaran Bulan Ini</span>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black">LUNAS</span>
+                    </div>
+                    <h3 class="font-extrabold text-slate-900 text-sm mt-0.5">Tagihan {{ $currentPeriodName }} Sudah Lunas</h3>
+                    <p class="text-xs text-slate-500">
+                        Dibayarkan {{ $currentInv->paid_at ? $currentInv->paid_at->translatedFormat('d F Y') : '-' }} via {{ strtoupper($currentInv->payment_method ?? 'Cash') }} &bull; Rp {{ number_format($currentInv->amount, 0, ',', '.') }}
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <a href="{{ $currentInv->whatsapp_receipt_url }}" target="_blank"
+                   class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition" title="Kirim Bukti Pembayaran via WhatsApp">
+                    <i data-lucide="receipt" class="w-4 h-4"></i>
+                    <span>Kirim Struk WA</span>
+                </a>
+                <a href="{{ route('invoices.print', $currentInv) }}" target="_blank"
+                   class="px-3.5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 border border-slate-200 transition" title="Cetak Struk">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Cetak Struk</span>
+                </a>
+            </div>
+        </div>
+    @else
+        <div class="p-5 rounded-3xl bg-amber-50 border border-amber-200/80 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                    <i data-lucide="clock" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-amber-800">Tagihan {{ $currentPeriodName }}</span>
+                        <span class="px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[10px] font-black">BELUM BAYAR</span>
+                    </div>
+                    <h3 class="font-extrabold text-slate-900 text-sm mt-0.5">
+                        Jatuh Tempo: Setiap Tanggal {{ $customer->due_date_day }} {{ $currentPeriodName }}
+                    </h3>
+                    <p class="text-xs text-slate-600">
+                        Nominal Tagihan: <strong class="text-slate-900">Rp {{ number_format($currentInv ? $currentInv->amount : $customer->monthly_fee, 0, ',', '.') }}</strong>
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                @if(!auth()->user()->isTeknisi())
+                    <button type="button" 
+                            @click="openPayModal({
+                                customer_id: {{ $customer->id }},
+                                customer_name: '{{ addslashes($customer->name) }}',
+                                customer_code: '{{ $customer->customer_code }}',
+                                amount: {{ $currentInv ? (float)$currentInv->amount : (float)$customer->monthly_fee }},
+                                amount_formatted: '{{ number_format($currentInv ? $currentInv->amount : $customer->monthly_fee, 0, ',', '.') }}',
+                                period: '{{ $currentPeriod }}',
+                                due_date_day: {{ $customer->due_date_day ?: 10 }},
+                                action_url: '{{ route('customers.pay-current', $customer) }}'
+                            })"
+                            class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-emerald-600/25 transition transform hover:-translate-y-0.5">
+                        <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+                        <span>Bayar / Tandai Lunas Sekarang</span>
+                    </button>
+                @endif
+                @if($currentInv)
+                    <a href="{{ $currentInv->whatsapp_url }}" target="_blank"
+                       class="px-3.5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs transition" title="Kirim Tagihan via WhatsApp">
+                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                        <span>Kirim WA</span>
+                    </a>
+                @endif
+            </div>
+        </div>
+    @endif
 
     <!-- 2 Column Details: Left Details + Notes, Right Invoices -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -314,9 +399,34 @@
                                                     <!-- Send WhatsApp Struk / Receipt -->
                                                     <a href="{{ $inv->whatsapp_receipt_url }}" target="_blank"
                                                        class="p-1.5 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition" title="Kirim Bukti Lunas WA">
-                                                        <i data-lucide="message-circle" class="w-4 h-4"></i>
+                                                        <i data-lucide="receipt" class="w-4 h-4"></i>
                                                     </a>
+
+                                                    <!-- Revert Lunas Button -->
+                                                    <form action="{{ route('invoices.mark-unpaid', $inv) }}" method="POST" onsubmit="return confirm('Batalkan pelunasan tagihan periode {{ $inv->period }} ini? Transaksi kas akan disesuaikan.')" class="inline">
+                                                        @csrf
+                                                        <button type="submit" class="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition" title="Batalkan Lunas">
+                                                            <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+                                                        </button>
+                                                    </form>
                                                 @else
+                                                    <!-- Tombol Tandai Lunas -->
+                                                    <button type="button" 
+                                                            @click="openPayModal({
+                                                                customer_id: {{ $customer->id }},
+                                                                customer_name: '{{ addslashes($customer->name) }}',
+                                                                customer_code: '{{ $customer->customer_code }}',
+                                                                amount: {{ (float)$inv->amount }},
+                                                                amount_formatted: '{{ number_format($inv->amount, 0, ',', '.') }}',
+                                                                period: '{{ $inv->period }}',
+                                                                due_date_day: {{ $customer->due_date_day ?: 10 }},
+                                                                action_url: '{{ route('invoices.mark-paid', $inv) }}'
+                                                            })"
+                                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs" title="Tandai Lunas">
+                                                        <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                                                        <span>Lunas</span>
+                                                    </button>
+
                                                     <!-- Send WhatsApp Bill -->
                                                     <a href="{{ $inv->whatsapp_url }}" target="_blank"
                                                        class="p-1.5 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 transition" title="Kirim Tagihan WA">
@@ -342,5 +452,127 @@
 
     </div>
 
+    <!-- Modal Pelunasan Cepat (Bisa Bayar Duluan Sebelum Jatuh Tempo) -->
+    <div x-show="payModalOpen" x-cloak 
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0"
+         x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100"
+         x-transition:leave-end="opacity-0">
+        
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4"
+             @click.outside="payModalOpen = false"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95"
+             x-transition:enter-end="opacity-100 scale-100">
+            
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-slate-900 text-base">Pelunasan Tagihan WiFi</h3>
+                        <p class="text-[11px] text-slate-500">Bisa lunaskan lebih awal sebelum tanggal jatuh tempo</p>
+                    </div>
+                </div>
+                <button @click="payModalOpen = false" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form :action="selectedInvoice.action_url" method="POST" class="space-y-4">
+                @csrf
+                <input type="hidden" name="period" :value="selectedInvoice.period">
+
+                <!-- Ringkasan Info Pelanggan -->
+                <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-900" x-text="selectedInvoice.customer_name"></span>
+                        <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900" x-text="selectedInvoice.customer_code"></span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs text-slate-600 pt-1 border-t border-emerald-200/60">
+                        <span>Nominal Tagihan:</span>
+                        <span class="text-base font-black text-emerald-900" x-text="'Rp ' + selectedInvoice.amount_formatted"></span>
+                    </div>
+                    <div class="flex items-center justify-between text-[11px] text-slate-500">
+                        <span>Jatuh Tempo:</span>
+                        <span class="font-bold text-slate-700" x-text="'Setiap Tanggal ' + selectedInvoice.due_date_day"></span>
+                    </div>
+                </div>
+
+                <!-- Metode Pembayaran -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Metode Pembayaran *</label>
+                    <select name="payment_method" required class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 bg-white">
+                        <option value="transfer">Transfer BSI (7233297792 a/n MUHAMMAD IRZAQ IRAWAN)</option>
+                        <option value="cash">Tunai (Cash ke Kantor / Titip Teknisi)</option>
+                        <option value="transfer_lain">Transfer Bank Lain / QRIS / DANA</option>
+                    </select>
+                </div>
+
+                <!-- Tanggal Diterima -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Diterima Pembayaran *</label>
+                    <input type="date" name="paid_at" value="{{ date('Y-m-d') }}" required
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+                    <p class="text-[11px] text-slate-400 mt-1">Jika pelanggan bayar duluan (misal tanggal 4 atau 5), tanggal bisa disesuaikan.</p>
+                </div>
+
+                <!-- Catatan Opsional -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Catatan Pembayaran (Opsional)</label>
+                    <input type="text" name="notes" placeholder="Contoh: Transfer BSI jam 10 pagi / Titip teknisi"
+                           class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+                </div>
+
+                <!-- Alert Perlindungan Chat Otomatis -->
+                <div class="p-3.5 rounded-2xl bg-blue-50 border border-blue-200/80 flex items-start gap-2.5 text-blue-900 text-xs">
+                    <i data-lucide="shield-check" class="w-4 h-4 text-brand-blue shrink-0 mt-0.5"></i>
+                    <p class="text-[11px] leading-relaxed">
+                        <strong>Proteksi Chat Otomatis:</strong> Setelah ditandai Lunas, sistem otomatis <strong>TIDAK AKAN</strong> mengirimkan pesan penagihan WhatsApp pada tanggal jatuh tempo nanti.
+                    </p>
+                </div>
+
+                <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                    <button type="button" @click="payModalOpen = false" 
+                            class="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 text-xs font-bold transition">
+                        Batal
+                    </button>
+                    <button type="submit" 
+                            class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-600/30 transition flex items-center gap-1.5">
+                        <i data-lucide="check" class="w-4 h-4"></i>
+                        <span>Konfirmasi Lunas</span>
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
 </div>
+
+<script>
+    function customerShowApp() {
+        return {
+            payModalOpen: false,
+            selectedInvoice: {
+                customer_id: {{ $customer->id }},
+                customer_name: '{{ addslashes($customer->name) }}',
+                customer_code: '{{ $customer->customer_code }}',
+                amount: {{ (float)$customer->monthly_fee }},
+                amount_formatted: '{{ number_format($customer->monthly_fee, 0, ',', '.') }}',
+                period: '{{ $currentPeriod }}',
+                due_date_day: {{ $customer->due_date_day ?: 10 }},
+                action_url: '{{ route('customers.pay-current', $customer) }}'
+            },
+            openPayModal(data) {
+                this.selectedInvoice = data;
+                this.payModalOpen = true;
+            }
+        };
+    }
+</script>
 @endsection

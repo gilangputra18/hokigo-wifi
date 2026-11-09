@@ -25,7 +25,7 @@ class CustomerController extends Controller
             }
         ])->select([
             'id', 'customer_code', 'name', 'phone', 'village_id', 'package_id',
-            'monthly_fee', 'status', 'notes', 'pppoe_user', 'pppoe_password',
+            'monthly_fee', 'due_date_day', 'status', 'notes', 'pppoe_user', 'pppoe_password',
             'wifi_ssid', 'wifi_password', 'house_number', 'installation_date', 'ip_address'
         ]);
 
@@ -159,7 +159,9 @@ class CustomerController extends Controller
         // Auto create invoice for current month if active
         if ($customer->status === 'active') {
             $currentPeriod = Carbon::now()->format('Y-m');
-            $dueDate = Carbon::createFromFormat('Y-m', $currentPeriod)->setDay(min($customer->due_date_day, 28));
+            $periodDate = Carbon::createFromFormat('Y-m', $currentPeriod);
+            $day = min($customer->due_date_day ?: 10, $periodDate->daysInMonth);
+            $dueDate = $periodDate->copy()->setDay($day);
 
             Invoice::firstOrCreate(
                 [

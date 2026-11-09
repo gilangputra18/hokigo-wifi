@@ -129,6 +129,14 @@ class WhatsAppGatewayService
      */
     public static function sendInvoiceReminder(Invoice $invoice): array
     {
+        // Safety guard: NEVER send reminder to customers who already paid
+        if ($invoice->status === 'paid') {
+            return [
+                'success' => false,
+                'message' => 'Tagihan ini sudah berstatus LUNAS. Pengingat penagihan tidak dikirimkan.',
+            ];
+        }
+
         $customer = $invoice->customer;
         if (!$customer || empty($customer->clean_phone)) {
             return [
