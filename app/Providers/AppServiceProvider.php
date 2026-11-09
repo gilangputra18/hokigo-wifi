@@ -27,6 +27,19 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
+        // Auto-ensure plain_password column exists on users table (Serverless PostgreSQL Supabase)
+        try {
+            static $plainPassChecked = false;
+            if (!$plainPassChecked) {
+                $plainPassChecked = true;
+                if (!\Illuminate\Support\Facades\Schema::hasColumn('users', 'plain_password')) {
+                    \Illuminate\Support\Facades\Schema::table('users', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        $table->string('plain_password')->nullable()->after('password');
+                    });
+                }
+            }
+        } catch (\Throwable $e) {}
+
         // Fast In-Memory & Session-Cached View Composer for Sidebar Badges (Eliminates DB queries on page navigation)
         View::composer('layouts.app', function ($view) {
             static $counts = null;

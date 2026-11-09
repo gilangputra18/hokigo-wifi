@@ -44,6 +44,15 @@
                         @if($ownerUser?->phone)
                             <p class="text-xs text-amber-800 font-semibold mt-1">WA: {{ $ownerUser->phone }}</p>
                         @endif
+                        @if($ownerUser?->plain_password)
+                            <div x-data="{ showPass: false }" class="mt-1 flex items-center gap-1.5 text-xs text-amber-900 font-mono">
+                                <span class="text-[11px] text-slate-500">Sandi:</span>
+                                <span x-text="showPass ? '{{ $ownerUser->plain_password }}' : '••••••••'" class="font-bold"></span>
+                                <button type="button" @click="showPass = !showPass" class="text-amber-700 hover:text-amber-950 p-0.5">
+                                    <span x-text="showPass ? '🙈' : '👁️'" class="text-[11px]"></span>
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 </div>
                 @if($ownerUser)
@@ -70,6 +79,15 @@
                         <p class="text-xs font-mono text-slate-500">{{ $adminUser?->email ?? 'admin@hokigo.net' }}</p>
                         @if($adminUser?->phone)
                             <p class="text-xs text-blue-800 font-semibold mt-1">WA: {{ $adminUser->phone }}</p>
+                        @endif
+                        @if($adminUser?->plain_password)
+                            <div x-data="{ showPass: false }" class="mt-1 flex items-center gap-1.5 text-xs text-blue-900 font-mono">
+                                <span class="text-[11px] text-slate-500">Sandi:</span>
+                                <span x-text="showPass ? '{{ $adminUser->plain_password }}' : '••••••••'" class="font-bold"></span>
+                                <button type="button" @click="showPass = !showPass" class="text-blue-700 hover:text-blue-950 p-0.5">
+                                    <span x-text="showPass ? '🙈' : '👁️'" class="text-[11px]"></span>
+                                </button>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -98,6 +116,15 @@
                         @if($teknisiUser?->phone)
                             <p class="text-xs text-cyan-800 font-semibold mt-1">WA: {{ $teknisiUser->phone }}</p>
                         @endif
+                        @if($teknisiUser?->plain_password)
+                            <div x-data="{ showPass: false }" class="mt-1 flex items-center gap-1.5 text-xs text-cyan-900 font-mono">
+                                <span class="text-[11px] text-slate-500">Sandi:</span>
+                                <span x-text="showPass ? '{{ $teknisiUser->plain_password }}' : '••••••••'" class="font-bold"></span>
+                                <button type="button" @click="showPass = !showPass" class="text-cyan-700 hover:text-cyan-950 p-0.5">
+                                    <span x-text="showPass ? '🙈' : '👁️'" class="text-[11px]"></span>
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 </div>
                 @if($teknisiUser)
@@ -124,6 +151,7 @@
                     <tr>
                         <th class="py-3 pl-4">Nama Lengkap & Email</th>
                         <th class="py-3">Peran (Role)</th>
+                        <th class="py-3">Kata Sandi</th>
                         <th class="py-3">No. WhatsApp</th>
                         <th class="py-3">Status</th>
                         <th class="py-3 pr-4 text-right">Aksi</th>
@@ -160,6 +188,18 @@
                                     <span class="px-2.5 py-1 rounded-full bg-blue-100 text-blue-800 font-bold border border-blue-300">
                                         🛡️ Admin (Staf)
                                     </span>
+                                @endif
+                            </td>
+                            <td class="py-3.5 font-mono text-xs">
+                                @if($user->plain_password)
+                                    <div x-data="{ showP: false }" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200">
+                                        <span x-text="showP ? '{{ $user->plain_password }}' : '••••••••'" class="font-bold text-slate-800 tracking-wider"></span>
+                                        <button type="button" @click="showP = !showP" class="text-slate-400 hover:text-slate-700 transition" title="Lihat / Sembunyikan Kata Sandi">
+                                            <span x-text="showP ? '🙈' : '👁️'" class="text-xs"></span>
+                                        </button>
+                                    </div>
+                                @else
+                                    <span class="text-slate-400 italic text-[11px]">(Belum diset)</span>
                                 @endif
                             </td>
                             <td class="py-3.5 font-mono text-slate-600">
@@ -497,8 +537,15 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Kata Sandi (Password) *</label>
-                        <input type="password" name="password" required placeholder="Min 6 karakter"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                        <div class="relative" x-data="{ showNewPass: false }">
+                            <input :type="showNewPass ? 'text' : 'password'" name="password" required placeholder="Min 6 karakter"
+                                   class="w-full pl-3.5 pr-9 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
+                            <button type="button" @click="showNewPass = !showNewPass"
+                                    class="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600 p-0.5"
+                                    title="Tampilkan / Sembunyikan Kata Sandi">
+                                <span x-text="showNewPass ? '🙈' : '👁️'" class="text-xs"></span>
+                            </button>
+                        </div>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Peran (Role) *</label>
@@ -596,10 +643,10 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Kata Sandi Baru</label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Ubah Kata Sandi</label>
                         <div class="relative">
                             <input :type="showEditPassword ? 'text' : 'password'" name="password" x-model="editPassword"
-                                   placeholder="Kosongkan jika tetap" autocomplete="new-password"
+                                   placeholder="Ketik jika ingin ganti..." autocomplete="new-password"
                                    class="w-full pl-3 pr-9 py-2 rounded-xl border border-slate-200 text-xs font-mono focus:ring-2 focus:ring-brand-blue/30 focus:border-brand-blue">
                             <button type="button" @click="showEditPassword = !showEditPassword"
                                     class="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 p-0.5"
@@ -616,6 +663,27 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
                             <option value="admin">🛡️ Admin</option>
                             <option value="teknisi">🔧 Teknisi</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Kotak Lihat Kata Sandi Yang Sudah Dimasukkan -->
+                <div class="p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 flex items-center justify-between gap-3 text-xs">
+                    <div class="min-w-0 flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+                            <i data-lucide="key" class="w-4 h-4"></i>
+                        </div>
+                        <div class="truncate">
+                            <span class="text-slate-500 font-semibold block text-[11px]">Kata Sandi Yang Tersimpan:</span>
+                            <span class="font-mono font-extrabold text-slate-900 text-xs tracking-wider"
+                                  x-text="selectedUser && selectedUser.plain_password ? (showSavedPassword ? selectedUser.plain_password : '••••••••') : '(Belum diset, isi sandi di atas lalu Simpan)'">
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0" x-show="selectedUser && selectedUser.plain_password">
+                        <button type="button" @click="showSavedPassword = !showSavedPassword"
+                                class="px-2.5 py-1 rounded-xl bg-white border border-amber-200 text-amber-900 hover:bg-amber-100 text-[11px] font-bold shadow-xs transition flex items-center gap-1">
+                            <span x-text="showSavedPassword ? '🙈 Sembunyikan' : '👁️ Lihat Sandi'"></span>
+                        </button>
                     </div>
                 </div>
 
@@ -661,6 +729,7 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
             editIsActive: true,
             editPassword: '',
             showEditPassword: false,
+            showSavedPassword: false,
             editAvatar: '',
             removeEditAvatar: false,
             handleEditAvatarFile(e) {
@@ -709,9 +778,13 @@ Mohon kirimkan bukti transfer jika sudah membayar ya Kak. Terima kasih! 🙏✨
                 this.editIsActive = !!u.is_active;
                 this.editPassword = '';
                 this.showEditPassword = false;
+                this.showSavedPassword = false;
                 this.editAvatar = u.avatar || '';
                 this.removeEditAvatar = false;
                 this.editUserModalOpen = true;
+                if (window.lucide) {
+                    setTimeout(() => window.lucide.createIcons(), 50);
+                }
             }
         };
     }

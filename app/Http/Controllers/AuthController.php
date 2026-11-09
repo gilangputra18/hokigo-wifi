@@ -98,6 +98,7 @@ class AuthController extends Controller
 
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
+            $user->plain_password = $validated['password'];
         }
 
         $user->save();

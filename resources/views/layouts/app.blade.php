@@ -523,6 +523,19 @@
                     <p class="text-[10px] text-slate-400 mt-0.5">Min 6 karakter. Kosongkan jika tetap.</p>
                 </div>
 
+                @if(auth()->user()->plain_password)
+                <div x-data="{ showMyPass: false }" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="key" class="w-3.5 h-3.5 text-brand-blue shrink-0"></i>
+                        <span class="text-slate-500 text-[11px]">Sandi Anda saat ini:</span>
+                        <span class="font-mono font-bold text-slate-800" x-text="showMyPass ? '{{ auth()->user()->plain_password }}' : '••••••••'"></span>
+                    </div>
+                    <button type="button" @click="showMyPass = !showMyPass" class="text-[11px] font-bold text-brand-blue hover:underline">
+                        <span x-text="showMyPass ? 'Sembunyikan' : 'Lihat Sandi'"></span>
+                    </button>
+                </div>
+                @endif
+
                 <div>
                     <label class="block text-xs font-bold text-slate-700 mb-1">Nomor WhatsApp</label>
                     <input type="text" name="phone" value="{{ auth()->user()->phone }}" placeholder="08xxxxxxxxxx"

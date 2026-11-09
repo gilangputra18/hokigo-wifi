@@ -91,7 +91,9 @@ class SettingController extends Controller
             'phone' => ['nullable', 'string', 'max:25'],
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
+        $plainPass = $validated['password'];
+        $validated['password'] = Hash::make($plainPass);
+        $validated['plain_password'] = $plainPass;
         $validated['is_active'] = true;
 
         User::create($validated);
@@ -136,6 +138,7 @@ class SettingController extends Controller
         $passwordChanged = false;
         if (!empty($validated['password'])) {
             $user->password = Hash::make($validated['password']);
+            $user->plain_password = $validated['password'];
             $passwordChanged = true;
         }
 
