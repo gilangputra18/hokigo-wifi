@@ -3,6 +3,12 @@
 @section('title', 'Tambah Pelanggan Baru')
 @section('header_title', 'Registrasi Pelanggan Baru')
 
+@push('styles')
+    <!-- Leaflet Maps CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+@endpush
+
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
 
@@ -501,8 +507,15 @@
             lng: '{{ old('longitude', '') }}',
 
             init() {
+                const tryInit = () => {
+                    if (window.L && typeof window.L.map === 'function') {
+                        this.initPicker();
+                    } else {
+                        setTimeout(tryInit, 100);
+                    }
+                };
                 this.$nextTick(() => {
-                    this.initPicker();
+                    tryInit();
                 });
             },
 
