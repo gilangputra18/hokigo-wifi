@@ -37,11 +37,11 @@
         }
     </script>
     
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js (Local Edge CDN Cached) -->
+    <script defer src="{{ asset('js/alpine.min.js') }}"></script>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Lucide Icons (Local Edge CDN Cached) -->
+    <script defer src="{{ asset('js/lucide.min.js') }}"></script>
 
     <style>
         [x-cloak] { display: none !important; }
@@ -199,9 +199,13 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
+        function runLucide() {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }
+        document.addEventListener('DOMContentLoaded', runLucide);
+        window.addEventListener('load', runLucide);
     </script>
 </body>
 </html>

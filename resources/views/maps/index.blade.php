@@ -3,6 +3,10 @@
 @section('title', 'Peta Jaringan, Server Satelit, ODP & Jalur Kabel')
 @section('header_title', 'Peta Jaringan & Infrastruktur WiFi')
 
+@push('styles')
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+@endpush
+
 @section('content')
 <style>
     /* Leaflet performance & mobile touch optimizations */
@@ -923,6 +927,7 @@
 </div>
 
 <!-- Leaflet Map Script Implementation -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     function mapApp() {
         return {

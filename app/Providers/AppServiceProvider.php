@@ -27,30 +27,55 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        // Fast In-Memory View Composer for Sidebar Badges (Prevents redundant DB queries on every page)
+        // Fast In-Memory & Session-Cached View Composer for Sidebar Badges (Eliminates DB queries on page navigation)
         View::composer('layouts.app', function ($view) {
             static $counts = null;
-            if ($counts === null) {
-                try {
-                    $nowMonth = now()->format('Y-m');
-                    $today = now()->toDateString();
-                    $invRow = Invoice::whereIn('status', ['unpaid', 'overdue'])
-                        ->selectRaw("COUNT(CASE WHEN period = ? THEN 1 END) as unpaid_month, COUNT(CASE WHEN due_date <= ? THEN 1 END) as due_count", [$nowMonth, $today])
-                        ->first();
-
-                    $counts = [
-                        'total_customers' => Customer::count(),
-                        'unpaid_month' => (int) ($invRow->unpaid_month ?? 0),
-                        'due_count' => (int) ($invRow->due_count ?? 0),
-                    ];
-                } catch (\Throwable $e) {
-                    $counts = [
-                        'total_customers' => 0,
-                        'unpaid_month' => 0,
-                        'due_count' => 0,
-                    ];
-                }
+            if ($counts !== null) {
+                $view->with('sidebarCounts', $counts);
+                return;
             }
+
+            try {
+                $cached = session('sidebar_counts');
+                $cachedTime = (int) session('sidebar_counts_time', 0);
+                if (is_array($cached) && (time() - $cachedTime) < 60) {
+                    $counts = $cached;
+                    $view->with('sidebarCounts', $counts);
+                    return;
+                }
+            } catch (\Throwable $e) {
+                // Ignore if session not active
+            }
+
+            try {
+                $nowMonth = now()->format('Y-m');
+                $today = now()->toDateString();
+                $invRow = Invoice::whereIn('status', ['unpaid', 'overdue'])
+                    ->selectRaw("COUNT(CASE WHEN period = ? THEN 1 END) as unpaid_month, COUNT(CASE WHEN due_date <= ? THEN 1 END) as due_count", [$nowMonth, $today])
+                    ->first();
+
+                $counts = [
+                    'total_customers' => Customer::count(),
+                    'unpaid_month' => (int) ($invRow->unpaid_month ?? 0),
+                    'due_count' => (int) ($invRow->due_count ?? 0),
+                ];
+
+                try {
+                    session([
+                        'sidebar_counts' => $counts,
+                        'sidebar_counts_time' => time(),
+                    ]);
+                } catch (\Throwable $e) {
+                    // Ignore session write failure
+                }
+            } catch (\Throwable $e) {
+                $counts = [
+                    'total_customers' => 0,
+                    'unpaid_month' => 0,
+                    'due_count' => 0,
+                ];
+            }
+
             $view->with('sidebarCounts', $counts);
         });
     }

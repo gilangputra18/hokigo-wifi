@@ -490,6 +490,7 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/chart.min.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // 1. Chart Tren Finansial 6 Bulan

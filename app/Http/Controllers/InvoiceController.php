@@ -370,17 +370,17 @@ class InvoiceController extends Controller
 
         $invoices = $query->orderBy('due_date', 'asc')->paginate(30)->withQueryString();
 
-        $todayCount = Invoice::whereIn('status', ['unpaid', 'overdue'])
-            ->whereDate('due_date', $now->toDateString())
-            ->count();
+        $stats = Invoice::whereIn('status', ['unpaid', 'overdue'])
+            ->selectRaw("
+                COUNT(CASE WHEN due_date = ? THEN 1 END) as today_count,
+                COUNT(CASE WHEN due_date < ? THEN 1 END) as overdue_count,
+                COUNT(CASE WHEN period = ? THEN 1 END) as all_month_count
+            ", [$now->toDateString(), $now->toDateString(), $currentPeriod])
+            ->first();
 
-        $overdueCount = Invoice::whereIn('status', ['unpaid', 'overdue'])
-            ->whereDate('due_date', '<', $now->toDateString())
-            ->count();
-
-        $allMonthCount = Invoice::whereIn('status', ['unpaid', 'overdue'])
-            ->where('period', $currentPeriod)
-            ->count();
+        $todayCount = (int) ($stats->today_count ?? 0);
+        $overdueCount = (int) ($stats->overdue_count ?? 0);
+        $allMonthCount = (int) ($stats->all_month_count ?? 0);
 
         return view('invoices.reminders', compact('invoices', 'todayCount', 'overdueCount', 'allMonthCount', 'filter', 'currentPeriod'));
     }

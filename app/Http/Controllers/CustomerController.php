@@ -21,7 +21,9 @@ class CustomerController extends Controller
             'village:id,name',
             'package:id,name,speed,price',
             'invoices' => function ($q) use ($currentPeriod) {
-                $q->where('period', $currentPeriod)->select('id', 'customer_id', 'period', 'amount', 'status');
+                $q->where('period', $currentPeriod)->select(
+                    'id', 'customer_id', 'invoice_number', 'period', 'amount', 'status', 'due_date', 'paid_at', 'payment_method'
+                );
             }
         ])->select([
             'id', 'customer_code', 'name', 'phone', 'village_id', 'package_id',
@@ -60,12 +62,18 @@ class CustomerController extends Controller
 
         if ($viewMode === 'grouped') {
             $customers = $query->orderBy('village_id')->orderBy('name')->get();
+            $customers->each(function ($c) {
+                $c->invoices->each(fn($inv) => $inv->setRelation('customer', $c));
+            });
             $groupedCustomers = $customers->groupBy(function ($item) {
                 return $item->village ? $item->village->name : 'Tanpa Desa / Luar Wilayah';
             });
             $paginatedCustomers = null;
         } else {
             $customers = $query->latest()->paginate(20)->withQueryString();
+            $customers->getCollection()->each(function ($c) {
+                $c->invoices->each(fn($inv) => $inv->setRelation('customer', $c));
+            });
             $groupedCustomers = null;
             $paginatedCustomers = $customers;
         }

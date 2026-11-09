@@ -39,18 +39,16 @@
         }
     </script>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- Alpine.js -->
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Alpine.js (Local Edge CDN Cached) -->
+    <script defer src="{{ asset('js/alpine.min.js') }}"></script>
 
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons (Local Edge CDN Cached) -->
+    <script defer src="{{ asset('js/lucide.min.js') }}"></script>
 
-    <!-- Leaflet Maps CSS & JS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Instant Page Transition Prefetcher (Instant 0ms Clicks) -->
+    <script defer src="{{ asset('js/instantpage.min.js') }}"></script>
+
+    @stack('styles')
 
     <style>
         [x-cloak] { display: none !important; }
@@ -603,9 +601,14 @@
 
     <!-- Initialize Lucide Icons -->
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-        });
+        function runLucide() {
+            if (window.lucide && typeof window.lucide.createIcons === 'function') {
+                window.lucide.createIcons();
+            }
+        }
+        document.addEventListener('DOMContentLoaded', runLucide);
+        window.addEventListener('load', runLucide);
+        window.addEventListener('pageshow', runLucide);
     </script>
 
     <!-- Instant Page Transition & Progress Bar Controller -->
