@@ -1,2 +1,12 @@
 User-agent: *
-Disallow: /
+Allow: /
+Allow: /login
+Disallow: /dashboard
+Disallow: /customers
+Disallow: /invoices
+Disallow: /finance
+Disallow: /settings
+Disallow: /backup
+Disallow: /pppoe
+Disallow: /maps
+Disallow: /vouchers

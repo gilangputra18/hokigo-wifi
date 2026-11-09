@@ -3,11 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="robots" content="index, follow">
     <meta name="author" content="Hokigo Network">
-    <meta name="description" content="Portal Internal Manajemen Layanan Hokigo WiFi">
+    <meta name="description" content="Portal Resmi Layanan Internet Hokigo WiFi. Solusi provider internet cepat, stabil, dan terjangkau untuk kebutuhan rumah dan usaha.">
     <meta name="google-site-verification" content="googlea6015a19596336f6" />
-    <title>Masuk - Hokigo WiFi Portal</title>
+    <title>Hokigo WiFi - Layanan Provider Internet Desa Cepat & Andal</title>
+    <link rel="canonical" href="https://www.hokigo.my.id/">
     <link rel="icon" type="image/png" href="{{ asset('images/logo.png') }}">
 
     <!-- Google Fonts -->
