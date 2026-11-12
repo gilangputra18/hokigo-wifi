@@ -12,16 +12,30 @@ use Illuminate\Support\Facades\Log;
 class BroadcastController extends Controller
 {
     /**
-     * Display broadcast dashboard with villages, stats, and logs.
+     * Display broadcast dashboard with villages, detailed customers, stats, and logs.
      */
     public function index()
     {
-        $villages = Village::withCount([
+        $villages = Village::with([
+            'customers' => function ($q) {
+                $q->select('id', 'name', 'customer_code', 'phone', 'village_id', 'status', 'address', 'package_id')
+                    ->with('package:id,name')
+                    ->orderBy('name');
+            }
+        ])
+        ->withCount([
             'customers',
             'customers as active_customers_count' => function ($q) {
                 $q->where('status', 'active');
             }
         ])->orderBy('name')->get();
+
+        // Check if there are any customers without village
+        $noVillageCustomers = Customer::whereNull('village_id')
+            ->select('id', 'name', 'customer_code', 'phone', 'village_id', 'status', 'address', 'package_id')
+            ->with('package:id,name')
+            ->orderBy('name')
+            ->get();
 
         $stats = [
             'total_villages' => $villages->count(),
@@ -36,6 +50,7 @@ class BroadcastController extends Controller
 
         return view('broadcast.index', compact(
             'villages',
+            'noVillageCustomers',
             'stats',
             'logs',
             'isGatewayConfigured',
@@ -44,20 +59,21 @@ class BroadcastController extends Controller
     }
 
     /**
-     * Send targeted WhatsApp broadcast to selected villages or all villages.
+     * Send targeted WhatsApp broadcast to specific customers or selected villages.
      */
     public function send(Request $request)
     {
         // 1. Validate Request
         $request->validate([
-            'target_type' => ['required', 'in:selected,all'],
-            'village_ids' => ['required_if:target_type,selected', 'array'],
+            'customer_ids' => ['required_without:village_ids', 'array'],
+            'customer_ids.*' => ['integer', 'exists:customers,id'],
+            'village_ids' => ['nullable', 'array'],
             'village_ids.*' => ['integer', 'exists:villages,id'],
-            'customer_status' => ['required', 'in:active,all'],
             'message' => ['required', 'string', 'min:5'],
             'title' => ['nullable', 'string', 'max:150'],
         ], [
-            'village_ids.required_if' => 'Silakan pilih minimal satu desa tujuan broadcast.',
+            'customer_ids.required_without' => 'Silakan pilih minimal satu orang pelanggan penerima broadcast.',
+            'customer_ids.array' => 'Daftar pelanggan tidak valid.',
             'message.required' => 'Kolom pesan WhatsApp wajib diisi.',
             'message.min' => 'Pesan minimal terdiri dari 5 karakter.',
         ]);
@@ -69,48 +85,50 @@ class BroadcastController extends Controller
             ]);
         }
 
-        // 3. Query Target Customers
-        $targetType = $request->input('target_type');
-        $customerStatus = $request->input('customer_status', 'active');
-        $villageIds = (array) $request->input('village_ids', []);
+        // 3. Determine target customer IDs
+        $customerIds = (array) $request->input('customer_ids', []);
 
-        $query = Customer::with(['village', 'package']);
-
-        if ($customerStatus === 'active') {
-            $query->where('status', 'active');
+        if (empty($customerIds) && !empty($request->input('village_ids'))) {
+            // Fallback: fetch active customers from selected villages
+            $customerIds = Customer::whereIn('village_id', $request->input('village_ids'))
+                ->when($request->input('customer_status', 'active') === 'active', fn($q) => $q->where('status', 'active'))
+                ->pluck('id')
+                ->toArray();
         }
 
-        if ($targetType === 'selected') {
-            if (empty($villageIds)) {
-                return back()->withInput()->withErrors([
-                    'village_ids' => 'Pilih minimal satu desa sasaran untuk mengirim broadcast.'
-                ]);
-            }
-            $query->whereIn('village_id', $villageIds);
-
-            // Get names of selected villages
-            $selectedVillages = Village::whereIn('id', $villageIds)->pluck('name')->toArray();
-            $villageNamesStr = implode(', ', $selectedVillages);
-        } else {
-            $totalVillagesCount = Village::count();
-            $villageNamesStr = "Semua Desa ({$totalVillagesCount} Wilayah)";
-        }
-
-        $customers = $query->get();
-
-        if ($customers->isEmpty()) {
+        if (empty($customerIds)) {
             return back()->withInput()->withErrors([
-                'customers' => 'Tidak ditemukan pelanggan pada kriteria atau desa yang Anda pilih.'
+                'customers' => 'Pilih minimal satu orang pelanggan sasaran untuk mengirim broadcast.'
             ]);
         }
 
-        // 4. Send Broadcast Loop
+        $customers = Customer::whereIn('id', $customerIds)
+            ->with(['village', 'package'])
+            ->get();
+
+        if ($customers->isEmpty()) {
+            return back()->withInput()->withErrors([
+                'customers' => 'Tidak ditemukan data pelanggan yang valid.'
+            ]);
+        }
+
+        // 4. Group village summary for logs
+        $groupedByVillage = $customers->groupBy(fn($c) => $c->village?->name ?? 'Luar Wilayah');
+        $villageSummaryParts = [];
+        foreach ($groupedByVillage as $vName => $custsInVillage) {
+            $villageSummaryParts[] = "{$vName} ({$custsInVillage->count()} org)";
+        }
+        $villageNamesStr = implode(', ', $villageSummaryParts);
+
         $rawMessage = trim($request->input('message'));
         $title = trim((string) $request->input('title'));
         if (empty($title)) {
-            $title = $targetType === 'all' ? 'Broadcast Seluruh Wilayah' : 'Broadcast ' . (count($villageIds) > 1 ? count($villageIds) . ' Desa' : ($selectedVillages[0] ?? 'Desa'));
+            $title = count($groupedByVillage) === 1
+                ? 'Broadcast ' . $groupedByVillage->keys()->first() . ' (' . $customers->count() . ' Orang)'
+                : 'Broadcast ' . count($groupedByVillage) . ' Desa (' . $customers->count() . ' Orang)';
         }
 
+        // 5. Send Broadcast Loop
         $sentCount = 0;
         $failedCount = 0;
         $failedDetails = [];
@@ -152,15 +170,15 @@ class BroadcastController extends Controller
             usleep(250000);
         }
 
-        // 5. Store Broadcast History Log
+        // 6. Store Broadcast History Log
         try {
             BroadcastLog::create([
                 'title' => $title,
                 'message' => $rawMessage,
-                'target_type' => $targetType,
+                'target_type' => 'specific_customers',
                 'village_names' => $villageNamesStr,
-                'village_ids' => $targetType === 'selected' ? json_encode($villageIds) : null,
-                'customer_status' => $customerStatus,
+                'village_ids' => json_encode($customers->pluck('village_id')->unique()->filter()->values()->toArray()),
+                'customer_status' => 'custom_selection',
                 'total_recipients' => $customers->count(),
                 'sent_count' => $sentCount,
                 'failed_count' => $failedCount,
@@ -170,9 +188,9 @@ class BroadcastController extends Controller
             Log::error('Failed to save BroadcastLog: ' . $e->getMessage());
         }
 
-        // 6. Return response
+        // 7. Return response
         if ($sentCount > 0) {
-            $statusMsg = "Siaran WhatsApp berhasil dikirim! Berhasil: {$sentCount} pelanggan di [{$villageNamesStr}].";
+            $statusMsg = "Broadcast WhatsApp berhasil diproses! Berhasil terkirim ke {$sentCount} pelanggan di [{$villageNamesStr}].";
             if ($failedCount > 0) {
                 $statusMsg .= " (Catatan: {$failedCount} nomor gagal/tidak valid).";
             }
