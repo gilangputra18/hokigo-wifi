@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\BroadcastController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinanceController;
@@ -81,6 +82,11 @@ Route::middleware('auth')->group(function () {
         Route::post('/invoices/reminders/send-batch', [InvoiceController::class, 'sendBatchViaGateway'])->name('invoices.send-batch-gateway');
         Route::get('/invoices/{invoice}/print', [InvoiceController::class, 'print'])->name('invoices.print');
         Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+
+        // Broadcast WhatsApp Berdasarkan Desa (Trouble Jaringan, Pemeliharaan, Pengumuman)
+        Route::get('/broadcast', [BroadcastController::class, 'index'])->name('broadcast.index');
+        Route::post('/broadcast/send', [BroadcastController::class, 'send'])->name('broadcast.send');
+        Route::delete('/broadcast/{log}', [BroadcastController::class, 'destroy'])->name('broadcast.destroy');
 
         // Manajemen Voucheran (Khusus Owner & Admin)
         Route::get('/vouchers', [VoucherController::class, 'index'])->name('vouchers.index');

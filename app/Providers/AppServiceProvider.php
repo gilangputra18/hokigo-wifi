@@ -40,6 +40,30 @@ class AppServiceProvider extends ServiceProvider
             }
         } catch (\Throwable $e) {}
 
+        // Auto-ensure broadcast_logs table exists (Serverless PostgreSQL Supabase)
+        try {
+            static $broadcastTableChecked = false;
+            if (!$broadcastTableChecked) {
+                $broadcastTableChecked = true;
+                if (!\Illuminate\Support\Facades\Schema::hasTable('broadcast_logs')) {
+                    \Illuminate\Support\Facades\Schema::create('broadcast_logs', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        $table->id();
+                        $table->string('title')->nullable();
+                        $table->text('message');
+                        $table->string('target_type')->default('selected');
+                        $table->string('village_names')->nullable();
+                        $table->text('village_ids')->nullable();
+                        $table->string('customer_status')->default('active');
+                        $table->integer('total_recipients')->default(0);
+                        $table->integer('sent_count')->default(0);
+                        $table->integer('failed_count')->default(0);
+                        $table->unsignedBigInteger('created_by')->nullable();
+                        $table->timestamps();
+                    });
+                }
+            }
+        } catch (\Throwable $e) {}
+
         // Fast In-Memory & Session-Cached View Composer for Sidebar Badges (Eliminates DB queries on page navigation)
         View::composer('layouts.app', function ($view) {
             static $counts = null;
