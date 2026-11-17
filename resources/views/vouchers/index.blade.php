@@ -314,17 +314,17 @@
                                                 </td>
 
                                                 <!-- Diberikan (Pcs) -->
-                                                <td class="py-3.5 px-4 text-center align-top min-w-[130px]">
+                                                <td class="py-3.5 px-4 text-center align-top min-w-[140px]">
                                                     <span class="inline-block font-bold text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-xl mb-1.5">
                                                         {{ number_format($sData['given']) }} pcs
                                                     </span>
 
                                                     @if(!empty($sData['types_breakdown']) && $sData['given'] > 0)
-                                                        <div class="flex flex-col gap-1 items-stretch max-w-[180px] mx-auto text-[11px]">
+                                                        <div class="flex flex-col gap-1 items-stretch max-w-[210px] mx-auto text-[11px]">
                                                             @foreach($sData['types_breakdown'] as $t)
                                                                 @if($t['given'] > 0)
                                                                     <div class="inline-flex items-center justify-between px-2 py-0.5 rounded-lg bg-slate-100/90 border border-slate-200 text-slate-800 font-mono text-[10px]">
-                                                                        <span class="font-bold truncate mr-1.5 text-slate-600">{{ $t['voucher_type'] }}:</span>
+                                                                        <span class="font-bold truncate mr-1.5 text-slate-600">{{ $t['display_name'] ?? $t['voucher_type'] }}:</span>
                                                                         <strong class="font-bold text-slate-900 shrink-0">{{ number_format($t['given']) }} pcs</strong>
                                                                     </div>
                                                                 @endif
@@ -334,17 +334,17 @@
                                                 </td>
 
                                                 <!-- Terjual / Habis (Pcs) -->
-                                                <td class="py-3.5 px-4 text-center align-top min-w-[140px]">
+                                                <td class="py-3.5 px-4 text-center align-top min-w-[150px]">
                                                     <span class="inline-block font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100 shadow-2xs mb-1.5">
                                                         {{ number_format($sData['sold']) }} pcs
                                                     </span>
 
                                                     @if(!empty($sData['types_breakdown']))
-                                                        <div class="flex flex-col gap-1 items-stretch max-w-[190px] mx-auto text-[11px]">
+                                                        <div class="flex flex-col gap-1 items-stretch max-w-[210px] mx-auto text-[11px]">
                                                             @foreach($sData['types_breakdown'] as $t)
                                                                 @if($t['sold'] > 0)
                                                                     <div class="inline-flex items-center justify-between px-2 py-0.5 rounded-lg bg-emerald-50/90 border border-emerald-200/70 text-emerald-950 font-mono text-[10px] shadow-2xs">
-                                                                        <span class="font-bold truncate mr-1.5 text-slate-700">{{ $t['voucher_type'] }}:</span>
+                                                                        <span class="font-bold truncate mr-1.5 text-slate-700">{{ $t['display_name'] ?? $t['voucher_type'] }}:</span>
                                                                         <strong class="font-extrabold text-emerald-700 shrink-0">{{ number_format($t['sold']) }} pcs</strong>
                                                                     </div>
                                                                 @endif
@@ -354,17 +354,17 @@
                                                 </td>
 
                                                 <!-- Sisa di Tangan (Pcs) -->
-                                                <td class="py-3.5 px-4 text-center align-top min-w-[130px]">
+                                                <td class="py-3.5 px-4 text-center align-top min-w-[140px]">
                                                     <span class="inline-block font-black text-xs px-2.5 py-1 rounded-xl mb-1.5 {{ $sData['remaining'] > 0 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-400' }}">
                                                         {{ number_format($sData['remaining']) }} pcs
                                                     </span>
 
                                                     @if(!empty($sData['types_breakdown']) && $sData['given'] > 0)
-                                                        <div class="flex flex-col gap-1 items-stretch max-w-[180px] mx-auto text-[11px]">
+                                                        <div class="flex flex-col gap-1 items-stretch max-w-[210px] mx-auto text-[11px]">
                                                             @foreach($sData['types_breakdown'] as $t)
                                                                 @if($t['remaining'] > 0)
                                                                     <div class="inline-flex items-center justify-between px-2 py-0.5 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-950 font-mono text-[10px]">
-                                                                        <span class="font-bold truncate mr-1.5 text-amber-900">{{ $t['voucher_type'] }}:</span>
+                                                                        <span class="font-bold truncate mr-1.5 text-amber-900">{{ $t['display_name'] ?? $t['voucher_type'] }}:</span>
                                                                         <strong class="font-extrabold text-amber-800 shrink-0">{{ number_format($t['remaining']) }} pcs</strong>
                                                                     </div>
                                                                 @endif
@@ -374,12 +374,22 @@
                                                 </td>
 
                                                 <!-- Progress Bar -->
-                                                <td class="py-3.5 px-4 min-w-[130px]">
-                                                    <div class="flex items-center gap-2">
-                                                        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                                                            <div class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: {{ $sData['percentage'] }}%"></div>
+                                                <td class="py-3.5 px-4 min-w-[140px]">
+                                                    <div class="space-y-1">
+                                                        <div class="flex items-center justify-between text-[10px] font-mono">
+                                                            <span class="font-bold {{ $sData['percentage'] >= 100 ? 'text-emerald-700' : 'text-indigo-700' }}">
+                                                                {{ $sData['percentage'] }}%
+                                                                @if($sData['percentage'] >= 100 && $sData['remaining'] == 0 && ($sData['given'] > 0 || $sData['sold'] > 0))
+                                                                    <span class="text-emerald-600 font-extrabold">(Habis)</span>
+                                                                @endif
+                                                            </span>
+                                                            @if($sData['remaining'] > 0)
+                                                                <span class="text-amber-700 font-bold text-[9px]">Sisa {{ number_format($sData['remaining']) }} pcs</span>
+                                                            @endif
                                                         </div>
-                                                        <span class="text-[10px] font-bold text-slate-600 font-mono shrink-0">{{ $sData['percentage'] }}%</span>
+                                                        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                                            <div class="{{ $sData['percentage'] >= 100 ? 'bg-emerald-500' : 'bg-indigo-600' }} h-2 rounded-full transition-all duration-300" style="width: {{ $sData['percentage'] }}%"></div>
+                                                        </div>
                                                     </div>
                                                 </td>
 
@@ -601,13 +611,27 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tipe / Masa Aktif Voucher *</label>
-                        <input type="text" name="voucher_type" value="Voucher Rp 5.000" required 
+                        <input type="text" name="voucher_type" x-model="stockForm.voucher_type" required 
                                class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Harga Jual per Pcs (Rp) *</label>
-                        <input type="number" name="price_per_unit" value="5000" required min="0" 
+                        <input type="number" name="price_per_unit" x-model.number="stockForm.price_per_unit" required min="0" 
                                class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-amber-500/30 focus:border-amber-500">
+                    </div>
+                </div>
+
+                <!-- Pilihan Cepat Paket Voucher -->
+                <div class="bg-amber-50/60 p-2.5 rounded-xl border border-amber-200/70">
+                    <label class="block text-[11px] font-bold text-amber-900 mb-1.5">Pilihan Cepat Paket Voucher:</label>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <template x-for="p in presets" :key="p.type">
+                            <button type="button" @click="applyStockPreset(p)"
+                                    :class="stockForm.voucher_type === p.type ? 'bg-amber-600 text-white font-bold border-amber-600 shadow-xs' : 'bg-white hover:bg-amber-100 text-slate-700 border-amber-200'"
+                                    class="px-2 py-1 rounded-lg border text-[11px] transition">
+                                <span x-text="p.label"></span>
+                            </button>
+                        </template>
                     </div>
                 </div>
 
@@ -698,13 +722,27 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Voucher *</label>
-                        <input type="text" name="voucher_type" value="Voucher Rp 5.000" required 
+                        <input type="text" name="voucher_type" x-model="allocForm.voucher_type" required 
                                class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Harga Jual (Rp) *</label>
-                        <input type="number" name="price_per_unit" value="5000" required min="0" 
+                        <input type="number" name="price_per_unit" x-model.number="allocForm.price_per_unit" required min="0" 
                                class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500">
+                    </div>
+                </div>
+
+                <!-- Pilihan Cepat Paket Voucher -->
+                <div class="bg-indigo-50/60 p-2.5 rounded-xl border border-indigo-200/70">
+                    <label class="block text-[11px] font-bold text-indigo-900 mb-1.5">Pilihan Cepat Paket Voucher:</label>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <template x-for="p in presets" :key="p.type">
+                            <button type="button" @click="applyAllocPreset(p)"
+                                    :class="allocForm.voucher_type === p.type ? 'bg-indigo-600 text-white font-bold border-indigo-600 shadow-xs' : 'bg-white hover:bg-indigo-100 text-slate-700 border-indigo-200'"
+                                    class="px-2 py-1 rounded-lg border text-[11px] transition">
+                                <span x-text="p.label"></span>
+                            </button>
+                        </template>
                     </div>
                 </div>
 
@@ -855,7 +893,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tipe / Masa Aktif Voucher *</label>
-                        <input type="text" name="voucher_type" x-model="saleForm.voucher_type" placeholder="Contoh: Voucher Rp 5.000 / 3 Jam / 24 Jam" required
+                        <input type="text" name="voucher_type" x-model="saleForm.voucher_type" placeholder="Contoh: 3 jam / 24 jam" required
                                class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
                     </div>
 
@@ -863,6 +901,20 @@
                         <label class="block text-xs font-bold text-slate-700 mb-1">Harga Jual per Pcs (Rp) *</label>
                         <input type="number" name="price_per_unit" x-model.number="price" required min="0" placeholder="5000"
                                class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- Pilihan Cepat Paket Voucher -->
+                <div class="bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-200/70">
+                    <label class="block text-[11px] font-bold text-emerald-900 mb-1.5">Pilihan Cepat Paket Voucher:</label>
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <template x-for="p in presets" :key="p.type">
+                            <button type="button" @click="applySalePreset(p)"
+                                    :class="saleForm.voucher_type === p.type ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-xs' : 'bg-white hover:bg-emerald-100 text-slate-700 border-emerald-200'"
+                                    class="px-2 py-1 rounded-lg border text-[11px] transition">
+                                <span x-text="p.label"></span>
+                            </button>
+                        </template>
                     </div>
                 </div>
 
@@ -950,14 +1002,27 @@ function vouchersPage() {
         modalAllocOpen: false,
         modalSellerOpen: false,
 
+        presets: [
+            { type: '3 jam', price: 5000, label: '3 Jam (Rp 5rb)' },
+            { type: '12 jam', price: 10000, label: '12 Jam (Rp 10rb)' },
+            { type: '24 jam', price: 15000, label: '24 Jam (Rp 15rb)' },
+            { type: '1 minggu', price: 35000, label: '1 Minggu (Rp 35rb)' },
+            { type: '1 bulan', price: 100000, label: '1 Bulan (Rp 100rb)' },
+            { type: 'Akun 2 Hp', price: 300000, label: 'Akun 2 Hp (Rp 300rb)' },
+        ],
+
         stockForm: {
             village_id: '',
+            voucher_type: '3 jam',
+            price_per_unit: 5000,
         },
 
         allocForm: {
             village_id: '',
             seller_id: '',
             seller_name: '',
+            voucher_type: '3 jam',
+            price_per_unit: 5000,
             new_seller: false,
             new_seller_name: '',
         },
@@ -970,11 +1035,23 @@ function vouchersPage() {
             village_id: '',
             seller_id: '',
             seller_name: '',
-            voucher_type: 'Voucher Rp 5.000',
+            voucher_type: '3 jam',
+        },
+
+        applyStockPreset(p) {
+            this.stockForm.voucher_type = p.type;
+            this.stockForm.price_per_unit = p.price;
+        },
+
+        applyAllocPreset(p) {
+            this.allocForm.voucher_type = p.type;
+            this.allocForm.price_per_unit = p.price;
         },
 
         openStockModal(villageId = '') {
             this.stockForm.village_id = villageId || '';
+            this.stockForm.voucher_type = '3 jam';
+            this.stockForm.price_per_unit = 5000;
             this.modalStockOpen = true;
         },
 
@@ -982,6 +1059,8 @@ function vouchersPage() {
             this.allocForm.village_id = villageId || '';
             this.allocForm.seller_id = sellerId || '';
             this.allocForm.seller_name = sellerName || '';
+            this.allocForm.voucher_type = '3 jam';
+            this.allocForm.price_per_unit = 5000;
             this.allocForm.new_seller = false;
             this.modalAllocOpen = true;
         },
@@ -995,6 +1074,7 @@ function vouchersPage() {
             this.saleForm.village_id = villageId || '';
             this.saleForm.seller_id = sellerId || '';
             this.saleForm.seller_name = sellerName || '';
+            this.saleForm.voucher_type = '3 jam';
             this.modalSaleOpen = true;
         }
     };
@@ -1005,6 +1085,11 @@ function saleCalculator() {
         price: 5000,
         qty: 100,
         feePerUnit: 1000,
+
+        applySalePreset(p) {
+            this.price = p.price;
+            this.saleForm.voucher_type = p.type;
+        },
 
         get grossAmount() {
             return (this.price || 0) * (this.qty || 0);

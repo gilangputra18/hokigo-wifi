@@ -82,8 +82,34 @@ class VoucherController extends Controller
                     ->where('period', $currentPeriod)
                     ->get();
 
-                $sold = max($soldFromAlloc, (int) $sellerSales->sum('quantity_sold'));
-                $remainingInHand = max(0, $given - $sold);
+                $totalSalesQty = (int) $sellerSales->sum('quantity_sold');
+                $sold = max($soldFromAlloc, $totalSalesQty);
+
+                // Sisa di tangan: Akurat dihitung dari sisa alokasi yang dipegang penjual
+                $remainingInHand = (int) $allocations->sum(function ($a) {
+                    return max(0, $a->quantity_given - $a->quantity_sold);
+                });
+
+                // Perhitungan progress habis:
+                // Jika penjual memegang alokasi baru, hitung progress terhadap stok aktif yang belum selesai
+                // agar jika sudah habis 100% lalu diberikan stok baru, progress TIDAK nyangkut di 100% dari riwayat lama
+                if ($allocations->isNotEmpty()) {
+                    $activeAllocs = $allocations->filter(function ($a) {
+                        return $a->quantity_sold < $a->quantity_given;
+                    });
+
+                    if ($activeAllocs->isNotEmpty()) {
+                        $activeGiven = (int) $activeAllocs->sum('quantity_given');
+                        $activeSold = (int) $activeAllocs->sum('quantity_sold');
+                        $percentage = $activeGiven > 0 ? min(100, round(($activeSold / $activeGiven) * 100)) : 0;
+                    } else {
+                        // Semua alokasi yang diberikan telah lunas terjual 100%
+                        $percentage = 100;
+                    }
+                } else {
+                    // Belum ada alokasi resmi (data penjualan historis langsung)
+                    $percentage = $sold > 0 ? 100 : 0;
+                }
 
                 $gross = (float) $sellerSales->sum('total_gross_amount');
                 $fee = (float) $sellerSales->sum('total_seller_fee');
@@ -112,13 +138,34 @@ class VoucherController extends Controller
                     $tSoldAlloc = (int) $typeAlloc->sum('quantity_sold');
                     $tSoldSales = (int) $typeSales->sum('quantity_sold');
                     $tSold = max($tSoldAlloc, $tSoldSales);
-                    $tRemaining = max(0, $tGiven - $tSold);
+
+                    // Sisa per tipe di tangan penjual
+                    $tRemaining = (int) $typeAlloc->sum(function ($a) {
+                        return max(0, $a->quantity_given - $a->quantity_sold);
+                    });
+
                     $tGross = (float) $typeSales->sum('total_gross_amount');
                     $tFee = (float) $typeSales->sum('total_seller_fee');
                     $tNet = (float) $typeSales->sum('net_amount');
 
+                    $unitPrice = $typeSales->first()?->price_per_unit 
+                        ?? $typeAlloc->first()?->price_per_unit 
+                        ?? 0;
+
+                    // Buat nama tampilan lengkap (misal: "3 jam (Rp 5.000)")
+                    $displayName = $vType;
+                    if ($unitPrice > 0) {
+                        $priceFormatted = 'Rp ' . number_format($unitPrice, 0, ',', '.');
+                        $hasRp = stripos($vType, 'rp') !== false || stripos($vType, number_format($unitPrice, 0, ',', '.')) !== false;
+                        if (!$hasRp) {
+                            $displayName = "{$vType} ({$priceFormatted})";
+                        }
+                    }
+
                     $typesBreakdown[] = [
                         'voucher_type' => $vType,
+                        'display_name' => $displayName,
+                        'unit_price' => $unitPrice,
                         'given' => $tGiven,
                         'sold' => $tSold,
                         'remaining' => $tRemaining,
@@ -141,10 +188,12 @@ class VoucherController extends Controller
                     'fee' => $fee,
                     'net' => $net,
                     'sales_count' => $sellerSales->count(),
-                    'percentage' => $given > 0 ? min(100, round(($sold / $given) * 100)) : ($sold > 0 ? 100 : 0),
+                    'percentage' => $percentage,
                     'types_breakdown' => $typesBreakdown,
                 ];
             }
+
+            $villageTotalRemaining = (int) collect($sellersData)->sum('remaining');
 
             $villageMonitoring[] = [
                 'village' => $v,
@@ -154,7 +203,7 @@ class VoucherController extends Controller
                 'remaining_central' => $remainingCentralStock,
                 'total_given' => $villageTotalGiven,
                 'total_sold' => $villageTotalSold,
-                'remaining_field' => max(0, $villageTotalGiven - $villageTotalSold),
+                'remaining_field' => $villageTotalRemaining,
                 'total_gross' => $villageTotalGross,
                 'total_fee' => $villageTotalFee,
                 'total_net' => $villageTotalNet,
@@ -465,20 +514,53 @@ class VoucherController extends Controller
             $sellerId = $seller->id;
         }
 
-        // Deduct from seller's allocation if exists
+        // Deduct from seller's active allocation if exists
         $allocationId = null;
         $remainingInHand = null;
 
         if ($sellerId) {
-            $allocation = VoucherAllocation::where('voucher_seller_id', $sellerId)
+            // Find active allocations where quantity_sold < quantity_given
+            $activeAllocQuery = VoucherAllocation::where('voucher_seller_id', $sellerId)
                 ->where('period', $validated['period'])
+                ->whereColumn('quantity_sold', '<', 'quantity_given');
+
+            // Prefer allocation with matching voucher_type
+            $allocation = (clone $activeAllocQuery)
+                ->where('voucher_type', $validated['voucher_type'])
                 ->orderBy('id', 'asc')
                 ->first();
 
+            // If not found by exact type, find any active allocation
+            if (!$allocation) {
+                $allocation = $activeAllocQuery->orderBy('id', 'asc')->first();
+            }
+
             if ($allocation) {
-                $allocation->increment('quantity_sold', $qty);
                 $allocationId = $allocation->id;
+                $available = max(0, $allocation->quantity_given - $allocation->quantity_sold);
+                $toDeduct = min($qty, $available);
+                $allocation->increment('quantity_sold', $toDeduct);
+
                 $remainingInHand = max(0, $allocation->quantity_given - $allocation->quantity_sold);
+
+                // If sale quantity exceeded this allocation's remaining, cascade to next active allocation
+                $remainingToDeduct = $qty - $toDeduct;
+                if ($remainingToDeduct > 0) {
+                    $otherAllocs = VoucherAllocation::where('voucher_seller_id', $sellerId)
+                        ->where('period', $validated['period'])
+                        ->where('id', '!=', $allocation->id)
+                        ->whereColumn('quantity_sold', '<', 'quantity_given')
+                        ->orderBy('id', 'asc')
+                        ->get();
+
+                    foreach ($otherAllocs as $other) {
+                        if ($remainingToDeduct <= 0) break;
+                        $otherAvail = max(0, $other->quantity_given - $other->quantity_sold);
+                        $d = min($remainingToDeduct, $otherAvail);
+                        $other->increment('quantity_sold', $d);
+                        $remainingToDeduct -= $d;
+                    }
+                }
             }
         }
 
