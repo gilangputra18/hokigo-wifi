@@ -110,6 +110,7 @@ class AppServiceProvider extends ServiceProvider
                         $table->unsignedBigInteger('voucher_stock_id')->nullable();
                         $table->string('period', 7);
                         $table->string('voucher_type')->default('Voucher Rp 5.000');
+                        $table->string('allocation_type', 20)->default('initial'); // 'initial' (stok awal/lama) atau 'additional' (stok tambahan)
                         $table->decimal('price_per_unit', 12, 2)->default(5000);
                         $table->unsignedInteger('quantity_given')->default(0);
                         $table->unsignedInteger('quantity_sold')->default(0);
@@ -118,6 +119,12 @@ class AppServiceProvider extends ServiceProvider
                         $table->unsignedBigInteger('created_by')->nullable();
                         $table->timestamps();
                     });
+                } else {
+                    if (!\Illuminate\Support\Facades\Schema::hasColumn('voucher_allocations', 'allocation_type')) {
+                        \Illuminate\Support\Facades\Schema::table('voucher_allocations', function (\Illuminate\Database\Schema\Blueprint $table) {
+                            $table->string('allocation_type', 20)->default('initial')->after('voucher_type');
+                        });
+                    }
                 }
 
                 // 4. Add columns to voucher_sales if not present

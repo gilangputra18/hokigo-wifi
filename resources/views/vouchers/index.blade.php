@@ -314,18 +314,39 @@
                                                 </td>
 
                                                 <!-- Diberikan (Pcs) -->
-                                                <td class="py-3.5 px-4 text-center align-top min-w-[140px]">
-                                                    <span class="inline-block font-bold text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-xl mb-1.5">
-                                                        {{ number_format($sData['given']) }} pcs
-                                                    </span>
+                                                <td class="py-3.5 px-4 text-center align-top min-w-[155px]">
+                                                    <div class="inline-flex flex-col items-center mb-1.5">
+                                                        <span class="inline-block font-black text-slate-800 text-xs bg-slate-100 px-3 py-1 rounded-xl shadow-2xs">
+                                                            Total: {{ number_format($sData['given']) }} pcs
+                                                        </span>
+                                                        @if($sData['given'] > 0)
+                                                            <div class="flex items-center justify-center gap-1 mt-1 text-[10px] font-mono">
+                                                                <span class="px-1.5 py-0.5 rounded bg-slate-200/90 text-slate-700 font-bold" title="Stok Awal / Stok Lama yang sudah ada">
+                                                                    Lama: {{ number_format($sData['given_initial']) }}
+                                                                </span>
+                                                                <span class="px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 font-bold" title="Voucher Tambahan">
+                                                                    +Tambahan: {{ number_format($sData['given_additional']) }}
+                                                                </span>
+                                                            </div>
+                                                        @endif
+                                                    </div>
 
                                                     @if(!empty($sData['types_breakdown']) && $sData['given'] > 0)
-                                                        <div class="flex flex-col gap-1 items-stretch max-w-[210px] mx-auto text-[11px]">
+                                                        <div class="flex flex-col gap-1 items-stretch max-w-[220px] mx-auto text-[11px]">
                                                             @foreach($sData['types_breakdown'] as $t)
                                                                 @if($t['given'] > 0)
-                                                                    <div class="inline-flex items-center justify-between px-2 py-0.5 rounded-lg bg-slate-100/90 border border-slate-200 text-slate-800 font-mono text-[10px]">
-                                                                        <span class="font-bold truncate mr-1.5 text-slate-600">{{ $t['display_name'] ?? $t['voucher_type'] }}:</span>
-                                                                        <strong class="font-bold text-slate-900 shrink-0">{{ number_format($t['given']) }} pcs</strong>
+                                                                    <div class="px-2 py-1 rounded-lg bg-slate-100/90 border border-slate-200 text-slate-800 font-mono text-[10px] space-y-0.5">
+                                                                        <div class="flex items-center justify-between">
+                                                                            <span class="font-bold truncate mr-1.5 text-slate-600">{{ $t['display_name'] ?? $t['voucher_type'] }}:</span>
+                                                                            <strong class="font-bold text-slate-900 shrink-0">{{ number_format($t['given']) }} pcs</strong>
+                                                                        </div>
+                                                                        @if($t['given_additional'] > 0 || $t['given_initial'] > 0)
+                                                                            <div class="flex items-center justify-end gap-1.5 text-[9px] text-slate-500">
+                                                                                <span>Lama: {{ number_format($t['given_initial']) }}</span>
+                                                                                <span>&bull;</span>
+                                                                                <span class="text-blue-700 font-bold">+Tambahan: {{ number_format($t['given_additional']) }}</span>
+                                                                            </div>
+                                                                        @endif
                                                                     </div>
                                                                 @endif
                                                             @endforeach
@@ -354,18 +375,39 @@
                                                 </td>
 
                                                 <!-- Sisa di Tangan (Pcs) -->
-                                                <td class="py-3.5 px-4 text-center align-top min-w-[140px]">
-                                                    <span class="inline-block font-black text-xs px-2.5 py-1 rounded-xl mb-1.5 {{ $sData['remaining'] > 0 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-400' }}">
-                                                        {{ number_format($sData['remaining']) }} pcs
-                                                    </span>
+                                                <td class="py-3.5 px-4 text-center align-top min-w-[155px]">
+                                                    <div class="inline-flex flex-col items-center mb-1.5">
+                                                        <span class="inline-block font-black text-xs px-3 py-1 rounded-xl {{ $sData['remaining'] > 0 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-400' }}">
+                                                            Total: {{ number_format($sData['remaining']) }} pcs
+                                                        </span>
+                                                        @if($sData['remaining'] > 0)
+                                                            <div class="flex items-center justify-center gap-1 mt-1 text-[10px] font-mono">
+                                                                <span class="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200/80 text-amber-900 font-bold" title="Sisa Stok Lama">
+                                                                    Lama: {{ number_format($sData['remaining_initial']) }}
+                                                                </span>
+                                                                <span class="px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200/80 text-blue-900 font-bold" title="Sisa Voucher Tambahan">
+                                                                    Tambahan: {{ number_format($sData['remaining_additional']) }}
+                                                                </span>
+                                                            </div>
+                                                        @endif
+                                                    </div>
 
                                                     @if(!empty($sData['types_breakdown']) && $sData['given'] > 0)
-                                                        <div class="flex flex-col gap-1 items-stretch max-w-[210px] mx-auto text-[11px]">
+                                                        <div class="flex flex-col gap-1 items-stretch max-w-[220px] mx-auto text-[11px]">
                                                             @foreach($sData['types_breakdown'] as $t)
                                                                 @if($t['remaining'] > 0)
-                                                                    <div class="inline-flex items-center justify-between px-2 py-0.5 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-950 font-mono text-[10px]">
-                                                                        <span class="font-bold truncate mr-1.5 text-amber-900">{{ $t['display_name'] ?? $t['voucher_type'] }}:</span>
-                                                                        <strong class="font-extrabold text-amber-800 shrink-0">{{ number_format($t['remaining']) }} pcs</strong>
+                                                                    <div class="px-2 py-1 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-950 font-mono text-[10px] space-y-0.5">
+                                                                        <div class="flex items-center justify-between">
+                                                                            <span class="font-bold truncate mr-1.5 text-amber-900">{{ $t['display_name'] ?? $t['voucher_type'] }}:</span>
+                                                                            <strong class="font-extrabold text-amber-800 shrink-0">{{ number_format($t['remaining']) }} pcs</strong>
+                                                                        </div>
+                                                                        @if($t['remaining_additional'] > 0 || $t['remaining_initial'] > 0)
+                                                                            <div class="flex items-center justify-end gap-1.5 text-[9px] text-amber-800">
+                                                                                <span>Lama: {{ number_format($t['remaining_initial']) }}</span>
+                                                                                <span>&bull;</span>
+                                                                                <span class="text-blue-700 font-bold">Tambahan: {{ number_format($t['remaining_additional']) }}</span>
+                                                                            </div>
+                                                                        @endif
                                                                     </div>
                                                                 @endif
                                                             @endforeach
@@ -719,6 +761,29 @@
                     </div>
                 </div>
 
+                <!-- Jenis Pembagian: Stok Awal / Lama vs Voucher Tambahan -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">Kategori / Jenis Jatah *</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <label class="flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer text-xs transition"
+                               :class="allocForm.allocation_type === 'initial' ? 'border-indigo-600 bg-indigo-50/80 text-indigo-900 font-bold shadow-2xs' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
+                            <input type="radio" name="allocation_type" value="initial" x-model="allocForm.allocation_type" class="mt-0.5 text-indigo-600 focus:ring-indigo-500">
+                            <div>
+                                <span class="block font-bold">Stok Awal / Lama</span>
+                                <span class="block text-[10px] text-slate-400 font-normal">Sudah terlanjur diberikan / stok awal</span>
+                            </div>
+                        </label>
+                        <label class="flex items-start gap-2 p-2.5 rounded-xl border cursor-pointer text-xs transition"
+                               :class="allocForm.allocation_type === 'additional' ? 'border-blue-600 bg-blue-50/80 text-blue-900 font-bold shadow-2xs' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'">
+                            <input type="radio" name="allocation_type" value="additional" x-model="allocForm.allocation_type" class="mt-0.5 text-blue-600 focus:ring-blue-500">
+                            <div>
+                                <span class="block font-bold">Voucher Tambahan</span>
+                                <span class="block text-[10px] text-slate-400 font-normal">Drop tambahan berjalan</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Tipe Voucher *</label>
@@ -1006,8 +1071,8 @@ function vouchersPage() {
             { type: '3 jam', price: 5000, label: '3 Jam (Rp 5rb)' },
             { type: '12 jam', price: 10000, label: '12 Jam (Rp 10rb)' },
             { type: '24 jam', price: 15000, label: '24 Jam (Rp 15rb)' },
-            { type: '1 minggu', price: 35000, label: '1 Minggu (Rp 35rb)' },
-            { type: '1 bulan', price: 100000, label: '1 Bulan (Rp 100rb)' },
+            { type: '1 minggu', price: 50000, label: '1 Minggu (Rp 50rb)' },
+            { type: '1 bulan', price: 200000, label: '1 Bulan (Rp 200rb)' },
             { type: 'Akun 2 Hp', price: 300000, label: 'Akun 2 Hp (Rp 300rb)' },
         ],
 
@@ -1022,6 +1087,7 @@ function vouchersPage() {
             seller_id: '',
             seller_name: '',
             voucher_type: '3 jam',
+            allocation_type: 'initial',
             price_per_unit: 5000,
             new_seller: false,
             new_seller_name: '',
@@ -1055,11 +1121,12 @@ function vouchersPage() {
             this.modalStockOpen = true;
         },
 
-        openAllocModal(villageId = '', sellerId = '', sellerName = '') {
+        openAllocModal(villageId = '', sellerId = '', sellerName = '', defaultType = 'initial') {
             this.allocForm.village_id = villageId || '';
             this.allocForm.seller_id = sellerId || '';
             this.allocForm.seller_name = sellerName || '';
             this.allocForm.voucher_type = '3 jam';
+            this.allocForm.allocation_type = defaultType || 'initial';
             this.allocForm.price_per_unit = 5000;
             this.allocForm.new_seller = false;
             this.modalAllocOpen = true;

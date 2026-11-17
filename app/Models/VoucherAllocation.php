@@ -17,6 +17,7 @@ class VoucherAllocation extends Model
         'voucher_stock_id',
         'period',
         'voucher_type',
+        'allocation_type',
         'price_per_unit',
         'quantity_given',
         'quantity_sold',

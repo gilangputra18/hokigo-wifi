@@ -18,6 +18,7 @@ return new class extends Migration
                 $table->foreignId('village_id')->constrained('villages')->cascadeOnDelete();
                 $table->string('period', 7); // Format: YYYY-MM
                 $table->string('voucher_type')->default('Voucher Rp 5.000');
+                $table->string('allocation_type', 20)->default('initial'); // 'initial' (stok awal/lama) atau 'additional' (stok tambahan)
                 $table->decimal('price_per_unit', 12, 2)->default(5000);
                 $table->unsignedInteger('initial_stock')->default(0); // Misal 500 pcs
                 $table->unsignedInteger('allocated_stock')->default(0); // Pcs yang sudah dibagikan ke penjual
@@ -51,6 +52,7 @@ return new class extends Migration
                 $table->foreignId('voucher_stock_id')->nullable()->constrained('voucher_stocks')->nullOnDelete();
                 $table->string('period', 7); // Format: YYYY-MM
                 $table->string('voucher_type')->default('Voucher Rp 5.000');
+                $table->string('allocation_type', 20)->default('initial'); // 'initial' (stok awal/lama) atau 'additional' (stok tambahan)
                 $table->decimal('price_per_unit', 12, 2)->default(5000);
                 $table->unsignedInteger('quantity_given')->default(0); // Misal 150 pcs
                 $table->unsignedInteger('quantity_sold')->default(0); // Terjual & kepotong
