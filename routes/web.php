@@ -93,6 +93,12 @@ Route::middleware('auth')->group(function () {
         Route::post('/vouchers', [VoucherController::class, 'store'])->name('vouchers.store');
         Route::post('/vouchers/{voucher}/mark-deposited', [VoucherController::class, 'markDeposited'])->name('vouchers.mark-deposited');
         Route::delete('/vouchers/{voucher}', [VoucherController::class, 'destroy'])->name('vouchers.destroy');
+        Route::post('/vouchers/stocks', [VoucherController::class, 'storeStock'])->name('vouchers.stocks.store');
+        Route::delete('/vouchers/stocks/{stock}', [VoucherController::class, 'destroyStock'])->name('vouchers.stocks.destroy');
+        Route::post('/vouchers/sellers', [VoucherController::class, 'storeSeller'])->name('vouchers.sellers.store');
+        Route::delete('/vouchers/sellers/{seller}', [VoucherController::class, 'destroySeller'])->name('vouchers.sellers.destroy');
+        Route::post('/vouchers/allocations', [VoucherController::class, 'storeAllocation'])->name('vouchers.allocations.store');
+        Route::delete('/vouchers/allocations/{allocation}', [VoucherController::class, 'destroyAllocation'])->name('vouchers.allocations.destroy');
 
         // Keuangan (Finance: Omzet, Pengeluaran, Laba Bersih)
         Route::get('/finance', [FinanceController::class, 'index'])->name('finance.index');

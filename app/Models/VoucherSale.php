@@ -12,6 +12,8 @@ class VoucherSale extends Model
 
     protected $fillable = [
         'village_id',
+        'voucher_seller_id',
+        'voucher_allocation_id',
         'seller_name',
         'seller_phone',
         'period',
@@ -43,6 +45,16 @@ class VoucherSale extends Model
     public function village(): BelongsTo
     {
         return $this->belongsTo(Village::class);
+    }
+
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(VoucherSeller::class, 'voucher_seller_id');
+    }
+
+    public function allocation(): BelongsTo
+    {
+        return $this->belongsTo(VoucherAllocation::class, 'voucher_allocation_id');
     }
 
     public function creator(): BelongsTo

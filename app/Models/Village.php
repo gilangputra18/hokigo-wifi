@@ -37,6 +37,21 @@ class Village extends Model
         return $this->hasMany(VoucherSale::class);
     }
 
+    public function voucherStocks(): HasMany
+    {
+        return $this->hasMany(VoucherStock::class);
+    }
+
+    public function voucherSellers(): HasMany
+    {
+        return $this->hasMany(VoucherSeller::class);
+    }
+
+    public function voucherAllocations(): HasMany
+    {
+        return $this->hasMany(VoucherAllocation::class);
+    }
+
     public function networkNodes(): HasMany
     {
         return $this->hasMany(NetworkNode::class);

@@ -64,6 +64,84 @@ class AppServiceProvider extends ServiceProvider
             }
         } catch (\Throwable $e) {}
 
+        // Auto-ensure voucher inventory & distribution tables exist (Serverless PostgreSQL Supabase)
+        try {
+            static $voucherTablesChecked = false;
+            if (!$voucherTablesChecked) {
+                $voucherTablesChecked = true;
+
+                // 1. voucher_stocks
+                if (!\Illuminate\Support\Facades\Schema::hasTable('voucher_stocks')) {
+                    \Illuminate\Support\Facades\Schema::create('voucher_stocks', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        $table->id();
+                        $table->unsignedBigInteger('village_id');
+                        $table->string('period', 7);
+                        $table->string('voucher_type')->default('Voucher Rp 5.000');
+                        $table->decimal('price_per_unit', 12, 2)->default(5000);
+                        $table->unsignedInteger('initial_stock')->default(0);
+                        $table->unsignedInteger('allocated_stock')->default(0);
+                        $table->text('notes')->nullable();
+                        $table->unsignedBigInteger('created_by')->nullable();
+                        $table->timestamps();
+                    });
+                }
+
+                // 2. voucher_sellers
+                if (!\Illuminate\Support\Facades\Schema::hasTable('voucher_sellers')) {
+                    \Illuminate\Support\Facades\Schema::create('voucher_sellers', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        $table->id();
+                        $table->unsignedBigInteger('village_id');
+                        $table->string('name');
+                        $table->string('phone', 25)->nullable();
+                        $table->string('address')->nullable();
+                        $table->decimal('default_fee_per_unit', 12, 2)->default(1000);
+                        $table->boolean('is_active')->default(true);
+                        $table->unsignedBigInteger('created_by')->nullable();
+                        $table->timestamps();
+                    });
+                }
+
+                // 3. voucher_allocations
+                if (!\Illuminate\Support\Facades\Schema::hasTable('voucher_allocations')) {
+                    \Illuminate\Support\Facades\Schema::create('voucher_allocations', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        $table->id();
+                        $table->unsignedBigInteger('village_id');
+                        $table->unsignedBigInteger('voucher_seller_id');
+                        $table->unsignedBigInteger('voucher_stock_id')->nullable();
+                        $table->string('period', 7);
+                        $table->string('voucher_type')->default('Voucher Rp 5.000');
+                        $table->decimal('price_per_unit', 12, 2)->default(5000);
+                        $table->unsignedInteger('quantity_given')->default(0);
+                        $table->unsignedInteger('quantity_sold')->default(0);
+                        $table->date('allocation_date')->nullable();
+                        $table->text('notes')->nullable();
+                        $table->unsignedBigInteger('created_by')->nullable();
+                        $table->timestamps();
+                    });
+                }
+
+                // 4. Add columns to voucher_sales if not present
+                if (\Illuminate\Support\Facades\Schema::hasTable('voucher_sales')) {
+                    \Illuminate\Support\Facades\Schema::table('voucher_sales', function (\Illuminate\Database\Schema\Blueprint $table) {
+                        if (!\Illuminate\Support\Facades\Schema::hasColumn('voucher_sales', 'voucher_seller_id')) {
+                            $table->unsignedBigInteger('voucher_seller_id')->nullable()->after('seller_phone');
+                        }
+                        if (!\Illuminate\Support\Facades\Schema::hasColumn('voucher_sales', 'voucher_allocation_id')) {
+                            $table->unsignedBigInteger('voucher_allocation_id')->nullable()->after('voucher_seller_id');
+                        }
+                    });
+                }
+
+                // Ensure Hampul can sell vouchers (set to hybrid if pppoe)
+                try {
+                    \Illuminate\Support\Facades\DB::table('villages')
+                        ->where('name', 'Hampul')
+                        ->where('system_type', 'pppoe')
+                        ->update(['system_type' => 'hybrid']);
+                } catch (\Throwable $e) {}
+            }
+        } catch (\Throwable $e) {}
+
         // Fast In-Memory & Session-Cached View Composer for Sidebar Badges (Eliminates DB queries on page navigation)
         View::composer('layouts.app', function ($view) {
             static $counts = null;

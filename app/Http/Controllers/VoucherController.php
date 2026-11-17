@@ -4,19 +4,128 @@ namespace App\Http\Controllers;
 
 use App\Models\FinancialTransaction;
 use App\Models\Village;
+use App\Models\VoucherAllocation;
 use App\Models\VoucherSale;
+use App\Models\VoucherSeller;
+use App\Models\VoucherStock;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class VoucherController extends Controller
 {
+    /**
+     * Display voucher dashboard, central village stocks, seller distribution, and sales records.
+     */
     public function index(Request $request)
     {
         $currentPeriod = $request->get('period', Carbon::now()->format('Y-m'));
         $villageId = $request->get('village_id');
         $status = $request->get('status');
 
-        $query = VoucherSale::with(['village', 'creator'])
+        // Auto-seed existing sellers from historical voucher_sales if not yet created
+        $this->syncHistoricalSellers();
+
+        // 1. Voucher-enabled Villages (voucher or hybrid)
+        $villages = Village::orderBy('name')->get();
+        $voucherVillages = Village::whereIn('system_type', ['voucher', 'hybrid'])
+            ->orWhere('name', 'Hampul')
+            ->orderBy('name')
+            ->get();
+
+        // If a specific village is filtered, narrow down
+        $activeVillagesForMonitoring = $villageId 
+            ? $voucherVillages->where('id', $villageId) 
+            : $voucherVillages;
+
+        // 2. Prepare Detailed Village Voucher Inventory & Seller Tracking for the selected Period
+        $villageMonitoring = [];
+        foreach ($activeVillagesForMonitoring as $v) {
+            // Central stocks dropped to this village in this period
+            $stocks = VoucherStock::where('village_id', $v->id)
+                ->where('period', $currentPeriod)
+                ->get();
+
+            $totalCentralStock = (int) $stocks->sum('initial_stock');
+            $totalAllocatedStock = (int) $stocks->sum('allocated_stock');
+            $remainingCentralStock = max(0, $totalCentralStock - $totalAllocatedStock);
+
+            // Sellers registered in this village
+            $sellers = VoucherSeller::where('village_id', $v->id)
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get();
+
+            $sellersData = [];
+            $villageTotalGiven = 0;
+            $villageTotalSold = 0;
+            $villageTotalGross = 0;
+            $villageTotalFee = 0;
+            $villageTotalNet = 0;
+
+            foreach ($sellers as $s) {
+                // Allocations for this seller in this period
+                $allocations = VoucherAllocation::where('voucher_seller_id', $s->id)
+                    ->where('period', $currentPeriod)
+                    ->get();
+
+                $given = (int) $allocations->sum('quantity_given');
+                $soldFromAlloc = (int) $allocations->sum('quantity_sold');
+
+                // Sales records for this seller in this period
+                $sellerSales = VoucherSale::where(function ($q) use ($s, $v) {
+                        $q->where('voucher_seller_id', $s->id)
+                          ->orWhere(function ($q2) use ($s, $v) {
+                              $q2->where('village_id', $v->id)
+                                 ->where('seller_name', $s->name);
+                          });
+                    })
+                    ->where('period', $currentPeriod)
+                    ->get();
+
+                $sold = max($soldFromAlloc, (int) $sellerSales->sum('quantity_sold'));
+                $remainingInHand = max(0, $given - $sold);
+
+                $gross = (float) $sellerSales->sum('total_gross_amount');
+                $fee = (float) $sellerSales->sum('total_seller_fee');
+                $net = (float) $sellerSales->sum('net_amount');
+
+                $villageTotalGiven += $given;
+                $villageTotalSold += $sold;
+                $villageTotalGross += $gross;
+                $villageTotalFee += $fee;
+                $villageTotalNet += $net;
+
+                $sellersData[] = [
+                    'seller' => $s,
+                    'given' => $given,
+                    'sold' => $sold,
+                    'remaining' => $remainingInHand,
+                    'gross' => $gross,
+                    'fee' => $fee,
+                    'net' => $net,
+                    'sales_count' => $sellerSales->count(),
+                    'percentage' => $given > 0 ? min(100, round(($sold / $given) * 100)) : ($sold > 0 ? 100 : 0),
+                ];
+            }
+
+            $villageMonitoring[] = [
+                'village' => $v,
+                'stocks' => $stocks,
+                'total_central' => $totalCentralStock,
+                'total_allocated' => $totalAllocatedStock,
+                'remaining_central' => $remainingCentralStock,
+                'total_given' => $villageTotalGiven,
+                'total_sold' => $villageTotalSold,
+                'remaining_field' => max(0, $villageTotalGiven - $villageTotalSold),
+                'total_gross' => $villageTotalGross,
+                'total_fee' => $villageTotalFee,
+                'total_net' => $villageTotalNet,
+                'sellers' => $sellersData,
+            ];
+        }
+
+        // 3. Voucher Sales Table Query
+        $query = VoucherSale::with(['village', 'seller', 'creator'])
             ->where('period', $currentPeriod);
 
         if ($villageId) {
@@ -29,7 +138,7 @@ class VoucherController extends Controller
 
         $sales = $query->orderBy('id', 'desc')->paginate(25)->withQueryString();
 
-        // Calculate period statistics
+        // 4. Period Statistics
         $statsQuery = VoucherSale::where('period', $currentPeriod);
         if ($villageId) {
             $statsQuery->where('village_id', $villageId);
@@ -43,6 +152,21 @@ class VoucherController extends Controller
             COALESCE(SUM(CASE WHEN status = 'pending' THEN net_amount ELSE 0 END), 0) as total_pending
         ")->first();
 
+        // Overall Central Drop & Allocation Totals for Period
+        $periodStockTotals = VoucherStock::where('period', $currentPeriod)
+            ->when($villageId, fn($q) => $q->where('village_id', $villageId))
+            ->selectRaw("
+                COALESCE(SUM(initial_stock), 0) as total_drop,
+                COALESCE(SUM(allocated_stock), 0) as total_allocated
+            ")->first();
+
+        $periodAllocationTotals = VoucherAllocation::where('period', $currentPeriod)
+            ->when($villageId, fn($q) => $q->where('village_id', $villageId))
+            ->selectRaw("
+                COALESCE(SUM(quantity_given), 0) as total_given,
+                COALESCE(SUM(quantity_sold), 0) as total_sold
+            ")->first();
+
         // Grand Total Sepanjang Waktu
         $allTimeStats = VoucherSale::selectRaw("
             COALESCE(SUM(quantity_sold), 0) as total_sold,
@@ -52,16 +176,212 @@ class VoucherController extends Controller
             COALESCE(SUM(CASE WHEN status = 'pending' THEN net_amount ELSE 0 END), 0) as total_pending
         ")->first();
 
-        // Villages that have voucher enabled (voucher or hybrid)
-        $villages = Village::orderBy('name')->get();
-
-        return view('vouchers.index', compact('sales', 'stats', 'allTimeStats', 'villages', 'currentPeriod', 'villageId', 'status'));
+        return view('vouchers.index', compact(
+            'sales',
+            'stats',
+            'allTimeStats',
+            'villages',
+            'voucherVillages',
+            'villageMonitoring',
+            'periodStockTotals',
+            'periodAllocationTotals',
+            'currentPeriod',
+            'villageId',
+            'status'
+        ));
     }
 
+    /**
+     * Store Central Stock Drop for a Village (e.g. 500 pcs voucher 5000 ke Desa Hampul).
+     */
+    public function storeStock(Request $request)
+    {
+        $validated = $request->validate([
+            'village_id' => ['required', 'exists:villages,id'],
+            'period' => ['required', 'string', 'max:7'],
+            'voucher_type' => ['required', 'string', 'max:100'],
+            'price_per_unit' => ['required', 'numeric', 'min:0'],
+            'initial_stock' => ['required', 'integer', 'min:1'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $village = Village::findOrFail($validated['village_id']);
+
+        $stock = VoucherStock::create([
+            'village_id' => $validated['village_id'],
+            'period' => $validated['period'],
+            'voucher_type' => $validated['voucher_type'],
+            'price_per_unit' => $validated['price_per_unit'],
+            'initial_stock' => $validated['initial_stock'],
+            'allocated_stock' => 0,
+            'notes' => $validated['notes'] ?? null,
+            'created_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', "Stok sentral sebanyak {$stock->initial_stock} pcs ({$stock->voucher_type}) berhasil di-drop ke {$village->name} untuk periode {$stock->period}!");
+    }
+
+    /**
+     * Destroy a Central Stock Drop.
+     */
+    public function destroyStock(VoucherStock $stock)
+    {
+        if ($stock->allocated_stock > 0) {
+            return back()->withErrors(['error' => "Stok sentral ini tidak dapat dihapus karena sudah dibagikan sebanyak {$stock->allocated_stock} pcs ke penjual."]);
+        }
+
+        $villageName = $stock->village?->name ?? 'Desa';
+        $stock->delete();
+
+        return back()->with('success', "Catatan stok sentral {$villageName} berhasil dihapus.");
+    }
+
+    /**
+     * Store a new Voucher Seller / Reseller for a Village.
+     */
+    public function storeSeller(Request $request)
+    {
+        $validated = $request->validate([
+            'village_id' => ['required', 'exists:villages,id'],
+            'name' => ['required', 'string', 'max:150'],
+            'phone' => ['nullable', 'string', 'max:25'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'default_fee_per_unit' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $village = Village::findOrFail($validated['village_id']);
+
+        $seller = VoucherSeller::firstOrCreate(
+            [
+                'village_id' => $validated['village_id'],
+                'name' => trim($validated['name']),
+            ],
+            [
+                'phone' => $validated['phone'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'default_fee_per_unit' => $validated['default_fee_per_unit'] ?? 1000,
+                'is_active' => true,
+                'created_by' => auth()->id(),
+            ]
+        );
+
+        return back()->with('success', "Mitra penjual {$seller->name} di {$village->name} berhasil disimpan!");
+    }
+
+    /**
+     * Destroy a Voucher Seller.
+     */
+    public function destroySeller(VoucherSeller $seller)
+    {
+        $name = $seller->name;
+        $seller->delete();
+
+        return back()->with('success', "Mitra penjual {$name} berhasil dihapus.");
+    }
+
+    /**
+     * Distribute stock from central village to a specific seller (e.g. Si A dikasih 150 pcs).
+     */
+    public function storeAllocation(Request $request)
+    {
+        $validated = $request->validate([
+            'village_id' => ['required', 'exists:villages,id'],
+            'voucher_seller_id' => ['required_without:new_seller_name', 'nullable', 'exists:voucher_sellers,id'],
+            'new_seller_name' => ['nullable', 'string', 'max:150'],
+            'period' => ['required', 'string', 'max:7'],
+            'voucher_stock_id' => ['nullable', 'exists:voucher_stocks,id'],
+            'voucher_type' => ['required', 'string', 'max:100'],
+            'price_per_unit' => ['required', 'numeric', 'min:0'],
+            'quantity_given' => ['required', 'integer', 'min:1'],
+            'allocation_date' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $village = Village::findOrFail($validated['village_id']);
+        $qtyGiven = (int) $validated['quantity_given'];
+
+        // If new seller name is provided, create it on the fly
+        if (!empty($validated['new_seller_name'])) {
+            $seller = VoucherSeller::firstOrCreate(
+                [
+                    'village_id' => $village->id,
+                    'name' => trim($validated['new_seller_name']),
+                ],
+                [
+                    'default_fee_per_unit' => 1000,
+                    'is_active' => true,
+                    'created_by' => auth()->id(),
+                ]
+            );
+            $sellerId = $seller->id;
+            $sellerName = $seller->name;
+        } else {
+            $seller = VoucherSeller::findOrFail($validated['voucher_seller_id']);
+            $sellerId = $seller->id;
+            $sellerName = $seller->name;
+        }
+
+        // Link with central stock if available
+        $stockId = $validated['voucher_stock_id'] ?? null;
+        if (!$stockId) {
+            $stock = VoucherStock::where('village_id', $village->id)
+                ->where('period', $validated['period'])
+                ->where('voucher_type', $validated['voucher_type'])
+                ->first();
+            $stockId = $stock?->id;
+        } else {
+            $stock = VoucherStock::find($stockId);
+        }
+
+        if ($stock) {
+            $stock->increment('allocated_stock', $qtyGiven);
+        }
+
+        $allocation = VoucherAllocation::create([
+            'village_id' => $village->id,
+            'voucher_seller_id' => $sellerId,
+            'voucher_stock_id' => $stockId,
+            'period' => $validated['period'],
+            'voucher_type' => $validated['voucher_type'],
+            'price_per_unit' => $validated['price_per_unit'],
+            'quantity_given' => $qtyGiven,
+            'quantity_sold' => 0,
+            'allocation_date' => $validated['allocation_date'] ?? Carbon::now()->toDateString(),
+            'notes' => $validated['notes'] ?? null,
+            'created_by' => auth()->id(),
+        ]);
+
+        return back()->with('success', "Berhasil membagikan {$qtyGiven} pcs voucher ({$allocation->voucher_type}) kepada {$sellerName} di {$village->name}!");
+    }
+
+    /**
+     * Destroy a stock allocation to seller and return the stock back to central.
+     */
+    public function destroyAllocation(VoucherAllocation $allocation)
+    {
+        if ($allocation->quantity_sold > 0) {
+            return back()->withErrors(['error' => "Pembagian voucher ini tidak dapat dihapus karena sudah ada {$allocation->quantity_sold} pcs yang terjual."]);
+        }
+
+        if ($allocation->stock) {
+            $allocation->stock->decrement('allocated_stock', $allocation->quantity_given);
+        }
+
+        $sellerName = $allocation->seller?->name ?? 'Penjual';
+        $qty = $allocation->quantity_given;
+        $allocation->delete();
+
+        return back()->with('success', "Pembagian {$qty} pcs voucher kepada {$sellerName} dibatalkan & dikembalikan ke stok sentral.");
+    }
+
+    /**
+     * Store a voucher sales record (Laporan Penjualan Voucher & Potong Stok).
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'village_id' => ['nullable', 'exists:villages,id'],
+            'voucher_seller_id' => ['nullable', 'exists:voucher_sellers,id'],
             'seller_name' => ['required', 'string', 'max:150'],
             'seller_phone' => ['nullable', 'string', 'max:25'],
             'period' => ['required', 'string', 'max:7'],
@@ -89,8 +409,45 @@ class VoucherController extends Controller
 
         $netAmount = max(0, $totalGross - $totalFee);
 
+        // Resolve or create seller
+        $sellerId = $validated['voucher_seller_id'] ?? null;
+        if (!$sellerId && !empty($validated['village_id']) && !empty($validated['seller_name'])) {
+            $seller = VoucherSeller::firstOrCreate(
+                [
+                    'village_id' => $validated['village_id'],
+                    'name' => trim($validated['seller_name']),
+                ],
+                [
+                    'phone' => $validated['seller_phone'] ?? null,
+                    'default_fee_per_unit' => $feePerUnit > 0 ? $feePerUnit : 1000,
+                    'is_active' => true,
+                    'created_by' => auth()->id(),
+                ]
+            );
+            $sellerId = $seller->id;
+        }
+
+        // Deduct from seller's allocation if exists
+        $allocationId = null;
+        $remainingInHand = null;
+
+        if ($sellerId) {
+            $allocation = VoucherAllocation::where('voucher_seller_id', $sellerId)
+                ->where('period', $validated['period'])
+                ->orderBy('id', 'asc')
+                ->first();
+
+            if ($allocation) {
+                $allocation->increment('quantity_sold', $qty);
+                $allocationId = $allocation->id;
+                $remainingInHand = max(0, $allocation->quantity_given - $allocation->quantity_sold);
+            }
+        }
+
         $sale = VoucherSale::create([
             'village_id' => $validated['village_id'] ?? null,
+            'voucher_seller_id' => $sellerId,
+            'voucher_allocation_id' => $allocationId,
             'seller_name' => $validated['seller_name'],
             'seller_phone' => $validated['seller_phone'] ?? null,
             'period' => $validated['period'],
@@ -123,7 +480,8 @@ class VoucherController extends Controller
             ]);
         }
 
-        return back()->with('success', "Rekap penjualan voucher {$sale->seller_name} berhasil dicatat! Laba Bersih: Rp " . number_format($netAmount, 0, ',', '.'));
+        $stockInfo = $remainingInHand !== null ? " (Sisa stok di tangan penjual: {$remainingInHand} pcs)" : "";
+        return back()->with('success', "Rekap penjualan {$qty} pcs voucher {$sale->seller_name} berhasil dicatat! Laba Bersih: Rp " . number_format($netAmount, 0, ',', '.') . $stockInfo);
     }
 
     public function markDeposited(VoucherSale $voucher)
@@ -158,8 +516,43 @@ class VoucherController extends Controller
     public function destroy(VoucherSale $voucher)
     {
         $seller = $voucher->seller_name;
+        $qty = $voucher->quantity_sold;
+
+        // Restore allocation if linked
+        if ($voucher->voucher_allocation_id && $voucher->allocation) {
+            $voucher->allocation->decrement('quantity_sold', min($qty, $voucher->allocation->quantity_sold));
+        }
+
         $voucher->delete();
 
-        return back()->with('success', "Data penjualan voucher {$seller} berhasil dihapus.");
+        return back()->with('success', "Data penjualan voucher {$seller} ({$qty} pcs) berhasil dihapus & stok dikembalikan.");
+    }
+
+    /**
+     * Helper to sync existing distinct sellers from voucher_sales table.
+     */
+    protected function syncHistoricalSellers(): void
+    {
+        try {
+            $historical = VoucherSale::whereNotNull('village_id')
+                ->whereNotNull('seller_name')
+                ->select('village_id', 'seller_name', 'seller_phone')
+                ->distinct()
+                ->get();
+
+            foreach ($historical as $h) {
+                VoucherSeller::firstOrCreate(
+                    [
+                        'village_id' => $h->village_id,
+                        'name' => trim($h->seller_name),
+                    ],
+                    [
+                        'phone' => $h->seller_phone,
+                        'default_fee_per_unit' => 1000,
+                        'is_active' => true,
+                    ]
+                );
+            }
+        } catch (\Throwable $e) {}
     }
 }
