@@ -314,24 +314,63 @@
                                                 </td>
 
                                                 <!-- Diberikan (Pcs) -->
-                                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                                                    <span class="font-bold text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-xl">
+                                                <td class="py-3.5 px-4 text-center align-top min-w-[130px]">
+                                                    <span class="inline-block font-bold text-slate-800 text-xs bg-slate-100 px-2.5 py-1 rounded-xl mb-1.5">
                                                         {{ number_format($sData['given']) }} pcs
                                                     </span>
+
+                                                    @if(!empty($sData['types_breakdown']) && $sData['given'] > 0)
+                                                        <div class="flex flex-col gap-1 items-stretch max-w-[180px] mx-auto text-[11px]">
+                                                            @foreach($sData['types_breakdown'] as $t)
+                                                                @if($t['given'] > 0)
+                                                                    <div class="inline-flex items-center justify-between px-2 py-0.5 rounded-lg bg-slate-100/90 border border-slate-200 text-slate-800 font-mono text-[10px]">
+                                                                        <span class="font-bold truncate mr-1.5 text-slate-600">{{ $t['voucher_type'] }}:</span>
+                                                                        <strong class="font-bold text-slate-900 shrink-0">{{ number_format($t['given']) }} pcs</strong>
+                                                                    </div>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 </td>
 
-                                                <!-- Terjual (Pcs) -->
-                                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                                                    <span class="font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100">
+                                                <!-- Terjual / Habis (Pcs) -->
+                                                <td class="py-3.5 px-4 text-center align-top min-w-[140px]">
+                                                    <span class="inline-block font-extrabold text-emerald-700 text-xs bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-100 shadow-2xs mb-1.5">
                                                         {{ number_format($sData['sold']) }} pcs
                                                     </span>
+
+                                                    @if(!empty($sData['types_breakdown']))
+                                                        <div class="flex flex-col gap-1 items-stretch max-w-[190px] mx-auto text-[11px]">
+                                                            @foreach($sData['types_breakdown'] as $t)
+                                                                @if($t['sold'] > 0)
+                                                                    <div class="inline-flex items-center justify-between px-2 py-0.5 rounded-lg bg-emerald-50/90 border border-emerald-200/70 text-emerald-950 font-mono text-[10px] shadow-2xs">
+                                                                        <span class="font-bold truncate mr-1.5 text-slate-700">{{ $t['voucher_type'] }}:</span>
+                                                                        <strong class="font-extrabold text-emerald-700 shrink-0">{{ number_format($t['sold']) }} pcs</strong>
+                                                                    </div>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 </td>
 
                                                 <!-- Sisa di Tangan (Pcs) -->
-                                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
-                                                    <span class="font-black text-xs px-2.5 py-1 rounded-xl {{ $sData['remaining'] > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-400' }}">
+                                                <td class="py-3.5 px-4 text-center align-top min-w-[130px]">
+                                                    <span class="inline-block font-black text-xs px-2.5 py-1 rounded-xl mb-1.5 {{ $sData['remaining'] > 0 ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-400' }}">
                                                         {{ number_format($sData['remaining']) }} pcs
                                                     </span>
+
+                                                    @if(!empty($sData['types_breakdown']) && $sData['given'] > 0)
+                                                        <div class="flex flex-col gap-1 items-stretch max-w-[180px] mx-auto text-[11px]">
+                                                            @foreach($sData['types_breakdown'] as $t)
+                                                                @if($t['remaining'] > 0)
+                                                                    <div class="inline-flex items-center justify-between px-2 py-0.5 rounded-lg bg-amber-50/90 border border-amber-200/80 text-amber-950 font-mono text-[10px]">
+                                                                        <span class="font-bold truncate mr-1.5 text-amber-900">{{ $t['voucher_type'] }}:</span>
+                                                                        <strong class="font-extrabold text-amber-800 shrink-0">{{ number_format($t['remaining']) }} pcs</strong>
+                                                                    </div>
+                                                                @endif
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
                                                 </td>
 
                                                 <!-- Progress Bar -->

@@ -95,6 +95,43 @@ class VoucherController extends Controller
                 $villageTotalFee += $fee;
                 $villageTotalNet += $net;
 
+                // Breakdown per specific voucher type (e.g. 3 jam, 12 jam, 24 jam)
+                $sellerVoucherTypes = collect()
+                    ->merge($allocations->pluck('voucher_type'))
+                    ->merge($sellerSales->pluck('voucher_type'))
+                    ->unique()
+                    ->filter()
+                    ->values();
+
+                $typesBreakdown = [];
+                foreach ($sellerVoucherTypes as $vType) {
+                    $typeAlloc = $allocations->where('voucher_type', $vType);
+                    $typeSales = $sellerSales->where('voucher_type', $vType);
+
+                    $tGiven = (int) $typeAlloc->sum('quantity_given');
+                    $tSoldAlloc = (int) $typeAlloc->sum('quantity_sold');
+                    $tSoldSales = (int) $typeSales->sum('quantity_sold');
+                    $tSold = max($tSoldAlloc, $tSoldSales);
+                    $tRemaining = max(0, $tGiven - $tSold);
+                    $tGross = (float) $typeSales->sum('total_gross_amount');
+                    $tFee = (float) $typeSales->sum('total_seller_fee');
+                    $tNet = (float) $typeSales->sum('net_amount');
+
+                    $typesBreakdown[] = [
+                        'voucher_type' => $vType,
+                        'given' => $tGiven,
+                        'sold' => $tSold,
+                        'remaining' => $tRemaining,
+                        'gross' => $tGross,
+                        'fee' => $tFee,
+                        'net' => $tNet,
+                    ];
+                }
+
+                usort($typesBreakdown, function ($a, $b) {
+                    return $b['sold'] <=> $a['sold'];
+                });
+
                 $sellersData[] = [
                     'seller' => $s,
                     'given' => $given,
@@ -105,6 +142,7 @@ class VoucherController extends Controller
                     'net' => $net,
                     'sales_count' => $sellerSales->count(),
                     'percentage' => $given > 0 ? min(100, round(($sold / $given) * 100)) : ($sold > 0 ? 100 : 0),
+                    'types_breakdown' => $typesBreakdown,
                 ];
             }
 
