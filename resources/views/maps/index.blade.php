@@ -37,6 +37,22 @@
     .leaflet-tile {
         will-change: transform, opacity;
     }
+    /* Mode Penarikan Jalur Kabel: Nonaktifkan semua interaksi pada SEMUA marker, jalur kabel, dan popup agar bisa klik mepet & snap */
+    .mode-drawing-cable .leaflet-marker-pane,
+    .mode-drawing-cable .leaflet-marker-pane *,
+    .mode-drawing-cable .leaflet-overlay-pane,
+    .mode-drawing-cable .leaflet-overlay-pane *,
+    .mode-drawing-cable .leaflet-popup-pane,
+    .mode-drawing-cable .leaflet-popup-pane *,
+    .mode-drawing-cable .leaflet-tooltip-pane,
+    .mode-drawing-cable .leaflet-tooltip-pane * {
+        pointer-events: none !important;
+    }
+    .mode-drawing-cable,
+    .mode-drawing-cable .leaflet-grab,
+    .mode-drawing-cable .leaflet-interactive {
+        cursor: crosshair !important;
+    }
 </style>
 
 <div class="space-y-4" x-data="mapApp()">
@@ -332,7 +348,14 @@
                 </div>
 
                 <div class="p-2.5 bg-emerald-50 rounded-xl border border-emerald-200/80 flex items-center justify-between text-xs font-bold text-emerald-900">
-                    <div>Titik Tiang: <span class="text-emerald-700" x-text="cablePoints.length"></span></div>
+                    <div class="flex items-center gap-2">
+                        <span>Titik Tiang: <span class="text-emerald-700" x-text="cablePoints.length"></span></span>
+                        <button type="button" @click="undoLastCablePoint()" x-show="cablePoints.length > 0"
+                                class="px-2 py-0.5 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-[10px] font-bold transition flex items-center gap-1"
+                                title="Hapus titik terakhir">
+                            <span>↩️ Urungkan Titik</span>
+                        </button>
+                    </div>
                     <div>Estimasi Panjang: <span class="text-emerald-700 font-mono" x-text="newCableLengthMeters + ' m'"></span></div>
                 </div>
 
@@ -418,7 +441,7 @@
             </div>
 
             <!-- Leaflet Map Canvas -->
-            <div id="map" class="w-full h-[520px] sm:h-[650px] z-0"></div>
+            <div id="map" :class="{ 'mode-drawing-cable': drawingCable }" class="w-full h-[520px] sm:h-[650px] z-0"></div>
 
             <!-- Map Legend Footer -->
             <div class="p-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-[11px] text-slate-500">
@@ -1426,10 +1449,14 @@
                 this.cablePoints = [];
                 this.newCableLengthMeters = 0;
                 this.clearTempCable();
+                if (this.map) this.map.closePopup();
                 this._setMarkersInteractive(false);
                 
                 const mapEl = document.getElementById('map');
-                if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if (mapEl) {
+                    mapEl.classList.add('mode-drawing-cable');
+                    mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
             },
 
             cancelCableDrawing() {
@@ -1438,31 +1465,18 @@
                 this.newCableLengthMeters = 0;
                 this.clearTempCable();
                 this._setMarkersInteractive(true);
+
+                const mapEl = document.getElementById('map');
+                if (mapEl) {
+                    mapEl.classList.remove('mode-drawing-cable');
+                }
             },
 
             // Aktifkan / nonaktifkan interaksi marker saat mode tarik kabel
             _setMarkersInteractive(active) {
-                const toggleLayer = (layer) => {
-                    if (!layer) return;
-                    layer.eachLayer(m => {
-                        const el = m.getElement ? m.getElement() : (m._icon || null);
-                        if (el) {
-                            el.style.pointerEvents = active ? 'auto' : 'none';
-                        }
-                        // CircleMarker (SVG) — ubah style interaktivitas
-                        if (m._path) {
-                            m._path.style.pointerEvents = active ? 'auto' : 'none';
-                        }
-                        // Nonaktifkan / aktifkan event Leaflet
-                        if (active) {
-                            if (m._leaflet_events_saved) {
-                                m.on(m._leaflet_events_saved);
-                                delete m._leaflet_events_saved;
-                            }
-                        }
-                    });
-                };
-                // Nonaktifkan klik pada semua marker & node di peta
+                if (!active && this.map) {
+                    this.map.closePopup();
+                }
                 const disableClicks = (layer) => {
                     if (!layer) return;
                     layer.eachLayer(m => {
@@ -1485,16 +1499,76 @@
                 this.tempPointMarkers = [];
             },
 
+            undoLastCablePoint() {
+                if (this.cablePoints.length === 0) return;
+                this.cablePoints.pop();
+                const lastMarker = this.tempPointMarkers.pop();
+                if (lastMarker) this.map.removeLayer(lastMarker);
+
+                if (this.tempPolyline) {
+                    if (this.cablePoints.length > 0) {
+                        this.tempPolyline.setLatLngs(this.cablePoints);
+                    } else {
+                        this.map.removeLayer(this.tempPolyline);
+                        this.tempPolyline = null;
+                    }
+                }
+                this.newCableLengthMeters = this.calculateDistance(this.cablePoints);
+            },
+
+            // Toleransi snap otomatis jika klik di atas atau sangat dekat dengan Server, ODP, atau Rumah
+            findNearbySnapPoint(latlng) {
+                if (!this.map) return latlng;
+                const clickPoint = this.map.latLngToContainerPoint(latlng);
+                const SNAP_DISTANCE_PX = 28;
+
+                let closestPoint = null;
+                let minDistance = Infinity;
+
+                // 1. Cek Server & ODP
+                if (this.networkNodesData) {
+                    for (const node of this.networkNodesData) {
+                        if (!node.latitude || !node.longitude) continue;
+                        const nodeLatLng = L.latLng(parseFloat(node.latitude), parseFloat(node.longitude));
+                        const nodePoint = this.map.latLngToContainerPoint(nodeLatLng);
+                        const dist = clickPoint.distanceTo(nodePoint);
+                        if (dist <= SNAP_DISTANCE_PX && dist < minDistance) {
+                            minDistance = dist;
+                            closestPoint = nodeLatLng;
+                        }
+                    }
+                }
+
+                // 2. Cek Rumah Pelanggan
+                if (this.pinnedList) {
+                    for (const cust of this.pinnedList) {
+                        if (!cust.latitude || !cust.longitude) continue;
+                        const custLatLng = L.latLng(parseFloat(cust.latitude), parseFloat(cust.longitude));
+                        const custPoint = this.map.latLngToContainerPoint(custLatLng);
+                        const dist = clickPoint.distanceTo(custPoint);
+                        if (dist <= SNAP_DISTANCE_PX && dist < minDistance) {
+                            minDistance = dist;
+                            closestPoint = custLatLng;
+                        }
+                    }
+                }
+
+                return closestPoint || latlng;
+            },
+
             handleCablePointClick(latlng) {
-                this.cablePoints.push([latlng.lat, latlng.lng]);
+                // Auto-snap ke titik ODP / Server / Pelanggan jika klik pas di atasnya
+                const finalLatLng = this.findNearbySnapPoint(latlng);
+                this.cablePoints.push([finalLatLng.lat, finalLatLng.lng]);
                 
                 // Waypoint circle
-                const dot = L.circleMarker(latlng, {
+                const dot = L.circleMarker(finalLatLng, {
                     radius: 5,
                     color: '#ffffff',
                     fillColor: this.newCableColor || '#10b981',
                     fillOpacity: 1,
-                    weight: 2
+                    weight: 2,
+                    interactive: false
                 }).addTo(this.map);
                 this.tempPointMarkers.push(dot);
 
@@ -1506,7 +1580,8 @@
                         color: this.newCableColor || '#10b981',
                         weight: 4.5,
                         opacity: 0.9,
-                        dashArray: '6, 6'
+                        dashArray: '6, 6',
+                        interactive: false
                     }).addTo(this.map);
                 }
 
@@ -1613,7 +1688,8 @@
                         weight: 4.5,
                         opacity: 0.95,
                         lineJoin: 'round',
-                        smoothFactor: 1
+                        smoothFactor: 1,
+                        interactive: !this.drawingCable
                     });
 
                     const villageName = cable.village ? cable.village.name : 'Semua Wilayah';
@@ -1671,7 +1747,7 @@
                 }
 
                 const html = `
-                    <div style="position: relative; display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+                    <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
                         <div style="background-color: ${bgColor}; border: 2.5px solid ${borderColor}; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4); font-size: 15px; color: white;">
                             ${iconChar}
                         </div>
@@ -1780,7 +1856,8 @@
                     if (isNaN(lat) || isNaN(lng)) return;
 
                     const marker = L.marker([lat, lng], {
-                        icon: this.createNodeIcon(node)
+                        icon: this.createNodeIcon(node),
+                        interactive: !this.drawingCable
                     });
 
                     const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
@@ -1875,7 +1952,7 @@
                 }
 
                 const html = `
-                    <div style="position: relative; display: flex; flex-direction: column; align-items: center; pointer-events: auto;">
+                    <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
                         <div style="background-color: ${bgColor}; border: 2.5px solid #ffffff; width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.35); font-size: 14px; color: white;">
                             ${iconSymbol}
                         </div>
