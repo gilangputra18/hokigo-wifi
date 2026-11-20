@@ -1426,6 +1426,7 @@
                 this.cablePoints = [];
                 this.newCableLengthMeters = 0;
                 this.clearTempCable();
+                this._setMarkersInteractive(false);
                 
                 const mapEl = document.getElementById('map');
                 if (mapEl) mapEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1436,6 +1437,43 @@
                 this.cablePoints = [];
                 this.newCableLengthMeters = 0;
                 this.clearTempCable();
+                this._setMarkersInteractive(true);
+            },
+
+            // Aktifkan / nonaktifkan interaksi marker saat mode tarik kabel
+            _setMarkersInteractive(active) {
+                const toggleLayer = (layer) => {
+                    if (!layer) return;
+                    layer.eachLayer(m => {
+                        const el = m.getElement ? m.getElement() : (m._icon || null);
+                        if (el) {
+                            el.style.pointerEvents = active ? 'auto' : 'none';
+                        }
+                        // CircleMarker (SVG) — ubah style interaktivitas
+                        if (m._path) {
+                            m._path.style.pointerEvents = active ? 'auto' : 'none';
+                        }
+                        // Nonaktifkan / aktifkan event Leaflet
+                        if (active) {
+                            if (m._leaflet_events_saved) {
+                                m.on(m._leaflet_events_saved);
+                                delete m._leaflet_events_saved;
+                            }
+                        }
+                    });
+                };
+                // Nonaktifkan klik pada semua marker & node di peta
+                const disableClicks = (layer) => {
+                    if (!layer) return;
+                    layer.eachLayer(m => {
+                        const el = m.getElement ? m.getElement() : (m._icon || null);
+                        if (el) el.style.pointerEvents = active ? 'auto' : 'none';
+                        if (m._path) m._path.style.pointerEvents = active ? 'auto' : 'none';
+                    });
+                };
+                disableClicks(this.markersGroup);
+                disableClicks(this.nodesGroup);
+                disableClicks(this.cablesGroup);
             },
 
             clearTempCable() {
@@ -1944,7 +1982,9 @@
                     if (isNaN(lat) || isNaN(lng)) return;
 
                     const marker = L.marker([lat, lng], {
-                        icon: this.createCustomIcon(c)
+                        icon: this.createCustomIcon(c),
+                        // Nonaktifkan interaksi jika sedang mode tarik kabel
+                        interactive: !this.drawingCable
                     });
 
                     marker.bindPopup(() => this.buildPopupHtml(c), {
@@ -1952,6 +1992,9 @@
                         minWidth: 220,
                         autoPanPadding: [25, 25]
                     });
+
+                    const el = marker.getElement ? marker.getElement() : null;
+                    if (el && this.drawingCable) el.style.pointerEvents = 'none';
 
                     this.markersGroup.addLayer(marker);
                     this.customerMarkers[c.id] = marker;
