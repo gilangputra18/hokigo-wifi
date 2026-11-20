@@ -6,6 +6,7 @@
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
 @endpush
 
 @section('content')
@@ -326,6 +327,27 @@
                         :class="currentLayer === 'street' ? 'bg-brand-blue text-white font-bold shadow-xs' : 'text-slate-600 hover:bg-slate-100'"
                         class="px-2.5 py-1.5 rounded-lg text-[11px] transition flex items-center gap-1">
                     <span>🗺️</span> <span>Jalan</span>
+                </button>
+            </div>
+
+            <!-- Rotate Controls (Putar Peta & Reset Utara) -->
+            <div class="absolute top-3 right-3 z-[1000] flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-xl shadow-md border border-slate-200 text-xs">
+                <button type="button" @click="rotateMap(-45)" 
+                        class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-700 transition" 
+                        title="Putar Kiri (-45°)">
+                    <span class="text-xs font-bold">↺</span>
+                </button>
+                <button type="button" @click="resetBearing()" 
+                        class="px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition flex items-center gap-1"
+                        :class="currentBearing !== 0 ? 'bg-amber-100 text-amber-800' : 'text-slate-600 hover:bg-slate-100'"
+                        title="Reset arah ke Utara (0°)">
+                    <span>🧭</span>
+                    <span x-text="currentBearing !== 0 ? Math.round(currentBearing) + '°' : 'Utara'"></span>
+                </button>
+                <button type="button" @click="rotateMap(45)" 
+                        class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-slate-100 text-slate-700 transition" 
+                        title="Putar Kanan (+45°)">
+                    <span class="text-xs font-bold">↻</span>
                 </button>
             </div>
 
@@ -959,6 +981,7 @@
             esriSatelliteLayer: null,
             streetLayer: null,
             currentLayer: 'google',
+            currentBearing: 0,
             markersGroup: null,
             nodesGroup: null,
             cablesGroup: null,
@@ -1103,19 +1126,36 @@
                 });
             },
 
-            // Save last map state (lat, lng, zoom, layer) so user never loses their view!
+            // Save last map state (lat, lng, zoom, layer, bearing) so user never loses their view!
             saveMapState() {
                 if (!this.map) return;
                 try {
                     const center = this.map.getCenter();
                     const zoom = this.map.getZoom();
+                    const bearing = typeof this.map.getBearing === 'function' ? this.map.getBearing() : 0;
                     localStorage.setItem('hokigo_map_state', JSON.stringify({
                         lat: center.lat,
                         lng: center.lng,
                         zoom: zoom,
+                        bearing: bearing,
                         layer: this.currentLayer
                     }));
                 } catch (e) {}
+            },
+
+            rotateMap(deg) {
+                if (!this.map || typeof this.map.setBearing !== 'function') return;
+                const next = ((this.currentBearing + deg) % 360 + 360) % 360;
+                this.map.setBearing(next);
+                this.currentBearing = next;
+                this.saveMapState();
+            },
+
+            resetBearing() {
+                if (!this.map || typeof this.map.setBearing !== 'function') return;
+                this.map.setBearing(0);
+                this.currentBearing = 0;
+                this.saveMapState();
             },
 
             getSavedMapState() {
@@ -1131,6 +1171,7 @@
                 let defaultLat = -7.536064;
                 let defaultLng = 112.238402;
                 let defaultZoom = 13;
+                let defaultBearing = 0;
 
                 // Priority 1: Restore exact location where user left off
                 if (saved && saved.lat && saved.lng && saved.zoom) {
@@ -1138,18 +1179,34 @@
                     defaultLng = parseFloat(saved.lng);
                     defaultZoom = parseInt(saved.zoom);
                     if (saved.layer) this.currentLayer = saved.layer;
+                    if (saved.bearing) defaultBearing = parseFloat(saved.bearing);
                 } else if (this.pinnedList.length > 0) {
                     defaultLat = parseFloat(this.pinnedList[0].latitude);
                     defaultLng = parseFloat(this.pinnedList[0].longitude);
                     defaultZoom = 16;
                 }
 
-                // Initialize Leaflet Map
+                // Initialize Leaflet Map with Rotation Support (Touch 2-finger rotate & desktop shift-scroll)
                 this.map = L.map('map', {
                     center: [defaultLat, defaultLng],
                     zoom: defaultZoom,
                     zoomControl: true,
-                    preferCanvas: true
+                    preferCanvas: true,
+                    rotate: true,
+                    touchRotate: true,
+                    rotateControl: false
+                });
+
+                if (defaultBearing && typeof this.map.setBearing === 'function') {
+                    this.map.setBearing(defaultBearing);
+                    this.currentBearing = defaultBearing;
+                }
+
+                this.map.on('rotate', () => {
+                    if (this.map && typeof this.map.getBearing === 'function') {
+                        let b = Math.round(this.map.getBearing() || 0);
+                        this.currentBearing = ((b % 360) + 360) % 360;
+                    }
                 });
 
                 // Google Hybrid Satellite

@@ -7,6 +7,7 @@
     <!-- Leaflet Maps CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate.js"></script>
 @endpush
 
 @section('content')
@@ -414,6 +415,27 @@
                         </button>
                     </div>
 
+                    <!-- Rotate Controls (Putar Peta & Reset Utara) -->
+                    <div class="absolute top-2.5 right-2.5 sm:top-3 sm:right-3 z-[400] flex items-center gap-1 bg-white/95 backdrop-blur-md p-1 rounded-2xl shadow-lg border border-slate-200 text-xs select-none">
+                        <button type="button" @click="rotateMap(-45)" 
+                                class="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-700 transition" 
+                                title="Putar Kiri (-45°)">
+                            <span class="text-xs font-bold">↺</span>
+                        </button>
+                        <button type="button" @click="resetBearing()" 
+                                class="px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition flex items-center gap-1"
+                                :class="currentBearing !== 0 ? 'bg-amber-100 text-amber-800' : 'text-slate-600 hover:bg-slate-100'"
+                                title="Reset arah ke Utara (0°)">
+                            <span>🧭</span>
+                            <span x-text="currentBearing !== 0 ? Math.round(currentBearing) + '°' : 'Utara'"></span>
+                        </button>
+                        <button type="button" @click="rotateMap(45)" 
+                                class="w-7 h-7 flex items-center justify-center rounded-xl hover:bg-slate-100 text-slate-700 transition" 
+                                title="Putar Kanan (+45°)">
+                            <span class="text-xs font-bold">↻</span>
+                        </button>
+                    </div>
+
                     <!-- Coordinates readout badge -->
                     <div class="absolute bottom-3 left-3 z-[400] bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-mono px-3 py-1.5 rounded-xl shadow border border-white/10 flex items-center gap-1.5"
                          x-show="lat && lng">
@@ -471,11 +493,25 @@
             map: null,
             marker: null,
             currentLayer: localStorage.getItem('hokigo_picker_map_layer') || 'google',
+            currentBearing: 0,
             googleHybridLayer: null,
             esriSatelliteLayer: null,
             streetLayer: null,
             lat: '{{ old('latitude', $customer->latitude ?? '') }}',
             lng: '{{ old('longitude', $customer->longitude ?? '') }}',
+
+            rotateMap(deg) {
+                if (!this.map || typeof this.map.setBearing !== 'function') return;
+                const next = ((this.currentBearing + deg) % 360 + 360) % 360;
+                this.map.setBearing(next);
+                this.currentBearing = next;
+            },
+
+            resetBearing() {
+                if (!this.map || typeof this.map.setBearing !== 'function') return;
+                this.map.setBearing(0);
+                this.currentBearing = 0;
+            },
 
             init() {
                 const tryInit = () => {
@@ -499,7 +535,17 @@
                     center: [initLat, initLng],
                     zoom: hasInitial ? 17 : 14,
                     zoomControl: false,
-                    preferCanvas: true
+                    preferCanvas: true,
+                    rotate: true,
+                    touchRotate: true,
+                    rotateControl: false
+                });
+
+                this.map.on('rotate', () => {
+                    if (this.map && typeof this.map.getBearing === 'function') {
+                        let b = Math.round(this.map.getBearing() || 0);
+                        this.currentBearing = ((b % 360) + 360) % 360;
+                    }
                 });
 
                 // Zoom control positioned at bottom right so it doesn't block top pill
